@@ -1,0 +1,157 @@
+# Budgets and vocabulary. The validator reads thresholds from here and nowhere
+# else: a number copied into prose becomes a second definition that drifts.
+
+# One declaration. Every namespaced name derives from it, and a rule checks
+# that they still agree.
+set: operation
+prefix: operation-          # <set>-
+shared_dir: _operation      # _<set>
+
+# `skills/` is where install.sh looks and where the skills live. The set's own
+# directories still carry the set name.
+skills_dir: skills
+platform_dirs: [.git, .github, .claude, skills, docs]
+
+limits:
+  skill_md_lines: 128         # measured at adoption: 292-314, all over. Raised from 120
+                              # when the expiry block was delivered into every skill: the
+                              # claim it governs is the one nobody exercises in normal
+                              # running, so it has to be in front of every run that makes it
+  description_chars: 200      # the listing truncates past this
+  playbook_lines: 300
+  playbooks_per_skill: 8
+  shared_file_lines: 100
+  shared_lines_total: 580     # measured: 479 before EXPIRY.md, 552 after. This set is the
+                              # only one whose deliverables assert a capability that is
+                              # never exercised until the night it is needed
+  skills_max: 7               # 5 in use, 2 spare for demand found in use
+  routes_max: 12
+  route_stages_max: 6
+  repo_md_lines_total: 5600     # measured: 5017 after the observation layer landed.
+                                # Raised because reference/ carries no line budget of its
+                                # own but is counted in the repository total; the set now
+                                # states which commands produce the `O1` its contract
+                                # demands, which it previously required and never named.
+
+listing:
+  packs_needed_above: 20
+
+# Every one of these skills decides and documents. None of them operates the
+# system: the change is made, the incident mitigated, and the runbook executed
+# by people, with these skills producing the decision and its record.
+#
+# That sentence is the contract, and it is not what the class enforces. These
+# were named `advise` and `review`, which read as narrower than they are —
+# `advise` granted Edit. The names now say what is granted; what bounds it is
+# each skill's Never list and _operation/SAFETY_TIERS.md, which are read on
+# every launch. A class name that flatters the grant only hides the gap.
+permission_classes:
+  full:
+    tools: "Read, Grep, Glob, Bash, Write, Edit"   # unrestricted; the contract is narrower
+    writes: true
+  read-only:
+    tools: "Read, Grep, Glob, Bash"                # verdicts only, and cannot do otherwise
+    writes: false
+
+forbidden_description_terms:
+  - "Not for"
+  - "not for"
+  - "instead of"
+  - "rather than"
+
+# All three CLIs read the same SKILL.md, so any of them may be the one running
+# — the producing engine is a property of the run, not of this file. An earlier
+# version pinned `produced_by: claude` here, which quietly approved `checker:
+# codex` on a run that was itself codex.
+#
+# Detection was tried and does not work: codex launched from inside Claude Code
+# inherits `CLAUDECODE` and `CLAUDE_CODE_*`, so a nested run reads as its parent.
+# The caller states which engine is running; when it does not, the runner stops.
+engines:
+  runs_on: [claude, codex, agy]     # two or more, or no run can check itself out
+
+# What a refuting engine attacks in this domain, and what counts as having broken
+# the claim. The tool is the same in every set (`operation-tools/refute.py`); the lens is
+# not, and a refuter with no domain framing is a second opinion rather than an
+# adversary.
+refutation:
+  lens: |
+    A claimed root cause, impact, or fitness verdict about a running system. Attack the
+    observation: a cause needs something read from the system, not inferred from a
+    module's own report of itself. Check whether a timeline was recorded as it happened
+    or reconstructed afterwards, and whether a mitigation was watched taking effect or
+    only applied. `changed=` is a claim; a metric going flat is an observation.
+  refuted_when: >-
+    the cause rests on inference rather than something read from the system, the
+    timeline was reconstructed after the fact, or nobody watched the mitigation land
+
+vocabulary:
+  patterns: [linear, loop, report-only]
+  checkers: [other-engine]
+  evidence_levels: [O1, O2, O3, O4, O5]
+  residual_classes: [BLOCKED, OUT-OF-SCOPE, DEFERRED, UNVERIFIED]
+  statuses: [DONE, PARTIAL, BLOCKED]
+  tiers: [T1, T2, T3, T4]     # SAFETY_TIERS, not a ceremony scale
+  proof_states: [proved, simulated, stale, untested, unprovable]
+
+
+label_by_path:
+  "skills/_operation/ROUTING.md": guidance
+  "skills/_operation/GLOSSARY.md": guidance
+  "skills/_operation/*.md": contract
+  "skills/*/SKILL.md": contract
+  "skills/*/playbooks/*.md": guidance
+  "skills/*/reference/*.md": deferred
+document_labels: [contract, guidance, deferred]
+
+rot_patterns:
+  - '\b(19|20)\d{2}-\d{2}\b'
+  - '\bv\d+\.\d+(\.\d+)?\b'
+
+reference_headers: ["Purpose:", "Read when:", "Verified:"]
+# A `Verified:` date records that someone looked once, and a date has no failure
+# mode. V31 requires the line to name what re-checks it — or to say plainly that
+# nothing does. An unchecked page is fine; an unchecked page that reads like a
+# checked one is not.
+verified_markers:
+  - "no automated check"      # the honest admission, and the common case
+  - "by running"
+  - "produced by running"
+  - "confirmed by running"
+  - "performing the operation"
+  - "quoted from"
+  - "recomputed"
+  - "re-run by"
+  - "re-runs"
+  - "re-derives"
+  - "re-checked"
+  - "re-verified"
+  - "make figures"
+  - "holds every"
+  - "holds the two"
+  - "holds them to"
+
+
+# Paths that belong to the host organisation, not to this set.
+external_paths: [".agents/", ".operations/", "runbooks/", "CLAUDE.md", "AGENTS.md", "GEMINI.md", "settings.json"]
+
+# The one mechanism this set has that its siblings do not. The rule that checks
+# it is identical in all six sets; this block is the whole difference, which is
+# what keeps six copies of the validator from becoming six dialects.
+#
+# `required_of` is every skill: each of them asserts, somewhere in its output,
+# that a path nobody has walked recently will work. `own_word` is the substring
+# each must carry outside the delivered block — the rule is stated for all, and
+# owned in each skill's own words.
+signature:
+  name: expiry
+  contract: EXPIRY.md
+  vocabulary: proof_states
+  required_of: [operation-change, operation-incident, operation-oncall, operation-runbook, operation-readiness]
+  own_word: expir
+
+delivered:
+  sizing:  { section: "Before starting" }
+  expiry:  { section: "Verify with" }
+  values:  { section: "Decide first" }
+  report:  { section: "Verify with" }

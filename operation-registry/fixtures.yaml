@@ -1,0 +1,34 @@
+# A record of misroutes.
+#
+# This does not reproduce how a model chooses. It is a proxy for finding
+# missing and duplicated signals, and "fixtures pass" does not mean "nothing
+# will be misrouted".
+
+- ask: "we have an incident, who is command and what do we tell people"
+  expect: operation-incident
+- ask: "write the postmortem for yesterday"
+  expect: operation-incident
+- ask: "design the mitigation path before we touch anything"
+  expect: operation-incident
+- ask: "how should we do this production change and roll it out"
+  expect: operation-change
+- ask: "we need approval design and freeze windows"
+  expect: operation-change
+- ask: "how should we stage this production change, and when do we roll back"
+  expect: operation-change
+- ask: "the on-call rotation is burning people out"
+  expect: operation-oncall
+- ask: "do an alert hygiene pass and fix the escalation policy"
+  expect: operation-oncall
+- ask: "is this service fit to run in production"
+  expect: operation-readiness
+- ask: "run the production readiness review and assign a service tiering"
+  expect: operation-readiness
+- ask: "plan the handover and eventual decommission"
+  expect: operation-readiness
+- ask: "write a runbook for this procedure"
+  expect: operation-runbook
+- ask: "this procedure has no preconditions written down anywhere"
+  expect: operation-runbook
+- ask: "how much toil accounting do we have"
+  expect: operation-runbook

@@ -1,0 +1,51 @@
+# Chains that recur, as control structure rather than prose.
+
+outage:
+  pattern: linear
+  when: "production is broken now"
+  chain: [operation-incident, operation-runbook]
+  gate: "user-visible impact has ended before any root-cause work starts"
+
+ship-it:
+  pattern: linear
+  when: "a change is going to production"
+  chain: [operation-change, operation-runbook]
+  gate: "the point of no return is named and the abort trigger is numeric"
+
+go-live:
+  pattern: linear
+  when: "a new service wants to run in production"
+  chain: [operation-readiness, operation-runbook, operation-oncall]
+  gate: "the service tier is assigned before any requirement is applied"
+
+noisy-pager:
+  pattern: linear
+  when: "the rota is unsustainable"
+  chain: [operation-oncall, operation-runbook]
+  gate: "current page load is measured before any rotation change is proposed"
+
+fitness-check:
+  pattern: report-only
+  when: "is this service fit to run"
+  chain: [operation-readiness]
+  stops_at: "findings split into blocking and non-blocking, each with its verification method. Nothing is changed"
+
+delivery-health:
+  pattern: report-only
+  when: "is our change process working"
+  chain: [operation-change]
+  stops_at: "the four delivery measures with their sources, and what the process costs. No process is imposed"
+
+learn:
+  pattern: linear
+  when: "the incident is over"
+  chain: [operation-incident, operation-readiness]
+  gate: "every reported time is reconciled against an observed one"
+
+review-to-ready:
+  pattern: loop
+  when: "close every blocking finding before launch"
+  chain: [operation-readiness, operation-runbook]
+  oracle: "no blocking finding remains, and one full pass adds none"
+  checker: other-engine          # resolved at run time to one that is not running this
+  max_cycles: 3

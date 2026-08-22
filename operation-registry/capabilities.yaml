@@ -1,0 +1,59 @@
+# What each skill owns, what it does not, and the words that select it.
+#
+# `not:` is the only place a boundary is written. Putting boundaries in
+# descriptions means every skill added rewrites its neighbours, and the
+# marginal cost of an addition stops being O(1).
+#
+# `signals` are the words a request actually uses. Each must appear literally
+# in that skill's description: the listing carries name and description only,
+# so a signal that lives here and nowhere else never reaches the engine.
+
+operation-incident:
+  class: full
+  does: [declare, command, impact, mitigate, comms, postmortem]
+  not:
+    - what: "the change process that keeps producing these"
+      go: operation-change
+    - what: "the alert that should have caught it, or should not have paged"
+      go: operation-oncall
+  signals: [incident, declaring, command roles, impact assessment, mitigation, comms, postmortem]
+
+operation-change:
+  class: full
+  does: [classification, risk, rollout, rollback, migration, freeze, approval, dora]
+  not:
+    - what: "a change that already broke production"
+      go: operation-incident
+    - what: "whether the service should be running at all yet"
+      go: operation-readiness
+  signals: [production change, risk classification, progressive rollout, rollback, freeze windows, approval design]
+
+operation-oncall:
+  class: full
+  does: [rotation, escalation, alert-hygiene, handoff, onboarding, health]
+  not:
+    - what: "the procedure the page points at"
+      go: operation-runbook
+    - what: "handling the page that is firing right now"
+      go: operation-incident
+  signals: [on-call, rotation design, escalation policy, alert hygiene, shift handoff, onboarding]
+
+operation-readiness:
+  class: read-only
+  does: [tiering, prr, capacity, cost, maturity, handover, decommission]
+  not:
+    - what: "writing the procedures the review finds missing"
+      go: operation-runbook
+    - what: "shipping a change to a service already running"
+      go: operation-change
+  signals: [fit to run, service tiering, production readiness review, capacity, maturity, handover, decommission]
+
+operation-runbook:
+  class: full
+  does: [anatomy, sop, testing, automation, toil]
+  not:
+    - what: "whether the alert that points here should exist"
+      go: operation-oncall
+    - what: "executing the procedure during an outage"
+      go: operation-incident
+  signals: [runbook, procedure, preconditions, automation ladder, toil accounting]
