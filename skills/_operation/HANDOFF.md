@@ -2,7 +2,8 @@
 # Handoff Contract
 
 `operation-*` skills chain. A handoff carries state forward without forcing the next skill
-to re-derive it.
+to re-derive it. **It is the record, not the report**: what a person reads is a bounded view
+over it (`_operation/REPORT.md`), never this schema rendered field by field.
 
 ## Schema
 

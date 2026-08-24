@@ -41,17 +41,9 @@ of a wrong postmortem sequence.
 
 ## Reporting shape
 
-- **Lead with the operational answer**, then the evidence. During an incident, the first
-  line is the current state of user impact — nothing else.
-- **Tables for decisions, prose for reasoning.** A severity call, a tier, a go/no-go: table.
-  Why: prose.
-- **Every recommendation carries an observation rung** (`_operation/CONTRACT.md`) and, if it
-  proposes an action, a `SAFETY_TIER` block (`_operation/SAFETY_TIERS.md`).
-- **Name the gap.** Unknown is a valid output. Padding a checklist with `N/A` to look
-  complete is a defect.
-- **No invented telemetry.** Never state a metric value, alert name, dashboard, or runbook
-  path that was not read from the repo, the tooling, or the user. If a value is needed and
-  absent, say what to query and where.
+The shape, the order and the ceiling are `_operation/REPORT.md` — one place, delivered into
+every skill. What this file owns is the input to it: **every claim carries a rung, and a
+report that crosses into a verification claim names which ladder its rung came from.**
 
 ## Status
 

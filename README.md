@@ -137,6 +137,7 @@ follows the link and finds the file, which is what makes that fail quietly.
 | [`skills/_operation/VALUES.md`](skills/_operation/VALUES.md) | The order when two goods conflict, and the escape hatch |
 | [`skills/_operation/HANDOFF.md`](skills/_operation/HANDOFF.md) | What passes between skills |
 | [`skills/_operation/ROUTING.md`](skills/_operation/ROUTING.md) | Guidance. Which skill owns the question |
+| [`skills/_operation/REPORT.md`](skills/_operation/REPORT.md) | What a person reads: the order, the ceiling per subject, and the impact line first |
 | [`skills/_operation/GLOSSARY.md`](skills/_operation/GLOSSARY.md) | Shared terms, and the output language rule |
 
 ## Layout
