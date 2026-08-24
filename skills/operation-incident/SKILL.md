@@ -137,4 +137,7 @@ action carries its tier, and what remains unverified is named.
 - **Ceiling by subject: one action with a procedure, one line · a procedure, review or
   decision, six · a live incident, the impact line and four more.** Cut content, not
   format — never the rung or the `SAFETY_TIER` block (`_operation/REPORT.md`)
+- **Not bigger than it is.** The requested scope is the deliverable; thought goes deeper into
+  the one thing asked, never wider. **A real problem is the exception** — something that would
+  break, is unsafe, or rests on a false premise is explained in full (`_operation/REPORT.md`)
 <!-- /deliver:surface -->
