@@ -3,6 +3,7 @@
 
 Purpose: Diagnosing rotation health, burnout leading indicators, metric definitions and collection.
 Read when: diagnosing rotation health, burnout leading indicators, metric definitions and collection
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Metric Definitions

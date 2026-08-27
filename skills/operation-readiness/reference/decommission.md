@@ -3,6 +3,7 @@
 
 Purpose: Retiring a service, silent consumer discovery, unwind order, data retention.
 Read when: retiring a service, silent consumer discovery, unwind order, data retention
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Retiring a service is a change with an unusually large blast radius and no rollback once data

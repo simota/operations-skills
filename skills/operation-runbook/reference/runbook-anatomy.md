@@ -3,6 +3,7 @@
 
 Purpose: Structuring a runbook, writing verifiable steps, preconditions, abort conditions, inline rollback.
 Read when: structuring a runbook, writing verifiable steps, preconditions, abort conditions, inline rollback
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Full Structure

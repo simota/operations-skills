@@ -3,6 +3,7 @@
 
 Purpose: DORA four keys, change failure rate attribution, batch-size analysis, constraint identification.
 Read when: dORA four keys, change failure rate attribution, batch-size analysis, constraint identification
+Source: DORA — the four keys and their definitions are theirs, not this page's.
 Verified: 2026-08-21 — no automated check.
 
 ## The Four Keys

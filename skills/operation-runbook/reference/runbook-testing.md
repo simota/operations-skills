@@ -3,6 +3,7 @@
 
 Purpose: Dry-run design, game-day validation, drift detection, audit verdicts.
 Read when: dry-run design, game-day validation, drift detection, audit verdicts
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 An untested runbook is a hypothesis with formatting. Testing is what converts it into a control.

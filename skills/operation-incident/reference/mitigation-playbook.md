@@ -3,6 +3,7 @@
 
 Purpose: Choosing rollback vs fix-forward vs degrade vs failover, time-boxing, verification.
 Read when: choosing rollback vs fix-forward vs degrade vs failover, time-boxing, verification
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## The Options

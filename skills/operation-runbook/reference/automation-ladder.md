@@ -3,6 +3,7 @@
 
 Purpose: Placing a procedure on the ladder, rung gates, circuit breakers, escape hatches, confidence thresholds.
 Read when: placing a procedure on the ladder, rung gates, circuit breakers, escape hatches, confidence thresholds
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## The Rungs

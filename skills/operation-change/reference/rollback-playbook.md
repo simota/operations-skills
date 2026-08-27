@@ -3,6 +3,7 @@
 
 Purpose: Verifying reversibility, expand-contract migration sequencing, point of no return, post-deploy verification.
 Read when: verifying reversibility, expand-contract migration sequencing, point of no return, post-deploy verification
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Reversibility Checklist

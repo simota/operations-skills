@@ -3,6 +3,7 @@
 
 Purpose: Classifying severity, declaration criteria, upgrade/downgrade rules, concurrent incidents.
 Read when: classifying severity, declaration criteria, upgrade/downgrade rules, concurrent incidents
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Classification

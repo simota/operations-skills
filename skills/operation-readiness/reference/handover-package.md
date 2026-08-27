@@ -3,6 +3,7 @@
 
 Purpose: Transferring operational ownership, package contents, acceptance demonstration.
 Read when: transferring operational ownership, package contents, acceptance demonstration
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 **Handover is complete when the receiving team can operate the service without the building

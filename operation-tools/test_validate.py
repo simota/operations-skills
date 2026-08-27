@@ -312,6 +312,33 @@ def _(r):
 def _(r): sub(r / "operation-registry/harness.yaml", "finding_visuals:", "unused_visuals:")
 
 
+@case("V37")
+def _(r):
+    """A page that leans on a declared source and does not say so."""
+    sub(r / f"{S}operation-change/reference/dora-metrics.md",
+        "Source: DORA — the four keys and their definitions are theirs, not this page's.",
+        "Source: none — nothing outside this page can move what it states.")
+
+
+@case("V37-unused")
+def _(r):
+    """A source named in the header that the page never uses."""
+    sub(r / f"{S}operation-oncall/reference/onboarding.md",
+        "Source: none — nothing outside this page can move what it states.",
+        "Source: DORA — the four keys and their definitions are theirs, not this page's.")
+
+
+@case("V37-silent")
+def _(r):
+    """Neither a source nor the admission that there is none."""
+    sub(r / f"{S}operation-oncall/reference/onboarding.md",
+        "Source: none — nothing outside this page can move what it states.", "Source:")
+
+
+@case("V37-none-declared")
+def _(r): sub(r / "operation-registry/harness.yaml", "source_authorities:", "unused_authorities:")
+
+
 def main() -> int:
     baseline = run(ROOT)
     if "green" not in baseline:

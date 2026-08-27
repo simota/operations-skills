@@ -3,6 +3,7 @@
 
 Purpose: Blameless narrative, contributing factors, counterfactual discipline, typed action items.
 Read when: blameless narrative, contributing factors, counterfactual discipline, typed action items
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Blameless Discipline

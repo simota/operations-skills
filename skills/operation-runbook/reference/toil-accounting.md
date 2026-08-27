@@ -3,6 +3,7 @@
 
 Purpose: Applying the six-criteria toil test, scoring, prioritisation, toil budget enforcement.
 Read when: applying the six-criteria toil test, scoring, prioritisation, toil budget enforcement
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## The Six Criteria

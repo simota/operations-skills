@@ -3,6 +3,7 @@
 
 Purpose: Sizing a responder pool, choosing shift shape, follow-the-sun trade-offs, fairness accounting, coverage-gap detection.
 Read when: sizing a responder pool, choosing shift shape, follow-the-sun trade-offs, fairness accounting, coverage-gap detection
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Pool Sizing

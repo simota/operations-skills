@@ -3,6 +3,7 @@
 
 Purpose: Assigning T0–T3, deriving requirements, dependency tier inversion.
 Read when: assigning T0–T3, deriving requirements, dependency tier inversion
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Tier is derived from **measured impact of downtime**, never from how important the service

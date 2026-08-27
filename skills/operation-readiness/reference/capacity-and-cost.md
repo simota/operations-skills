@@ -3,6 +3,7 @@
 
 Purpose: Headroom, growth modelling, saturation ceilings, unit economics, cost as operational risk.
 Read when: headroom, growth modelling, saturation ceilings, unit economics, cost as operational risk
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Headroom

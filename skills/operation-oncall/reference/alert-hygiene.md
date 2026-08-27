@@ -3,6 +3,7 @@
 
 Purpose: Auditing an alert corpus, applying the four paging criteria, grouping/suppression design, noise-source attribution.
 Read when: auditing an alert corpus, applying the four paging criteria, grouping/suppression design, noise-source attribution
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## The Four Paging Criteria

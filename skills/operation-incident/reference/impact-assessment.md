@@ -3,6 +3,7 @@
 
 Purpose: Scoping user/feature/data/financial/regulatory impact, capturing volatile evidence.
 Read when: scoping user/feature/data/financial/regulatory impact, capturing volatile evidence
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Two jobs, in this order: **capture what is about to disappear**, then **scope what is broken**.

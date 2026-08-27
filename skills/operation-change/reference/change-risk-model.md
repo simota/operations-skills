@@ -3,6 +3,7 @@
 
 Purpose: Classifying a change, scoring risk, batch-size effects, coupling and novelty assessment.
 Read when: classifying a change, scoring risk, batch-size effects, coupling and novelty assessment
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Classification

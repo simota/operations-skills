@@ -3,6 +3,7 @@
 
 Purpose: Running a readiness review, verification methods, blocking criteria, verdict format.
 Read when: running a readiness review, verification methods, blocking criteria, verdict format
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Principles

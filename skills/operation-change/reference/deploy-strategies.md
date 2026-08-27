@@ -3,6 +3,7 @@
 
 Purpose: Choosing canary / blue-green / rolling / flag / shadow, stage design, bake times, abort triggers.
 Read when: choosing canary / blue-green / rolling / flag / shadow, stage design, bake times, abort triggers
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Selection

@@ -3,6 +3,7 @@
 
 Purpose: Read-only commands whose output is routinely read as evidence for a claim it does not support, and the command that does support it.
 Read when: citing any command output as `O1`, verifying that a mitigation worked, or explaining why two responders disagree while quoting the same command.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — the Ansible behaviour was produced by running it against a local inventory (`O1`). The `aws` and `gcloud` behaviour is quoted from `aws help` / `gcloud help` on the installed CLIs (`O3`); no credentials were available, so nothing on those two was executed.
 Claims from neither source are `O5` and are worth confirming against the environment in use.
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook, and reports SKIPPED per missing tool rather than passing quietly.

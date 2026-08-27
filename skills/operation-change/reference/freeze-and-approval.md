@@ -3,6 +3,7 @@
 
 Purpose: Freeze windows, exemptions, emergency change handling, approval design, rubber-stamp detection.
 Read when: freeze windows, exemptions, emergency change handling, approval design, rubber-stamp detection
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Freeze Design

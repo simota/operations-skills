@@ -3,6 +3,7 @@
 
 Purpose: Internal cadence, customer notification thresholds, status page copy, all-clear.
 Read when: internal cadence, customer notification thresholds, status page copy, all-clear
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Principles

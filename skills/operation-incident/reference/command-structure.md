@@ -3,6 +3,7 @@
 
 Purpose: Assigning IC/OL/CL/Scribe, authority boundaries, command transfer, war-room discipline.
 Read when: assigning IC/OL/CL/Scribe, authority boundaries, command transfer, war-room discipline
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Adapted from incident command systems used in emergency response: the point is that authority

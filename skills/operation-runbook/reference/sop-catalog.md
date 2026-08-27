@@ -3,6 +3,7 @@
 
 Purpose: Naming, versioning, ownership, discoverability, freshness decay, alert-to-runbook coverage.
 Read when: naming, versioning, ownership, discoverability, freshness decay, alert-to-runbook coverage
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Naming

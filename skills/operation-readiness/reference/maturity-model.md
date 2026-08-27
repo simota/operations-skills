@@ -3,6 +3,7 @@
 
 Purpose: Scoring detection / response / recovery / prevention / knowledge, finding the weakest dimension.
 Read when: scoring detection / response / recovery / prevention / knowledge, finding the weakest dimension
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Five dimensions, scored 1–5. The value is in finding the **weakest** dimension — maturity is

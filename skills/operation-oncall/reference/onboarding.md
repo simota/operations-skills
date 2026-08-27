@@ -3,6 +3,7 @@
 
 Purpose: Shadow rotations, on-call readiness checklist, first-solo-shift gating.
 Read when: shadow rotations, on-call readiness checklist, first-solo-shift gating
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Readiness Checklist

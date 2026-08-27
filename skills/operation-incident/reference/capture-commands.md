@@ -3,6 +3,7 @@
 
 Purpose: The read-only commands that produce `O1` evidence on the platforms this set is used against, ordered by how fast the evidence disappears, and what each mitigation destroys as it runs.
 Read when: an incident is live and a playbook re-run, an instance replacement, a service redeploy, or a rollout is about to happen — or has just happened and the evidence is being reconstructed.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — the Ansible behaviour below was produced by running it against a local inventory (`O1`). The `aws` and `gcloud` behaviour is quoted from `aws help` / `gcloud help` on the installed CLIs (`O3`); no credentials were available in this session, so nothing on those two was executed.
 Claims not from either source — ingestion lag, retention windows, what a given account has configured — are `O5` and are worth confirming against the environment actually in use.
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook. With a CLI missing it reports SKIPPED for that tool and passes: a hole, announced rather than hidden.

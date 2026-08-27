@@ -3,6 +3,7 @@
 
 Purpose: Designing escalation tiers, timeouts, unacknowledged-page fallback, severity-to-channel routing.
 Read when: designing escalation tiers, timeouts, unacknowledged-page fallback, severity-to-channel routing
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 ## Tier Structure

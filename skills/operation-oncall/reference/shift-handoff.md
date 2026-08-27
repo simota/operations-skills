@@ -3,6 +3,7 @@
 
 Purpose: Handoff template, carry-forward register, degradation tracking across shifts.
 Read when: handoff template, carry-forward register, degradation tracking across shifts
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 A handoff is a deliverable. Its quality metric: **did the incoming shift have to re-derive
