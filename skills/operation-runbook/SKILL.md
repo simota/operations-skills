@@ -77,6 +77,9 @@ Phases: `SCOPE → CLASSIFY → DRAFT → TEST → AUTOMATE → GOVERN`.
   successfully at least twice. **Automation of an unproven procedure encodes a
   guess and executes it faster**
 - Never: write a step whose expected observation you cannot state
+- Never: annotate a step with what its command already says — the expected
+  observation is not that, it is half the step. A comment beside a command
+  carries only why the step is safe to repeat, and what aborts it
 - Never: reference a command, path, or dashboard that was not read
 - Never: let a tier be lowered because the procedure is now automated
 

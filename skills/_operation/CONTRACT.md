@@ -84,3 +84,20 @@ Before reporting, run both halves and state both results:
 Report it in one line: `swept, 1 marker / 1 in open; 14 claims / 14 runged`.
 **While either pair fails to match, the status is not `DONE`.**
 
+## Comments — the line says what, a comment says why
+
+A comment restating the line under it is a defect in the line, not a sentence
+missing from it. **The test is mechanical: cover the comment and read the
+command.** Nothing lost — delete the comment. Something lost — put it in the
+line, renaming or restructuring until the comment has become the name, and
+delete it anyway.
+
+**A step's expected observation is not a comment about the step; it is half the
+step**, and this rule never touches it. What a comment is for is what the line
+cannot carry: why this way and not the obvious way, the constraint from
+outside, and the two a reader at 3 a.m. cannot reconstruct — why the step is
+safe to repeat, and what aborts it. **Deleting those is the opposite failure
+and costs more.** A `#TODO(agent):` marker and a licence header stay.
+
+**Nothing checks this automatically.** It is a reading pass over what this run
+wrote. Comments elsewhere are not this run's to strip.

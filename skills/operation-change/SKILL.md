@@ -76,6 +76,9 @@ Phases: `CLASSIFY → ASSESS → PLAN → GATE → ROLL → VERIFY → RECORD`.
 - Never: combine migration phases
 - Never: let a freeze block an emergency, or an emergency skip its review
 - Never: report a delivery measure without the source it came from
+- Never: leave a comment in config or a rollout script restating the line under
+  it. What cannot be read off the line — where the threshold came from, why the
+  order is this one — is the whole of what a comment there is for
 
 ## Verify with
 
