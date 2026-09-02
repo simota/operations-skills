@@ -26,13 +26,12 @@ noise at the next.**
 |---|---|---|
 | **Start** | What will be done and what is excluded, with the tier if it is not obvious | one line |
 | **A question** | The one decision that is blocked, and the default taken if nobody answers | one question, one line |
-| **Mid-run** | Nothing — unless the reader must act now: a divergence from what was agreed, a path found blocked, work that would grow the scope, an action that turns out to be `T3` or above with no approver identified | one line each, or silence |
+| **Mid-run** | What changes what the reader would do: a divergence from what was agreed, a path found blocked, work that would grow the scope, an action that turns out to be `T3` or above with no approver identified | one line each |
 | **End** | The report below | the ceiling below |
 
-**Progress is not information.** "checking the dashboards", "now reading the runbook", "looks
-healthy" tell the reader nothing they can act on, and they cost the same attention as the line
-that matters. A tool call is already visible; narrating it a second time is the commonest way a
-run fills a screen while saying nothing.
+**A mid-run line is owed when the reader would act on it.** "looks healthy" is a claim and
+carries a rung or is not said; "the rollback path is `untested`, continuing on the assumption
+the owner accepts that" is a line the reader needs now.
 
 **A question is not a status update.** Ask when guessing wrong would be expensive to undo, ask
 one thing, and say what happens if the answer never comes.
@@ -48,17 +47,20 @@ one thing, and say what happens if the answer never comes.
    only if the reader would act on them today
 4. **What is next** — one line, or nothing if the answer is nothing
 
-A run with nothing unresolved reports lines 1 and 2 and stops.
+A run with nothing unresolved reports lines 1 and 2 and stops. "Everything looks good" is a
+claim, and carries a rung like any other.
 
 ## Ceiling
 
-The subject sets it, the way the tiers do — there is no ceremony dial here either.
+The subject sets it, the way the tiers do — there is no ceremony dial here either. The reader
+is someone who has been awake for nineteen hours: the report is what they act on, and the
+record (`_operation/HANDOFF.md`, the artifacts) is what they open when they ask.
 
 | Subject | The whole report |
 |---|---|
-| One action with an existing procedure | one line |
-| A procedure, a review, a rota, a decision | six lines, plus the artifact |
-| A live incident | the impact line, then at most four more. The timeline is the record |
+| One action with an existing procedure | the operational answer, and nothing under it |
+| A procedure, a review, a rota, a decision | the four end lines, plus the artifact's location |
+| A live incident | the impact line, then only what the reader must decide now. The timeline is the record |
 
 **Over the ceiling means cutting content, not reformatting it.** A table, a nested list and
 a heading per check are the three ways a report grows while appearing to have been tightened.
@@ -92,14 +94,6 @@ the reader's to make.
 **A real problem is the exception.** If the request would break something, is unsafe, or rests
 on a false premise, say what is wrong, why, and the options, at whatever length that takes.
 **Cut noise, never risk.**
-
-## Never in a report
-
-- A restatement of the request, or of what the run was about to do
-- A closing summary of what was just said
-- Checks the artifact already lists, or a walk through every rung awarded
-- Narration of process: what was read, which dashboard was opened first, which tool ran
-- Reassurance. "Everything looks good" is a claim with a rung or it is nothing
 
 ## Asked for more
 
