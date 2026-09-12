@@ -145,8 +145,8 @@ def _(r): sub(r / f"{S}_operation/SIZING.md", "`_operation/SAFETY_TIERS.md`", "`
 
 @case("V20")
 def _(r):
-    f = r / f"{S}_operation/CONTRACT.md"
-    f.write_text(f.read_text(encoding="utf-8").replace("UNVERIFIED", "OPEN"), encoding="utf-8")
+    """The definition row becomes a mention; the word is still on the page."""
+    sub(r / f"{S}_operation/CONTRACT.md", "| `O3` |", "| O3 |")
 
 
 @case("V21")
@@ -310,6 +310,11 @@ def _(r):
 
 @case("V36-none-declared")
 def _(r): sub(r / "operation-registry/harness.yaml", "finding_visuals:", "unused_visuals:")
+
+
+@case("V38")
+def _(r): sub(r / f"{S}operation-change/playbooks/risk-scoring.md", "## Risk Scoring",
+              "verdict: KEEP | DROP\n\n## Risk Scoring")
 
 
 @case("V37")

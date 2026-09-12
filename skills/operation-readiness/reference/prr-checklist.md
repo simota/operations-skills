@@ -105,11 +105,8 @@ restore successfully.
 
 ## Verdict
 
-| Verdict | Meaning |
-|---------|---------|
-| `GO` | No blocking findings |
-| `GO WITH CONDITIONS` | Blocking findings resolved before launch, or accepted with a named accepter |
-| `NO-GO` | Blocking findings unresolved and unaccepted |
+One of the three verdicts `_operation/CONTRACT.md` § Verdicts defines — `GO`,
+`GO-WITH-CONDITIONS`, `NO-GO` — read against the blocking findings above.
 
 `NO-GO` always states exactly what would change it to `GO`. A verdict that does not name the
 path forward is an obstacle, not a control.

@@ -141,6 +141,10 @@ vocabulary:
   statuses: [DONE, PARTIAL, BLOCKED]
   tiers: [T1, T2, T3, T4]     # SAFETY_TIERS, not a ceremony scale
   proof_states: [proved, simulated, stale, untested, unprovable]
+  # The readiness review and the change record both close on one of these.
+  # Hyphenated like every other multi-word value in the family; V38 is what
+  # makes a page spelling it with spaces fail rather than quietly diverge.
+  verdicts: [GO, GO-WITH-CONDITIONS, NO-GO]
 
 
 label_by_path:

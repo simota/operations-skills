@@ -47,7 +47,29 @@ Before executing, any of these makes the dialogue mandatory:
   agent choosing them silently has taken the decision
 - The work would set a gate, a freeze, or an escalation path that binds other people
 - The action is `T3` or above and its approver is not identified
+- A term in the request, the runbook, the alert or the design carries two
+  meanings, or one concept goes by two names, and the host's glossary does not
+  settle it
 
 **Reading to find out is not executing.** The dashboards, the incident history,
 the existing runbooks and the current rota answer more than the person can. And
 never open a dialogue over one `T1` action with an obvious procedure.
+
+## Terms — one name per concept, one concept per name
+
+The host's glossary is `.agents/glossary.md` when it exists. Read it before the
+work is sized and write with its names only — runbook, record, report alike. A
+term the work has to coin goes into the handoff's `terms`, and on anything
+beyond a one-action `T1` it is proposed in the dialogue rather than invented on
+the way.
+
+**An ambiguous or inconsistent term is never resolved by a silent choice.**
+Two meanings for one word, or two names for one concept, is a question
+(`_operation/REPORT.md`): one question, with the default named — the spelling
+the runbooks and dashboards already use most. The answer lands in `terms` and is
+appended to the glossary as `term · means · not to be called`, so the next run
+inherits the decision rather than the ambiguity. A run that opened a dialogue
+may create the glossary for its first settled term; a one-action `T1` run never
+does — it marks what it found `OUT-OF-SCOPE` and moves on. Two concepts keep
+two names: a `handover` passes a service to a team, a handoff passes work
+between skills, and neither is renamed to match the other.

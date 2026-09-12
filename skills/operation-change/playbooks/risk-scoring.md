@@ -27,7 +27,7 @@ rollout:
   abort_trigger: "<metric, threshold, window>"
 watcher: "<named individual>"
 window: "<when>"
-verdict: GO | GO WITH CONDITIONS | NO-GO
+verdict: GO | GO-WITH-CONDITIONS | NO-GO
 conditions: [<what must be true>]
 ```
 

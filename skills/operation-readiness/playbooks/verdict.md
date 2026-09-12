@@ -8,7 +8,7 @@ service: "<name>"
 tier: T0 | T1 | T2 | T3
 reviewed: <YYYY-MM-DD>
 reviewer: "<named individual>"
-verdict: GO | GO WITH CONDITIONS | NO-GO
+verdict: GO | GO-WITH-CONDITIONS | NO-GO
 blocking_findings:
   - finding: "<what is missing or wrong>"
     evidence: "<rung and source>"

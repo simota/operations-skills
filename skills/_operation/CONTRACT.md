@@ -57,6 +57,16 @@ report that crosses into a verification claim names which ladder its rung came f
 rule that costs most to break: a mitigation reported as verified, and not, sends
 everyone home while the impact continues.
 
+## Verdicts
+
+A readiness review and a change record close on one of three, and nothing else.
+
+| Verdict | Means |
+|---|---|
+| `GO` | No blocking findings |
+| `GO-WITH-CONDITIONS` | Blocking findings resolved before the action, or accepted with a named accepter |
+| `NO-GO` | Blocking findings unresolved and unaccepted. Always names what would change it to `GO` |
+
 ## Residuals
 
 Anything left behind is classified and appears in the handoff's `open` list.

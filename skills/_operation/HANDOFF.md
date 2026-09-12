@@ -17,6 +17,7 @@ OPERATION_HANDOFF:
     phase: "[phase the sending skill completed]"
     service_tier: T0 | T1 | T2 | T3
     safety_tier: T1 | T2 | T3 | T4
+    terms: {}                  # the names this run used, as the glossary spells them
   carried:
     - "[fact the receiving skill would otherwise re-derive, with observation rung]"
   artifacts:

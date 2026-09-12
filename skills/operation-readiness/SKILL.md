@@ -36,6 +36,10 @@ Phases: `TIER → INVENTORY → ASSESS → VERIFY → VERDICT → HANDOVER`.
   work sets a gate or an escalation path that binds other people, or when the
   action is `T3` or above and its approver is not identified. **State the checks
   you deliberately skipped** (`_operation/SIZING.md`)
+- **A term with two meanings, or a concept with two names, is a question, never
+  a silent choice** — one question with its default, the answer into the
+  handoff's `terms` and `.agents/glossary.md`, and the glossary's names only from
+  then on (`_operation/SIZING.md` § Terms)
 <!-- /deliver:sizing -->
 
 ## Decide first
