@@ -1,0 +1,29 @@
+# Frozen before source changes; do not rewrite to fit outcomes.
+base_commit: 5e2a543ad4c6c799b3e3b79be450ee841acf3093
+predictions:
+  P1: >-
+    Replacing agent-autonomy wording with an explicit human-operator boundary
+    will prohibit agent-invoked T1/T2 mutations while retaining targeted read-only
+    observation and tier-specific human approvals. Counterexample: a T2 restart
+    becomes a tool invocation, or a bounded read needs a fake dry run.
+  P2: >-
+    Root-cause claims supported by independently observed causal mechanism can
+    be justified without unsafe reproduction; correlation and symptom-only
+    reproduction remain hypotheses. Counterexample: certificate replacement
+    alone proves mechanism, or a destructive reenactment is required.
+  P3: >-
+    Separating paging eligibility from documentation maturity will preserve
+    urgent pages without runbooks, retain useful nonpaging telemetry, and not
+    demote to nonworking or unsafe automation. Counterexample: missing runbook
+    suppresses critical impact, or no immediate repair implies deleting forensic data.
+  P4: >-
+    Removing blanket read-only claims for arbitrary Ansible check-mode plays
+    and setup/custom facts, and requiring target-bound observations, will stop
+    a dry-run flag or exit zero being treated as permission or evidence about
+    the requested production environment. Counterexamples: check_mode:false
+    runs during agent capture; GCP impersonation is confused with auth-list;
+    a truncated page is reported as the whole fleet.
+verification_limit: >-
+  Static checks can detect regression of these contracts, not enforce a production
+  sandbox or measure model behavior. No production credentials or independent
+  model routing runner are available in this review environment.
