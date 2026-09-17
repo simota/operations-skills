@@ -1,13 +1,11 @@
 <!-- operation:contract -->
 # Safety Tiers
 
-Classify every proposed operational action by blast radius and actual reversibility.
-These tiers govern human-operator approval, not agent execution authority.
+Classify proposed actions by blast radius and actual reversibility; approvals below are human.
 
-**This set never executes system mutations**, even with approval or during an incident.
-It may write permitted local artifacts and run bounded, verified read-only observations.
-This boundary includes delegated tools. Agent-generated commands for changes are proposals;
-only the human operator executes them. Tool grants are not a sandbox enforcing this rule.
+**This set never executes system mutations**, including through delegated tools or with approval.
+Permitted local artifacts and verified, bounded read-only observations are allowed.
+A tool grant does not enforce this boundary; commands for changes remain human proposals.
 
 ## Tier Table
 
@@ -25,10 +23,7 @@ and verify the preconditions and bounded scope. Do not invent a dry-run command.
 
 ## Reversibility Decides the Tier, Not the Action Category
 
-The blast-radius column gives examples, not a fixed list. **Data mutation, cross-region
-operations, and credential rotation are usually `T4` because they are usually irreversible —
-not because of what they are called.** Where a specific instance has a reversal that has been
-written down and exercised, classify it by that reversal:
+Only an exercised reversal permits a lower tier; classify the instance, not the action name.
 
 | Action | `T4` when | Lower when |
 |--------|-----------|------------|
@@ -38,13 +33,7 @@ written down and exercised, classify it by that reversal:
 | Deletion | Any | — deletion is always `T4` |
 | Third-party side effect (charge, email, webhook) | Any | — never reversible; requires explicit acceptance, not approval |
 
-Downgrading below `T4` on this table requires the reversal to be **exercised**, not merely
-documented. An unexercised reversal is `unknown reversibility`, which is `T4` by rule 2.
-
 ## Recovery Prerequisite by Action Type
-
-`T4` requires a **verified recovery path**, and what that means differs by action. A single
-"backup verified restorable" requirement is unsatisfiable for actions that have no backup:
 
 | Action | Verified recovery path means |
 |--------|------------------------------|
@@ -56,18 +45,13 @@ documented. An unexercised reversal is `unknown reversibility`, which is `T4` by
 
 ## Classification Rules
 
-1. **Take the highest tier that any single step reaches.** A runbook with nine `T1` steps
-   and one `T4` step is a `T4` runbook.
-2. **Unknown reversibility is `T4`.** If nobody can state how to undo the action, it is
-   irreversible until proven otherwise.
+1. **Take the highest tier that any single step reaches.**
+2. **Unknown reversibility is `T4`.** Documented but unexercised reversals remain unknown.
 3. **Reversibility is measured in restored user experience, not in reverted config.**
    Rolling back a deploy that already wrote a new schema version is not reversible.
-4. **Production data reads are `T1` only if they exclude PII.** PII reads are `T3` — they
-   are auditable events even though nothing changes.
-5. **A `T4` action is never triggered by automation.** It may be *scripted* — a script a
-   human invokes deliberately is fine, and is usually safer than the same steps typed by
-   hand. What is forbidden is a `T4` action firing from an alert, a schedule, a retry, or a
-   remediation loop. Not during an incident, not under time pressure, not "just this once".
+4. **PII reads are `T3`**, auditable even though nothing changes.
+5. **A `T4` action is never triggered by automation.** Human-invoked scripts are allowed;
+   alerts, schedules, retries and remediation loops are not, including during incidents.
 
 ## Escalation During Incidents
 
@@ -78,9 +62,7 @@ Incident pressure does not lower a tier. It changes *who* approves, not *whether
 | `T3` | Service owner | Incident Commander |
 | `T4` | Service owner + change approver | Incident Commander + second responder (two-person rule holds) |
 
-If the approver cannot be reached, the correct action is to escalate, not to proceed.
-Record every tier-skip as an incident action item — a skipped tier is a control failure
-even when the outcome was fine.
+An unreachable approver means escalate, not proceed; record every tier-skip as a control failure.
 
 ## Emission
 
