@@ -74,6 +74,6 @@ user impact, so this hatch is closer to hand here than anywhere else.
   would be the only way to comply
 - Two contracts in `_operation/` give conflicting instructions for this exact case
 
-When it fires: do the work, state which rule was suspended and why, and record
-the gap as `#TODO(agent): OUT-OF-SCOPE`. **The one thing it never suspends is a
-`SAFETY_TIER` approval** — that is not ceremony, it is the mechanism.
+When it fires: continue the advisory work, state which ceremony was suspended and why,
+and record the gap as `#TODO(agent): OUT-OF-SCOPE`. **Neither the advisory-only boundary
+nor a `SAFETY_TIER` approval can be suspended.**

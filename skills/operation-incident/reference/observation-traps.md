@@ -1,9 +1,9 @@
 <!-- operation:deferred -->
 # Observation Traps — Commands That Succeed and Answer Something Else
 
-Purpose: Read-only commands whose output is routinely read as evidence for a claim it does not support, and the command that does support it.
+Purpose: Commands misread as read-only, or cited as evidence for a claim their output does not support.
 Read when: citing any command output as `O1`, verifying that a mitigation worked, or explaining why two responders disagree while quoting the same command.
-Source: none — nothing outside this page can move what it states.
+Source: Ansible check-mode and setup documentation; AWS CLI and Google Cloud SDK help (links and quotations below).
 Verified: 2026-08-21 — the Ansible behaviour was produced by running it against a local inventory (`O1`). The `aws` and `gcloud` behaviour is quoted from `aws help` / `gcloud help` on the installed CLIs (`O3`); no credentials were available, so nothing on those two was executed.
 Claims from neither source are `O5` and are worth confirming against the environment in use.
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook, and reports SKIPPED per missing tool rather than passing quietly.
@@ -47,7 +47,14 @@ on its result then evaluated against state that never existed. A clean check run
 is evidence about the declarative tasks and about nothing else — and the tasks
 it could not check are the ones most likely to be doing the dangerous thing.
 
-Pair it with `--diff`, and say in the report which tasks check mode skipped.
+Do not execute an unreviewed playbook as observation: `check_mode: false` overrides the
+flag and can mutate the target. `--diff` neither prevents that nor validates skipped tasks.
+Ansible `setup` can execute custom facts; fact gathering is not automatically passive.
+Review inventory/plugins, tasks and collectors before deciding a command is read-only.
+The [Ansible check-mode documentation](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_checkmode.html)
+and [setup documentation](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/setup_module.html)
+state these behaviors (O3). `make test` exercises both on isolated local fixtures when Ansible
+is installed, with missing tooling reported as SKIPPED; it never probes a production inventory.
 
 ## `--list-hosts` has to be read, not exit-checked
 

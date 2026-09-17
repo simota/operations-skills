@@ -4,4 +4,4 @@
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  The one thing that is never suspended is a `SAFETY_TIER` approval
+  The advisory-only boundary and `SAFETY_TIER` approvals are never suspended

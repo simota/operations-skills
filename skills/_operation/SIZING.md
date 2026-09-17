@@ -39,7 +39,7 @@ approval happens — and that substitution is recorded, not assumed.
 
 ## When a dialogue is required first
 
-Before executing, any of these makes the dialogue mandatory:
+Before committing a human decision, any of these makes the dialogue mandatory:
 
 - The shape of the deliverable is not uniquely determined
 - A **threshold** is implied but unstated — "acceptable error rate", "enough
@@ -67,7 +67,7 @@ the way.
 Two meanings for one word, or two names for one concept, is a question
 (`_operation/REPORT.md`): one question, with the default named — the spelling
 the runbooks and dashboards already use most. The answer lands in `terms` and is
-appended to the glossary as `term · means · not to be called`, so the next run
+recorded as `term · means · not to be called` (glossary writes only if permitted), so the next run
 inherits the decision rather than the ambiguity. A run that opened a dialogue
 may create the glossary for its first settled term; a one-action `T1` run never
 does — it marks what it found `OUT-OF-SCOPE` and moves on. Two concepts keep

@@ -85,8 +85,8 @@ because a check that silently passes when it cannot run is worse than no check.
 
 **The contract asks for `O1`, so the set says how to get it.** `O1` is *command
 output captured now*, and for a long time nothing here named a command. Two
-pages close that, both strictly read-only — the set still does not operate the
-system, it observes it.
+pages close that with scoped observations and explicit unsafe lookalikes — the set
+still does not operate the system. Ansible check mode is not a read-only guarantee.
 [`capture-commands`](skills/operation-incident/reference/capture-commands.md)
 is what to run in the 60 seconds before a mitigation, ordered by what each one
 destroys: re-running a playbook converges, and convergence erases the divergence
@@ -185,7 +185,7 @@ the symlinks inside it. Nothing un-prefixed is copied anywhere.
 ## What this does not guarantee
 
 - **`allowed-tools` is one CLI's mechanism.** Where a tool grant is not
-  enforced, the `Never` lines are discipline and nothing more. Four of five
+  enforced, the `Never` lines are discipline and nothing more. All five
   skills hold `Bash`, so a determined misuse is always reachable
 - **Nothing here stops a skill acting on production.** The class says what it may
   write locally; whether a command observes or changes is read by a person
