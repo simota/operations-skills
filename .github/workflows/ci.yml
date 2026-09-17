@@ -18,10 +18,28 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pyyaml ansible-core
-      - name: Contracts, negative tests and documented figures
-        run: make check
       - name: Delivered blocks are current
         run: |
           make render
           git diff --exit-code || {
             echo "SKILL.md delivery blocks are stale — run: make render"; exit 1; }
+      - name: Contracts, negative tests and documented figures
+        run: make check
+      - name: Explain an installed-documentation mismatch
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import re
+          import shutil
+          import subprocess
+          if shutil.which('aws'):
+              print(subprocess.run(['aws', '--version'], capture_output=True, text=True).stdout)
+              r = subprocess.run(['aws', 'ec2', 'describe-instances', 'help'],
+                                 capture_output=True, text=True, timeout=60)
+              text = re.sub(r'.\x08', '', r.stdout)
+              lines = text.splitlines()
+              for i, line in enumerate(lines):
+                  if 'permissions' in line:
+                      print(repr('\n'.join(lines[max(0, i-1):i+6])))
+              print('help exit:', r.returncode, 'stderr:', r.stderr[:500])
+          PY
