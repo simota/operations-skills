@@ -1,9 +1,9 @@
 <!-- operation:deferred -->
 # Capture Commands — Producing `O1` Before It Is Gone
 
-Purpose: The read-only commands that produce `O1` evidence on the platforms this set is used against, ordered by how fast the evidence disappears, and what each mitigation destroys as it runs.
+Purpose: Scoped observation commands and unsafe lookalikes for producing `O1` evidence on the platforms this set is used against, ordered by how fast the evidence disappears, and what each mitigation destroys as it runs.
 Read when: an incident is live and a playbook re-run, an instance replacement, a service redeploy, or a rollout is about to happen — or has just happened and the evidence is being reconstructed.
-Source: none — nothing outside this page can move what it states.
+Source: Ansible check-mode and setup documentation; AWS CLI and Google Cloud SDK help (links and quotations below).
 Verified: 2026-08-21 — the Ansible behaviour below was produced by running it against a local inventory (`O1`). The `aws` and `gcloud` behaviour is quoted from `aws help` / `gcloud help` on the installed CLIs (`O3`); no credentials were available in this session, so nothing on those two was executed.
 Claims not from either source — ingestion lag, retention windows, what a given account has configured — are `O5` and are worth confirming against the environment actually in use.
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook. With a CLI missing it reports SKIPPED for that tool and passes: a hole, announced rather than hidden.
@@ -12,8 +12,14 @@ Claims not from either source — ingestion lag, retention windows, what a given
 evidence ladder, and `impact-assessment.md` gives the capture 60 seconds. This
 page is what to run in them.
 
-Everything here is read-only. None of it operates the system; it is what makes
-the difference between a postmortem with a cause and one with a theory.
+Only verified read-only observations may be executed by the agent. A familiar tool name
+or a dry-run flag does not establish that property; unreviewed commands stay proposals.
+Before capture, bind the expected environment/account/project/region and resource to the
+incident; record the effective identity, command, UTC capture time and covered window.
+Verify returned identity and resource against that expectation. Command success alone is not O1
+for the intended target. Check pagination, truncation, ingestion lag and output redaction;
+record a bounded sample as a sample, not fleet-wide absence. Do not run extra commands merely
+to earn O1. Preserve only evidence relevant to the claim, before convergence/autoscaling erases it.
 
 ---
 
@@ -24,8 +30,8 @@ what a given action erases turns "capture everything" into three commands.
 
 | Mitigation | Destroyed the moment it runs | Grab first |
 |---|---|---|
-| Re-run the playbook | The diverged state itself. Convergence is the point of Ansible and it is also what erases the difference you were trying to explain | `--check --diff`, and the facts |
-| Terminate or replace an instance | Instance store, memory, anything not on a persistent disk | Console/serial output, a disk snapshot |
+| Re-run the playbook | The diverged state itself. Convergence is the point of Ansible and it is also what erases the difference you were trying to explain | Read-only state/log capture; check mode and facts require the review below |
+| Terminate or replace an instance | Instance store, memory, anything not on a persistent disk | Console/serial output; a new disk snapshot is a proposed human mutation, not a read |
 | Redeploy a service | The failing tasks and the reason each one stopped | The stopped tasks' own records, before they age out |
 | Roll a managed instance group | Every VM in the group, in sequence, on a schedule you started | Anything from one unhealthy member |
 | **An autoscaler or health check acting on its own** | The same, **on a clock you do not control** | Everything, immediately — this is the only row where waiting is itself the loss |
@@ -34,10 +40,19 @@ what a given action erases turns "capture everything" into three commands.
 ## Ansible — before you converge
 
 ```sh
-ansible <pattern> -i <inventory> --list-hosts        # what the pattern actually matches
-ansible-playbook -i <inv> <play.yml> --check --diff  # what would change, per file
-ansible <pattern> -i <inv> -m setup                  # the facts, as they are now
+ansible <pattern> -i <reviewed-static-inventory> --list-hosts
 ```
+
+Use only reviewed inventory and plugins: dynamic inventory can execute controller-side code.
+The host list is selection evidence, not proof of the remote environment's identity.
+**`ansible-playbook --check --diff` is ambiguous, not an observation shortcut.**
+Ansible permits `check_mode: false` tasks to make changes even under `--check`.
+`setup` can execute custom facts from `fact_path`; `--tree` also writes local files.
+Do not run an unreviewed playbook or fact collector to obtain O1. Inspect tasks, modules,
+plugins, delegation and custom facts first; use an established passive query instead.
+See the [check-mode contract](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_checkmode.html)
+and [setup parameters](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/setup_module.html).
+These are documented safety properties (O3); local negative tests do not prove production safety.
 
 **`--list-hosts` is a read, not an exit code.** Measured: a pattern matching
 nothing returns exit status 0 from `ansible --list-hosts`. Only the playbook
@@ -54,42 +69,47 @@ declarative tasks and about nothing else.
 ## AWS — before you replace
 
 ```sh
-aws sts get-caller-identity              # which account and identity this is
-aws ec2 describe-instances --instance-ids <id>
-aws ec2 get-console-output --instance-id <id>     # survives the instance, briefly
-aws ecs describe-tasks --cluster <c> --tasks <arn> # stoppedReason, before it ages out
-aws logs tail <group> --since 15m                 # scoped, not the whole group
+aws sts get-caller-identity --profile <profile> --region <region> --output json
+aws ec2 describe-instances --instance-ids <id> --profile <profile> --region <region> --output json
+aws ec2 get-console-output --instance-id <id> --profile <profile> --region <region> --output json
+aws ecs describe-tasks --cluster <cluster-arn> --tasks <task-arn> --profile <profile> --region <region> --output json
+aws logs tail <group> --since 15m --profile <profile> --region <region>
 ```
 
 Run `get-caller-identity` first and put its output in the timeline. Every other
 command on this page is meaningless if it ran against the wrong account, and
-nothing in their output says which account that was.
+the resource output alone does not establish the caller. Keep the same explicit profile and region;
+compare the STS identity with the expected account, not just a successful exit. Logs tail is a
+relative-window text sample; record capture time and returned event timestamps, not a full-history claim.
 
 ## Google Cloud — before you roll
 
 ```sh
-gcloud config list                       # the project this shell is pointed at
-gcloud auth list                         # which account is active
-gcloud compute instances describe <vm> --zone <z>
-gcloud compute instances get-serial-port-output <vm> --zone <z>
-gcloud logging read 'resource.type="gce_instance"' --limit 200 --freshness 1h
+gcloud config list --format=json
+gcloud auth list --format=json
+gcloud compute instances describe <vm> --zone <z> --project <project> --account <account> --format=json
+gcloud compute instances get-serial-port-output <vm> --zone <z> --project <project> --account <account> --format=json
+gcloud logging read 'resource.type="gce_instance" AND resource.labels.instance_id="<id>" AND timestamp>="<start-UTC>" AND timestamp<="<end-UTC>"' --limit 200 --project <project> --account <account> --format=json
 ```
 
 `gcloud help` states that `--project`, when omitted, means "the current project
 is assumed". The current project is ambient shell state, so two responders
 running the identical command can be describing two different environments and
 comparing notes as though they were not. Pass `--project` explicitly during an
-incident, and record it.
+incident, and record it. Resolve any configured impersonation before using these templates:
+`gcloud auth list` alone does not establish the effective principal. Stop if it is unverified.
+The 200-record limit is a cap, not evidence of complete coverage; narrow the window or continue
+capture when completeness matters. Serial output can be partial; record offsets and gaps.
 
 ## Exporting rather than reading
 
 Terminal scrollback is not evidence. Redirect to a file, name it for the
-incident, and say in the timeline where it went.
+incident, and say in the timeline where it went. Redirection mutates a local artifact,
+not production; use an approved destination and do not overwrite an earlier capture.
 
 ```sh
-aws ec2 describe-instances --instance-ids <id> > inc-<id>-instance.json
-gcloud compute instances describe <vm> --zone <z> --format=json > inc-<id>-vm.json
-ansible <pattern> -i <inv> -m setup --tree ./inc-<id>-facts/
+aws ec2 describe-instances --instance-ids <id> --profile <profile> --region <region> --output json > inc-<id>-instance.json
+gcloud compute instances describe <vm> --zone <z> --project <project> --account <account> --format=json > inc-<id>-vm.json
 ```
 
 Ask for JSON explicitly. `gcloud help` says the default format is

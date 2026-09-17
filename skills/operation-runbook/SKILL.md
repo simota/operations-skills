@@ -23,23 +23,23 @@ Phases: `SCOPE → CLASSIFY → DRAFT → TEST → AUTOMATE → GOVERN`.
 - **Establish the preconditions and the abort conditions first.** A procedure
   with no stated way to stop is one that gets pushed through when it should not be
 <!-- deliver:sizing -->
-- **Two scales, and neither is a ceremony dial.** The **service tier** (`T0`-`T3`)
-  says what this service failing costs and is assigned before any requirement is
-  applied; the **safety tier** (`T1`-`T4`) says what *this action* can destroy and
-  is classified before the steps are designed. What scales is the depth of review
-  and the number of people — never the observation rung or the approval the tier demands
-- **Incident pressure changes the approver, never the tier.** A database drop is
-  `T4` at 14:00 and `T4` at 03:00. What an outage may change is who is available
-  to approve and how fast, and that substitution is recorded rather than assumed
-- **A dialogue comes first** when a threshold is implied but unstated ("acceptable
-  error rate", "enough monitoring" are numbers somebody has to choose), when the
-  work sets a gate or an escalation path that binds other people, or when the
-  action is `T3` or above and its approver is not identified. **State the checks
-  you deliberately skipped** (`_operation/SIZING.md`)
+- **Advisory only. Humans execute system changes.** Agents produce decisions,
+  procedures and records, not mutations. `Bash` is not execution authority;
+  this also binds delegated tools. Run only bounded read-only observations after
+  verifying identity and explicit target scope; ambiguous commands stay proposals
+- **Two scales, and neither is a ceremony dial.** Assign the **service tier**
+  (`T0`-`T3`) before applying requirements; classify a proposed action's **safety
+  tier** (`T1`-`T4`) before designing its steps. Scale review depth and staffing,
+  never the observation rung or the approval the tier demands
+- **Incident pressure changes the approver, never the tier.** Record the
+  substitution; neither urgency nor human approval permits agent system mutation
+- **Read existing policy and evidence first. A dialogue comes first** for an
+  unresolved threshold, a gate or escalation path binding others, or a `T3`+
+  action without an identified approver. **State deliberately skipped checks**
+  (`_operation/SIZING.md`); local artifact writes remain subject to the skill's class
 - **A term with two meanings, or a concept with two names, is a question, never
-  a silent choice** — one question with its default, the answer into the
-  handoff's `terms` and `.agents/glossary.md`, and the glossary's names only from
-  then on (`_operation/SIZING.md` § Terms)
+  a silent choice.** Name the default; record the answer in handoff `terms` and,
+  where writing is permitted, `.agents/glossary.md`; use its names thereafter
 <!-- /deliver:sizing -->
 
 ## Decide first
@@ -64,7 +64,7 @@ Phases: `SCOPE → CLASSIFY → DRAFT → TEST → AUTOMATE → GOVERN`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  The one thing that is never suspended is a `SAFETY_TIER` approval
+  The advisory-only boundary and `SAFETY_TIER` approvals are never suspended
 <!-- /deliver:values -->
 
 ## Always / Never

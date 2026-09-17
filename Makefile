@@ -38,6 +38,7 @@ validate:
 
 test:
 	@python3 operation-tools/test_validate.py
+	@python3 operation-tools/test_advisory.py
 
 figures:
 	@python3 operation-tools/figures_check.py

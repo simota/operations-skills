@@ -17,13 +17,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install pyyaml
-      - name: Static rules
-        run: python3 operation-tools/validate.py
-      - name: Every rule still fires
-        run: python3 operation-tools/test_validate.py
+      - run: pip install pyyaml ansible-core
+      - name: Contracts, negative tests and documented figures
+        run: make check
       - name: Delivered blocks are current
         run: |
-          python3 operation-tools/render.py
+          make render
           git diff --exit-code || {
             echo "SKILL.md delivery blocks are stale — run: make render"; exit 1; }
