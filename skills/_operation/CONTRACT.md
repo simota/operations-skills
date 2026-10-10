@@ -28,7 +28,7 @@ verification claim, name which ladder each rung came from.
   Restore service first, prove cause second.
 - **`O4` never survives a postmortem unchallenged.** Human recollection of timing is
   systematically wrong; reconcile every reported time against `O1` timestamps.
-- **Cite the rung inline.** `payment-api 5xx rate 12% [O1: Grafana panel 44, 14:02 JST]`
+- **Cite the rung inline.** `payment-api 5xx rate 12% [O1: Grafana panel 44, 05:02Z]`
   beats "payments are erroring".
 - **State the gap when evidence is missing.** "No `O1` for the 13:40–13:55 window — the
   Collector was itself down" is a finding, not a blank.
