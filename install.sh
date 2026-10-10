@@ -27,19 +27,29 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --copy)      MODE="copy";      shift ;;
     --uninstall) MODE="uninstall"; shift ;;
-    --dest)      DEST_DIR="$2";    shift 2 ;;
+    --dest)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || { echo "--dest needs a directory" >&2; usage; exit 1; }
+      DEST_DIR="$2"; shift 2 ;;
     --force)     FORCE=1;          shift ;;
     -h|--help)   usage; exit 0 ;;
     *)           echo "unknown option: $1" >&2; usage; exit 1 ;;
   esac
 done
 
-# Is $1 something this repo installed? A symlink resolving inside $SRC_DIR.
+# A --copy install leaves this file behind, naming the source it came from, so a
+# later --copy or --uninstall can tell its own copy from a directory you made.
+STAMP=".installed-from"
+
+# Is $1 something this repo installed? A symlink resolving inside $SRC_DIR, or a
+# copy stamped with $SRC_DIR.
 ours() {
   local target="$1" resolved
-  [[ -L "$target" ]] || return 1
-  resolved="$(cd "$(dirname "$target")" && cd "$(readlink "$target")" 2>/dev/null && pwd)" || return 1
-  [[ "$resolved" == "$SRC_DIR"/* ]]
+  if [[ -L "$target" ]]; then
+    resolved="$(cd "$(dirname "$target")" && cd "$(readlink "$target")" 2>/dev/null && pwd)" || return 1
+    [[ "$resolved" == "$SRC_DIR"/* ]]
+  else
+    [[ -f "$target/$STAMP" && "$(cat "$target/$STAMP")" == "$SRC_DIR" ]]
+  fi
 }
 
 refuse() {
@@ -51,7 +61,12 @@ refuse() {
 
 SKIPPED=0
 
-mkdir -p "$DEST_DIR"
+# Uninstalling from a directory that is not there is a no-op, not a reason to make one.
+if [[ "$MODE" == "uninstall" ]]; then
+  [[ -d "$DEST_DIR" ]] || { echo "nothing to remove — $DEST_DIR does not exist"; exit 0; }
+else
+  mkdir -p "$DEST_DIR"
+fi
 
 for src in "$SRC_DIR"/operation-*; do
   [[ -d "$src" ]] || continue
@@ -76,6 +91,7 @@ for src in "$SRC_DIR"/operation-*; do
       rm -rf "$dest"
       # resolve the _operation symlink so the copy is self-contained
       cp -RL "$src" "$dest"
+      printf '%s\n' "$SRC_DIR" > "$dest/$STAMP"
       echo "copied   $dest"
       ;;
     link)

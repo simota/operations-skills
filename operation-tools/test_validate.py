@@ -143,6 +143,11 @@ def _(r): sub(r / f"{S}operation-runbook/SKILL.md", "`_operation/CONTRACT.md`", 
 def _(r): sub(r / f"{S}_operation/SIZING.md", "`_operation/SAFETY_TIERS.md`", "`SAFETY_TIERS.md`")
 
 
+@case("V19-reference")
+def _(r): sub(r / f"{S}operation-oncall/reference/escalation-policy.md",
+              "`reference/oncall-health.md`", "`oncall-health.md`")
+
+
 @case("V20")
 def _(r):
     """The definition row becomes a mention; the word is still on the page."""
@@ -207,10 +212,10 @@ def _(r): (r / f"{S}operation-runbook/reference/orphan.md").write_text(
 @case("V31")
 def _(r):
     for f in sorted((r / f"{S}").glob("*/reference/*.md")):
-        t = f.read_text()
+        t = f.read_text(encoding="utf-8")
         i = t.index("Verified:")
         j = t.index("\n\n", i)
-        f.write_text(t[:i] + "Verified: 2026-08-21" + t[j:])
+        f.write_text(t[:i] + "Verified: 2026-08-21" + t[j:], encoding="utf-8")
         return
 
 
@@ -257,8 +262,8 @@ def _(r):
 def _(r):
     """A link where the class grants no shell reads like a capability and is not one."""
     import yaml as _y
-    caps = _y.safe_load((r / "operation-registry/capabilities.yaml").read_text())
-    cls = _y.safe_load((r / "operation-registry/harness.yaml").read_text())["permission_classes"]
+    caps = _y.safe_load((r / "operation-registry/capabilities.yaml").read_text(encoding="utf-8"))
+    cls = _y.safe_load((r / "operation-registry/harness.yaml").read_text(encoding="utf-8"))["permission_classes"]
     for name, e in caps.items():
         if "Bash" not in cls[e["class"]]["tools"]:
             (r / "skills" / name / "refute.py").symlink_to("../../operation-tools/refute.py")

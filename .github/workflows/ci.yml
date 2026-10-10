@@ -22,6 +22,10 @@ jobs:
         run: python3 operation-tools/validate.py
       - name: Every rule still fires
         run: python3 operation-tools/test_validate.py
+      # The third leg of `make check`. A CLI the runner lacks reports SKIPPED and
+      # passes; the page-side half of every claim is checked either way.
+      - name: Quoted CLI behaviour still holds
+        run: python3 operation-tools/figures_check.py
       - name: Delivered blocks are current
         run: |
           python3 operation-tools/render.py

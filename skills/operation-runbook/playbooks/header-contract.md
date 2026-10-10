@@ -10,19 +10,23 @@ runbook: <service>/<procedure-name>
 purpose: "<the goal state, one line>"
 trigger: "<alert name, symptom, or schedule>"
 tier: T1 | T2 | T3 | T4          # max across all steps
-approval: AUTONOMOUS | "<role>"  # required before step 1
+approval: pre-approved | "<role>"  # before step 1; pre-approved is T1/T2 only, never this agent
 duration: "<expected wall-clock>"
 idempotent: yes | partial | no
 dry_run: "<command>" | none
 owner: "<named individual>"
-last_executed: <YYYY-MM-DD> | UNVERIFIED
-review_by: <YYYY-MM-DD>
+state: proved | simulated | stale | untested | unprovable   # _operation/EXPIRY.md
+last_executed: "<YYYY-MM-DD>, <by whom>, <environment>" | never
+expires: "<YYYY-MM-DD> — <why this interval>"
+voided_by: "<surface whose change expires it at once: CLI, schema, IAM, roster>"
 abort_if:
   - "<condition that means stop, do not continue>"
 ```
 
-`last_executed: UNVERIFIED` is a loud, deliberate warning. Do not remove it to make a document
-look finished.
+`state: untested` or `stale` is `UNVERIFIED`, and a loud, deliberate warning. Do not change it
+to make a document look finished: only execution upgrades the state, and a dry run or a
+non-production run reaches `simulated`, never `proved`. Whichever clock fires first — the
+`expires` date or a change to `voided_by` — turns `proved` into `stale`.
 
 ## Automation Ladder
 

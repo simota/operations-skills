@@ -19,7 +19,7 @@ here raises. Nothing returns a default verdict, nothing degrades to "assume
 fine": an engine missing from PATH, an engine that starts and produces no
 parseable object, a response that does not match the schema — each is an error
 with the engine's own words attached, because the alternative is a green run
-that verified nothing (DESIGN §5.4b).
+that verified nothing (`DESIGN.md` §5.4b in the `agent-toolkit` repository).
 
 Engine quirks, re-checked by `make engines` rather than dated:
 

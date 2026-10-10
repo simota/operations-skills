@@ -25,21 +25,21 @@ Phases: `CLASSIFY → ASSESS → PLAN → GATE → ROLL → VERIFY → RECORD`.
 <!-- deliver:sizing -->
 - **Two scales, and neither is a ceremony dial.** The **service tier** (`T0`-`T3`)
   says what this service failing costs and is assigned before any requirement is
-  applied; the **safety tier** (`T1`-`T4`) says what *this action* can destroy and
-  is classified before the steps are designed. What scales is the depth of review
+  applied; the **safety tier** (`T1`-`T4`, `_operation/SAFETY_TIERS.md`) says what
+  *this action* can destroy and is classified before the steps are designed. What scales is the depth of review
   and the number of people — never the observation rung or the approval the tier demands
 - **Incident pressure changes the approver, never the tier.** A database drop is
   `T4` at 14:00 and `T4` at 03:00. What an outage may change is who is available
   to approve and how fast, and that substitution is recorded rather than assumed
-- **A dialogue comes first** when a threshold is implied but unstated ("acceptable
-  error rate", "enough monitoring" are numbers somebody has to choose), when the
-  work sets a gate or an escalation path that binds other people, or when the
+- **A dialogue comes first** when the deliverable's shape is open, when a threshold
+  is implied but unstated ("acceptable error rate", "enough monitoring"), when the
+  work sets a gate, a freeze or an escalation path that binds other people, or when the
   action is `T3` or above and its approver is not identified. **State the checks
   you deliberately skipped** (`_operation/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
-  a silent choice** — one question with its default, the answer into the
-  handoff's `terms` and `.agents/glossary.md`, and the glossary's names only from
-  then on (`_operation/SIZING.md` § Terms)
+  a silent choice** — one question with its default, the answer into the handoff's
+  `terms` and, only where `_operation/SIZING.md` § Terms allows, the host glossary;
+  the settled names only from then on
 <!-- /deliver:sizing -->
 
 ## Decide first
@@ -96,7 +96,7 @@ the difference is discovered exactly once.
 - **Cite the rung inline on every claim** (`_operation/CONTRACT.md`): `O1`
   observed · `O2` reproduced · `O3` documented · `O4` reported · `O5` inferred.
   **A root cause requires `O2`**; mitigation may proceed on `O1`. `payment-api
-  5xx rate 12% [O1: panel 44, 14:02]` beats "payments are erroring", and a
+  5xx rate 12% [O1: panel 44, 05:02Z]` beats "payments are erroring", and a
   missing rung is stated as a gap rather than left blank
 - **No invented telemetry.** Never state a metric value, alert name, dashboard or
   runbook path that was not read from the repo, the tooling, or the user. If a
@@ -136,7 +136,7 @@ watched through its window, and the record says what shipped by which path.
 - **The handoff and the artifacts are the record, the report is the view.** Carried facts,
   the timeline and the runbook live there and are shown when asked
 - **The subject sets the length.** A single action with a procedure is answered in its one
-  line; a live incident is the impact line and what the reader must decide now, with the
+  line plus the sweep; a live incident is the impact line and what the reader must decide now, with the
   timeline left in the record. Cut content, never the rung or the `SAFETY_TIER` block
   (`_operation/REPORT.md`)
 - **Not bigger than it is.** The requested scope is the deliverable; thought goes deeper into

@@ -57,9 +57,9 @@ never open a dialogue over one `T1` action with an obvious procedure.
 
 ## Terms — one name per concept, one concept per name
 
-The host's glossary is `.agents/glossary.md` when it exists. Read it before the
-work is sized and write with its names only — runbook, record, report alike. A
-term the work has to coin goes into the handoff's `terms`, and on anything
+The set's terms are `_operation/GLOSSARY.md`; the host's `.agents/glossary.md`, where
+it exists, wins for its own names. Read both before sizing and write with their names
+only — runbook, record, report alike. A term the work has to coin goes into `terms`, and on anything
 beyond a one-action `T1` it is proposed in the dialogue rather than invented on
 the way.
 

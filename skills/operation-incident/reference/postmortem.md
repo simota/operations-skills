@@ -49,6 +49,7 @@ Authors: <names>  |  Status: draft | in review | final
 ## Impact
 <The impact statement from reference/impact-assessment.md. Quantified. User terms.>
 | Dimension | Impact |
+|---|---|
 | Users | |
 | Duration | |
 | Data | |
@@ -73,7 +74,7 @@ What went well. What was slow, and why. Where the response structure held or bro
 <Not "the root cause". Complex systems fail through combinations.>
 1. <Factor> — <how it contributed> — <observation rung>
 2. ...
-Each factor states its observation rung. Anything below O2 is labelled "hypothesis, unverified".
+Each factor states its observation rung. Any factor not reproduced (`O2`) is labelled "hypothesis, unverified".
 
 ## What Went Well
 <Genuine, specific. Not a courtesy section — these are the controls worth protecting.>
@@ -84,6 +85,7 @@ by chance rather than by design? Each entry is a candidate action item.>
 
 ## Action Items
 | # | Action | Type | Owner | Due | Priority | Tracking |
+|---|---|---|---|---|---|---|
 
 ## Open Questions
 <Unresolved, with who is chasing them.>

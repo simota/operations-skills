@@ -67,7 +67,7 @@ mechanism with extra latency.
 
 | Risk score | Approval |
 |------------|----------|
-| 5–9 (`Standard`) | None; automatic log |
+| 5–9 **and** meets the `Standard` definition (pre-approved, runbooked, executed unchanged before) | None; automatic log. Otherwise as 10–15 |
 | 10–15 | Service owner, asynchronous |
 | 16–20 | Service owner + a second reviewer with domain knowledge |
 | 21–25 | Explicit review with a rollout plan; split recommendation first |
@@ -79,7 +79,7 @@ An approval request without these cannot be evaluated, and will be rubber-stampe
 
 - What is changing, in one line
 - Risk score with the deciding dimension
-- Rollback procedure and its last-exercised date
+- Rollback procedure, its proof state and its expiry (`_operation/EXPIRY.md`)
 - Point of no return
 - Abort trigger and watcher
 - What was tested and what was not

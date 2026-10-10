@@ -27,7 +27,8 @@ this list; three months of tenure proves nothing about pager readiness.
 - [ ] Can locate the runbook index without help
 - [ ] Can state the severity definitions and who declares an incident
 - [ ] Knows the escalation path and that escalating is a right, not a failure
-- [ ] Knows what they are **not** authorised to do alone (`T4` actions per `_operation/SAFETY_TIERS.md`)
+- [ ] Knows what they are **not** authorised to do alone: `T3` needs a named approver, `T4` the
+      two-person rule (`_operation/SAFETY_TIERS.md`)
 
 ### Demonstrated
 

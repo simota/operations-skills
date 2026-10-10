@@ -8,7 +8,8 @@ Verified: 2026-08-21 — no automated check.
 
 ## The Four Paging Criteria
 
-An alert may page a human only if **all four** hold:
+An alert pages a human cleanly only if **all four** hold (failing only (4) still pages, as
+`KEEP (conditional)`):
 
 1. **Impact** — it indicates user-visible impact, or impact that will occur without action.
 2. **Agency** — a human action can change the outcome.
@@ -53,7 +54,7 @@ is even reachable. Untested alerts fail silently when they are finally needed.
 | `KEEP (conditional)` | Passes 1–3, missing runbook | Blocking gap handed to `operation-runbook` |
 | `DEMOTE` | Real but not page-worthy | Target channel + response SLA |
 | `MERGE` | Redundant with a parent symptom alert | Parent alert name |
-| `DELETE` | No impact or no agency | What would be lost, and what still covers it |
+| `DELETE` | No agency (with or without impact) | What would be lost, and what still covers it |
 
 Every `DELETE` states its coverage successor or explicitly states there is none. Deleting
 the only signal for a failure mode is a decision, not housekeeping.
@@ -85,9 +86,10 @@ inhibit: ServiceDown  suppresses  HighLatency, ErrorRateHigh   (same service)
 inhibit: RegionUnreachable  suppresses  ServiceDown            (same region)
 ```
 
-Inhibition without a corresponding "root alert exists" check is dangerous: if the root alert
-is itself broken, everything downstream is silenced too. Test inhibition chains by disabling
-the root and confirming downstream still fires.
+Inhibition mutes downstream only while the root alert is firing, so the danger is a root that
+fires but does not reach a human — silenced, misrouted, or non-paging — which mutes every
+downstream page with it. Test both halves: fire the root and confirm it pages a human, and
+confirm downstream still fires when the root does not.
 
 **Suppression/silence rules:**
 
@@ -113,7 +115,7 @@ the dominant source of unactionable pages.
 
 **Exception: predictable, dated, irreversible failures** (certificate expiry, licence expiry,
 quota exhaustion with a known date) are legitimately cause-based. They become tickets with a
-lead time, and only page once inside the last-resort window.
+lead time, and only page once the remaining lead time is shorter than the time needed to act.
 
 ## Alert Definition Checklist
 

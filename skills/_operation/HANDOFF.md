@@ -24,7 +24,8 @@ OPERATION_HANDOFF:
     - "[path or URL]"
   open:
     - blocking: true | false
-      question: "[what is unresolved]"
+      class: BLOCKED | OUT-OF-SCOPE | DEFERRED | UNVERIFIED
+      question: "[what is unresolved, and what would resolve it]"
   do_not_repeat:
     - "[work already done — the receiving skill must not redo it]"
 ```
@@ -39,6 +40,7 @@ OPERATION_HANDOFF:
 | `operation-incident` → `operation-change` | Fix requires a controlled rollout |
 | `operation-change` → `operation-incident` | A change caused impact; rollback is now incident work |
 | `operation-runbook` → `operation-oncall` | New runbook must be linked from its alert |
+| `operation-change` or `operation-oncall` → `operation-runbook` | A rollout or an alert needs a procedure that outlives it |
 | `operation-incident` → `operation-readiness` (`systemic`) | A component has appeared in ≥3 postmortems |
 | `operation-oncall` → `operation-change` | A change's risk window can or cannot be staffed |
 

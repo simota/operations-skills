@@ -75,7 +75,7 @@ Crude, fast, and frequently correct when the cause is unknown:
 | Scale out | Absorbs load-driven failure | T2 | Amplifies a downstream bottleneck |
 | Shed load / rate limit | Protects the core for most users | T3 | Choose *whose* traffic is dropped deliberately |
 | Disable the feature flag | Removes the failing path | T2 | Verify the flag actually gates the code path |
-| Fail over | Escapes localised failure | T3 if failback exercised, else **T4** | See Failover Safety below — fence before promote |
+| Fail over | Escapes localised failure | T3 if failback exercised and writes single-primary, else **T4** | See Failover Safety below — fence before promote |
 | Serve stale / cached | Preserves reads during a write failure | T3 | Communicate staleness to users |
 | Drain and isolate a bad node | Removes a single bad actor | T2 | Confirm it is actually the outlier |
 
@@ -126,8 +126,9 @@ Order matters:
    evidence, and log retention is usually shorter than the investigation.
 
 Steps 1–4 are `T3`. Step 5 is `T4` (it is the irreversible one). If the compromise is active
-and being exploited, the tier order inverts — revoke first and accept the outage — but that is
-an Incident Commander decision, stated explicitly, not a default.
+and being exploited, the step order inverts — revoke first and accept the outage — but that is
+a `T4` decision by the IC plus a second responder (`_operation/SAFETY_TIERS.md` § Escalation
+During Incidents), stated explicitly, not a default.
 
 Deep security analysis of the compromise itself is out of scope (`_operation/ROUTING.md`); this
 covers only keeping the service running while the credential is replaced.
@@ -137,15 +138,16 @@ covers only keeping the service running while the credential is replaced.
 The alert going quiet is not recovery. Verify in this order:
 
 1. **User-path probe** — a synthetic transaction or manual request through the real user path,
-   end to end. Metrics, logs, and traces are also `O1` (`_operation/CONTRACT.md`), but they are
-   `O1` about *the system*; only the probe is `O1` about **the user's experience**, which is
-   what recovery means. Do not substitute a green dashboard for it.
+   end to end. Metrics, logs, and traces are also `O1` (`_operation/CONTRACT.md`). Require
+   both the probe succeeding **and** the user-facing SLI from real traffic (step 2) back inside
+   its threshold; neither alone, and never a green infrastructure dashboard in their place.
 2. **SLI recovery** — the user-facing *instantaneous* indicator back at baseline, not merely
    improving. Do **not** gate the all-clear on a long-window SLO returning inside target: a
    30-day rolling SLO stays violated for weeks after a real recovery, and waiting on it holds
    the incident open long after users are whole. Track the burn *rate* returning to normal;
    the budget consumed is a postmortem input, not an all-clear gate.
-3. **Error budget** — confirm burn has stopped, not just slowed.
+3. **Error budget** — confirm the burn rate is back at its pre-incident baseline (≈1× or
+   below), not merely falling.
 4. **Backlog drained** — queues, retries, and dead-letter queues processed. Recovery with a
    million queued retries is a pending second incident.
 5. **Downstream confirmation** — dependent systems and partners recovered.

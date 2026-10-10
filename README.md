@@ -7,13 +7,13 @@ budgets that keep the set from growing into something nobody can route through.
 mitigated, and the runbook executed by people; these produce the decision, the
 procedure, and the record.
 
-| Skill | Answers | Class |
+| Skill | Answers | Class ([grants](operation-registry/harness.yaml)) |
 |---|---|---|
-| [`operation-incident`](skills/operation-incident/SKILL.md) | Something is broken right now — what do we do? | advise |
-| [`operation-change`](skills/operation-change/SKILL.md) | Is it safe to ship this, and how do we undo it? | advise |
-| [`operation-oncall`](skills/operation-oncall/SKILL.md) | Who gets paged, when, and is this worth waking someone for? | advise |
-| [`operation-runbook`](skills/operation-runbook/SKILL.md) | How is this performed, and can it be automated? | advise |
-| [`operation-readiness`](skills/operation-readiness/SKILL.md) | Is this service fit to run, and by whom? | review — never edits |
+| [`operation-incident`](skills/operation-incident/SKILL.md) | Something is broken right now — what do we do? | `full` |
+| [`operation-change`](skills/operation-change/SKILL.md) | Is it safe to ship this, and how do we undo it? | `full` |
+| [`operation-oncall`](skills/operation-oncall/SKILL.md) | Who gets paged, when, and is this worth waking someone for? | `full` |
+| [`operation-runbook`](skills/operation-runbook/SKILL.md) | How is this performed, and can it be automated? | `full` |
+| [`operation-readiness`](skills/operation-readiness/SKILL.md) | Is this service fit to run, and by whom? | `read-only` — no Write or Edit |
 
 ## The four ideas the set is built on
 
@@ -43,7 +43,6 @@ runbook and escalation path carries a state — `proved` · `simulated` · `stal
 `untested` · `unprovable` — and two clocks, whichever fires first: an interval
 with a stated reason, and a **named surface** whose change voids the proof
 immediately. Naming the surface is what gives the date something to fail against.
-
 **Only execution upgrades a state.** A dry run reaches `simulated`, never
 `proved`; re-reading the runbook moves nothing
 ([`_operation/EXPIRY.md`](skills/_operation/EXPIRY.md)).
@@ -63,9 +62,10 @@ lists those words per skill. A rule checks the two agree.
 never name a neighbour. If they did, adding a sixth skill would mean editing the
 other five.
 
-**Contracts are delivered, not referenced.** The operative part of each contract
-is copied verbatim into every `SKILL.md`; `make render` writes it back and a rule
-fails on drift.
+**Contracts are delivered, not referenced.** The operative part of `CONTRACT`,
+`SIZING`, `VALUES`, `EXPIRY` and `REPORT` is copied verbatim into every `SKILL.md`;
+`make render` writes it back and a rule fails on drift. `SAFETY_TIERS` and `HANDOFF`
+are not delivered — each skill reaches them through `_operation/`.
 
 **Knowledge splits by whether it rots.** `playbooks/` holds judgement and is
 budgeted. `reference/` holds what goes stale — deploy strategies, severity
@@ -78,9 +78,9 @@ are graded `O1` — measured — so `make figures` **re-runs them** against a lo
 inventory. The AWS and Google Cloud claims are graded `O3` — the tool's own
 documentation — so it re-reads that documentation on the installed CLIs: every
 cited command still resolves, every quoted sentence is still there, and the
-pages are still quoting it. It runs in `make check` and the pre-commit hook, and
-eight deliberate breaks were each observed failing it. A missing CLI reports
-SKIPPED for that tool and passes; that hole is announced rather than hidden,
+pages are still quoting it. It runs in `make check`, CI and the pre-commit hook,
+and eight deliberate breaks were each observed failing it — by hand; no test
+re-runs them. A missing CLI reports SKIPPED for that tool's half and passes; that hole is announced rather than hidden,
 because a check that silently passes when it cannot run is worse than no check.
 
 **The contract asks for `O1`, so the set says how to get it.** `O1` is *command
@@ -113,9 +113,9 @@ generic name placed there is a silent collision. This set's shared directory use
 to be `_shared`, which a sibling set also used, and `_common` in that same
 directory belongs to a third.
 
-**One declaration.** `set: operation` in the harness file is the only place the
-name is written; the prefix, the shared directory (`_operation/`), and the label
-every document carries all derive from it.
+**One declaration.** `set: operation` in the harness file is the name; the
+`prefix` and `shared_dir` written beside it, and the label every document
+carries, are checked against it.
 
 **Every directory this set owns carries the set name**, with `skills/` exempt as
 the place `install.sh` looks. Carrying the prefix is not what makes something
@@ -133,6 +133,7 @@ follows the link and finds the file, which is what makes that fail quietly.
 |---|---|
 | [`skills/_operation/CONTRACT.md`](skills/_operation/CONTRACT.md) | The rungs, reporting shape, status, residuals, the sweep |
 | [`skills/_operation/SAFETY_TIERS.md`](skills/_operation/SAFETY_TIERS.md) | What an action can destroy, and what that demands |
+| [`skills/_operation/EXPIRY.md`](skills/_operation/EXPIRY.md) | The five proof states, the two clocks, and what upgrades a state |
 | [`skills/_operation/SIZING.md`](skills/_operation/SIZING.md) | The two scales, when a dialogue is mandatory, and what pressure may not change |
 | [`skills/_operation/VALUES.md`](skills/_operation/VALUES.md) | The order when two goods conflict, and the escape hatch |
 | [`skills/_operation/HANDOFF.md`](skills/_operation/HANDOFF.md) | What passes between skills |
@@ -148,7 +149,8 @@ operations-skills/
 ├── Makefile
 ├── install.sh
 ├── operation-registry/           # budgets, boundaries, routes, delivered blocks
-├── operation-tools/              # validate · test_validate · render · pre-commit
+├── operation-tools/              # validate · test_validate · render · figures_check
+│                                 # engine · refute · githooks/pre-commit
 └── skills/                       # where install.sh looks
     ├── _operation/               # contracts in force on every run
     └── operation-<facet>/
@@ -156,6 +158,7 @@ operations-skills/
         │                         # Always·Never / Verify with / Done when
         ├── _operation -> ../_operation
         ├── registry   -> ../../operation-registry
+        ├── refute.py  -> ../../operation-tools/refute.py
         ├── playbooks/            # judgement. Budgeted, and must not rot
         └── reference/            # what goes stale. No line budget, dated instead
 ```
@@ -167,16 +170,19 @@ as external so the path checker does not read them as references into this repo.
 ## Working on it
 
 ```sh
-make check      # what CI runs: the rules, then proof the rules still fire
+make check      # what CI runs: the rules, proof the rules still fire, the CLI figures
 make render     # after editing anything in operation-registry/delivered/
 make hooks      # run the rules on every commit
+make engines    # which checker engines (claude · codex · agy) answer here
+make refute CLAIMS=claims.json RUNNING=claude   # put claims to the other engines
 ```
 
 ## Installing
 
 ```sh
 ./install.sh                    # symlink skills/operation-* into ~/.claude/skills
-make link                       # the same thing, via make
+./install.sh --copy             # a self-contained copy; --uninstall removes either
+make link                       # symlink into every installed CLI: claude, codex, agy
 ```
 
 Each `operation-*` skill is linked individually and reaches its contracts through
@@ -185,8 +191,9 @@ the symlinks inside it. Nothing un-prefixed is copied anywhere.
 ## What this does not guarantee
 
 - **`allowed-tools` is one CLI's mechanism.** Where a tool grant is not
-  enforced, the `Never` lines are discipline and nothing more. Four of five
-  skills hold `Bash`, so a determined misuse is always reachable
+  enforced, the `Never` lines are discipline and nothing more. All five
+  skills hold `Bash` — `read-only` included, since `Bash` can write a file —
+  so a determined misuse is always reachable
 - **Nothing here stops a skill acting on production.** The class says what it may
   write locally; whether a command observes or changes is read by a person
 - **The fixtures do not model how a model chooses.** They catch a missing or

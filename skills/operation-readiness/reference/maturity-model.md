@@ -87,7 +87,7 @@ Knowledge at level 1–2 caps every other dimension in practice: alerts nobody u
 noise, runbooks nobody has run are fiction, and a rotation where one person handles every
 escalation is not a rotation.
 
-When Knowledge is the weakest dimension, fix it first regardless of what else scores lower on
+When Knowledge is at level 1–2, fix it first, even if another dimension scores lower on
 paper.
 
 ## Reassessment

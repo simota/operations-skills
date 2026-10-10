@@ -2,7 +2,7 @@
 # Delivery Health
 
 Purpose: DORA four keys, change failure rate attribution, batch-size analysis, constraint identification.
-Read when: dORA four keys, change failure rate attribution, batch-size analysis, constraint identification
+Read when: DORA four keys, change failure rate attribution, batch-size analysis, constraint identification
 Source: DORA — the four keys and their definitions are theirs, not this page's.
 Verified: 2026-08-21 — no automated check.
 
@@ -11,7 +11,7 @@ Verified: 2026-08-21 — no automated check.
 | Metric | Definition | Measured from |
 |--------|------------|---------------|
 | **Deployment frequency** | How often changes reach production | Deploy events, per service |
-| **Lead time for change** | First commit of the change → running in production | VCS + deploy timestamps |
+| **Lead time for change** | Commit → running in production | VCS + deploy timestamps |
 | **Change failure rate** | Deploys causing degraded service requiring remediation ÷ all deploys | Change records ↔ incidents |
 | **Failed deployment recovery time** | Impact start → service restored, for change-caused impact | Incident records |
 
@@ -23,17 +23,17 @@ microservices describes nothing that exists.
 - **Change failure rate counts deploys that needed remediation**, including rollbacks, hotfixes,
   and flag reverts — not only declared incidents. Teams that count only incidents report a
   flattering and useless number.
-- **Lead time starts at the first commit**, not at ticket creation — that is DORA's own
-  definition, and it deliberately includes review and queueing, which are usually where the
+- **Lead time runs from commit to running in production**, not from ticket creation — that is
+  DORA's definition, measured per commit, and it deliberately includes review and queueing, which are usually where the
   time goes. Measuring from merge instead is a common local variant that hides review latency;
   if a team does that, label it "merge-to-deploy" rather than calling it DORA lead time.
 - **Recovery time is for change-caused impact only.** Mixing in all incidents measures
   operational maturity, not deployment safety.
 - **Deployment frequency counts production deploys**, not CI runs or staging deploys.
 
-## Batch Size — The Missing Fifth Metric
+## Batch Size — The Measure Behind the Keys
 
-Report alongside the four keys. It explains most of the variance in the other four:
+Not one of DORA's own metrics; report it alongside the four keys. It explains most of the variance in the other four:
 
 | Measure | Signal |
 |---------|--------|
@@ -88,7 +88,7 @@ Monthly, per service:
 - Batch size distribution
 - Change failure attribution clusters
 - Emergency change share — high share means the normal path is being bypassed
-- Rollback exercise dates for `T3`+ procedures — the number of them at `NEVER` is the most
+- Rollback exercise dates for `T3`+ procedures — the number at `untested` or `stale` is the most
   actionable line in the report
 
 ## Anti-patterns

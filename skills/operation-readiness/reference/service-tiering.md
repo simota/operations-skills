@@ -40,8 +40,8 @@ unknown cannot be tiered, staffed, or funded correctly.
 
 ## Requirements by Tier
 
-The requirement matrix is canonical in `operation-readiness/SKILL.md` § Tier Requirements —
-it is always loaded, so it is not duplicated here. This file covers derivation, dependency
+The requirement matrix is canonical in `playbooks/verdict.md` § Tier Requirements —
+it is read whenever a verdict is issued, so it is not duplicated here. This file covers derivation, dependency
 inversion, cost, and review.
 
 ## Dependency Tier Inversion
@@ -85,5 +85,5 @@ Reassess annually, and on:
 - A service becoming a dependency of a higher-tier service (automatic promotion)
 - Repeat incidents suggesting the current tier's support is insufficient
 
-**Lowering a tier is `Ask First`** — it removes support that people currently depend on, often
+**Lowering a tier is a dialogue first** (`_operation/SIZING.md`) — it removes support that people currently depend on, often
 including a rotation that will be dissolved and hard to rebuild.

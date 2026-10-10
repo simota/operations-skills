@@ -18,7 +18,10 @@ An untested runbook is a hypothesis with formatting. Testing is what converts it
 | Production rehearsal (game day) | It works under real conditions, with real access, at real scale | Half a day | Per review cadence for T3. **T4: never rehearsed destructively in production** — see below |
 | Incident execution | It works under pressure | — | Opportunistic; always debrief |
 
-Only the last three update `last_executed`.
+Each level sets the header `state` (`_operation/EXPIRY.md`): a read-through changes nothing; a
+dry-run or a non-production execution reaches `simulated`, with the gap stated; only a
+production rehearsal or an incident execution reaches `proved`. `last_executed` records every
+execution with its environment, so a non-production date never reads as production proof.
 
 ## Read-Through Protocol
 
@@ -54,8 +57,9 @@ The only way to test a runbook under conditions resembling reality.
   irreversible action for practice is indistinguishable from causing the incident. Rehearse them
   as: a full non-production run at production data volume, plus a production **dry-run** that
   exercises every check and stops before the mutating step, plus a read-through of the mutating
-  step with the approver present. That combination is what `last_executed` records for a `T4`
-  runbook.
+  step with the approver present. That combination is `simulated`, never `proved`; where the
+  mutating step cannot be exercised at all, record `unprovable` with a named compensating
+  control and its owner.
 - The executor is **not** the runbook's author.
 - An observer records every hesitation, wrong turn, and out-of-band question.
 
@@ -108,7 +112,7 @@ add the conditions.
 
 Per runbook:
 
-- [ ] Header contract complete, `last_executed` honest
+- [ ] Header contract complete; `state`, `expires` and `voided_by` honest
 - [ ] Owner is a named individual, still present
 - [ ] Tier assigned, and consistent with the most dangerous step
 - [ ] Abort conditions present

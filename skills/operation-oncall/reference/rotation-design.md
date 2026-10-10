@@ -16,14 +16,14 @@ The binding constraint is not headcount — it is the per-person night burden.
 | 2 | 1 week in 2 | Every other week | Unsustainable beyond ~1 month |
 | 3–4 | 1 week in 3–4 | 1 in 3–4 | Below minimum — degraded options only |
 | 5 | 1 week in 5 | 1 in 5 | Below minimum — state the deficit, offer degraded options |
-| 6–8 | 1 week in 6–8 | 1 in 6–8 | Minimum sustainable |
+| 6–10 | 1 week in 6–10 | 1 in 6–10 | Minimum sustainable |
 | >10 | 1 week in 10+ | rare | Healthy, but skill decay — see below |
 
 **Skill decay above 10.** When a responder carries the pager once a quarter, they arrive
 cold. Compensate with shadow shifts, game days, or split the rotation by domain rather than
 diluting one rotation across everyone.
 
-**Six is the floor for 24/7 primary coverage** (`operation-oncall/SKILL.md` Core Contract).
+**Six is the floor for 24/7 primary coverage** (`playbooks/paging.md`: night-shift burden ≤1 week in 6).
 Below it, never present a schedule as if it were sustainable — name the deficit first.
 
 ### Degraded Options When the Pool Is Too Small
@@ -43,7 +43,7 @@ Never silently schedule an unsustainable rotation. Offer explicitly:
 | Shape | Period | Best for | Cost |
 |-------|--------|----------|------|
 | Weekly | Mon 10:00 → Mon 10:00 | Low page volume, context continuity | One bad week ruins a week |
-| Split week | Mon–Thu / Fri–Sun | Protecting weekends unevenly is worse; splitting shares them | Two handoffs per week |
+| Split week | Mon–Thu / Fri–Sun | Sharing weekend load across two people | Two handoffs per week |
 | Daily | 24h | High page volume | Context loss; heavy handoff cost |
 | Day/night split | 12h × 2 | Sustained night load with a large pool | Doubles pool requirement |
 | Follow-the-sun | 8–12h per region | Genuinely global teams, irreducible night load | Handoff boundary, coordination overhead |
@@ -57,8 +57,8 @@ at the top of Monday collides with the week's first deploys.
 Only justified when night load is irreducible *after* alert triage. Requirements:
 
 - Each region must be able to act independently — full runbook parity, not "escalate to APAC".
-- A structured handoff at each boundary (`reference/shift-handoff.md`). Three handoffs a day
-  is three chances to drop context.
+- A structured handoff at each boundary (`reference/shift-handoff.md`). Two or three handoffs
+  a day is two or three chances to drop context.
 - Shared incident tooling and a single timeline of record.
 - Aligned severity definitions. Regions with different SEV1 thresholds produce inconsistent
   customer communication.
@@ -105,7 +105,7 @@ Equal shift *counts* with unequal *page* counts is not fairness. Publish both.
 
 ## Compensation Models
 
-Employment terms — always `Ask First`. Common shapes, stated neutrally:
+Employment terms — always a dialogue first (`_operation/SIZING.md`). Common shapes, stated neutrally:
 
 | Model | Notes |
 |-------|-------|
