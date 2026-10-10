@@ -54,22 +54,25 @@ class EngineError(RuntimeError):
 def strict(schema: dict) -> dict:
     """Every object closed, which is what codex requires and agy tolerates.
 
-    Including the ones under `anyOf` / `oneOf` / `allOf` and `$defs`, which are
-    lists or maps of schemas rather than a schema.
+    Including the ones under `anyOf` / `oneOf` / `allOf` and `$defs`. Only
+    keywords that hold schemas are walked: `enum` and `const` hold instance
+    values, and closing an object inside them would change what is allowed.
     """
-    if isinstance(schema, list):
-        return [strict(s) for s in schema]
     if not isinstance(schema, dict):
         return schema
-    out = {k: strict(v) if isinstance(v, (dict, list)) else v for k, v in schema.items()}
-    for key in ("$defs", "definitions"):
+    out = dict(schema)
+    for key in ("anyOf", "oneOf", "allOf"):
+        if isinstance(schema.get(key), list):
+            out[key] = [strict(s) for s in schema[key]]
+    for key in ("$defs", "definitions", "properties"):
         if isinstance(schema.get(key), dict):
             out[key] = {k: strict(v) for k, v in schema[key].items()}
+    for key in ("items", "additionalItems", "not"):
+        if isinstance(schema.get(key), dict):
+            out[key] = strict(schema[key])
     if out.get("type") == "object":
         out["additionalProperties"] = False
-        out["properties"] = {k: strict(v) for k, v in (out.get("properties") or {}).items()}
-    if isinstance(out.get("items"), dict):
-        out["items"] = strict(out["items"])
+        out.setdefault("properties", {})
     return out
 
 
@@ -82,10 +85,18 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
     here because an engine's own validation is a claim, not an observation."""
     if not isinstance(schema, dict):
         return []
-    for key in ("anyOf", "oneOf"):
-        if isinstance(schema.get(key), list):
-            if all(conforms(value, s, where) for s in schema[key]):
-                return [f"{where}: matches none of {key}"]
+    if isinstance(schema.get("allOf"), list):
+        for s in schema["allOf"]:
+            errs = conforms(value, s, where)
+            if errs:
+                return errs
+    if isinstance(schema.get("anyOf"), list):
+        if all(conforms(value, s, where) for s in schema["anyOf"]):
+            return [f"{where}: matches none of anyOf"]
+    if isinstance(schema.get("oneOf"), list):
+        hits = sum(not conforms(value, s, where) for s in schema["oneOf"])
+        if hits != 1:
+            return [f"{where}: matches {hits} of oneOf, not exactly one"]
     errs = []
     t = schema.get("type")
     if t is not None:

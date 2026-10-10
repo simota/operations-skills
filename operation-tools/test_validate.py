@@ -642,6 +642,14 @@ def tool_engine_checks_schema() -> str:
             return f"engine.conforms accepted {v}"
     if engine.conforms({"refuted": False, "why": None}, engine.strict(schema)):
         return "engine.conforms rejected a valid answer"
+    # oneOf means exactly one; allOf means every one.
+    if not engine.conforms(3, {"oneOf": [{"type": "integer"}, {"type": "number"}]}):
+        return "engine.conforms accepted a value matching two oneOf branches"
+    if not engine.conforms({"a": 1}, {"allOf": [{"required": ["a"]}, {"required": ["b"]}]}):
+        return "engine.conforms ignored an allOf branch"
+    # enum/const hold instance values, not schemas: strict() must leave them alone.
+    if engine.strict({"enum": [{"type": "object"}]}) != {"enum": [{"type": "object"}]}:
+        return "engine.strict rewrote an enum value as if it were a schema"
     return ""
 
 
