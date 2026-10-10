@@ -19,7 +19,7 @@ Verified: 2026-08-21 — no automated check.
 
 ## Checklist
 
-Blocking threshold is per tier — see `reference/service-tiering.md`.
+Blocking threshold is per tier — see `playbooks/verdict.md` § Tier Requirements.
 
 ### Observability
 
@@ -42,7 +42,7 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 |------|--------------|--------------|
 | On-call rotation exists with capacity for this service | Confirm with `operation-oncall`; check pool size | T0, T1, T2 |
 | Escalation path defined and exercised | Run a no-acknowledge test | T0, T1 |
-| Runbooks for the top failure modes, status `CURRENT` | Execute one end to end | T0, T1 |
+| Runbooks for the top failure modes, state `proved` and within expiry | Execute one end to end | T0, T1 |
 | Every paging alert links to a specific runbook | Follow each link | T0, T1 |
 | Severity definitions and declaration criteria agreed | Read them | T0, T1 |
 | Communication path to support and customers exists | Confirm the channel and the owner | T0, T1 |
@@ -51,7 +51,7 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 
 | Item | Verification | Blocking for |
 |------|--------------|--------------|
-| Rollback procedure documented and **exercised** | Run it in a non-production environment | T0, T1, T2 |
+| Rollback procedure documented and **exercised** | Run it in a non-production environment | T0, T1 |
 | **RPO defined** — how much data the business accepts losing | Read the figure; confirm the owner agreed it | T0, T1 |
 | **RTO defined** — how long recovery may take | Read the figure; confirm the owner agreed it | T0, T1 |
 | Backup frequency actually satisfies the RPO | Compare schedule to RPO — hourly backups cannot meet a 5-minute RPO | T0, T1 |

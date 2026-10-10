@@ -18,8 +18,8 @@ constraint that binds first.
 | T2 | ≥1.5× | Estimated with a stated method |
 | T3 | None | — |
 
-**Name the next ceiling with its value.** "It scales" is not an answer. "Tested to 4× current
-peak; the database connection pool saturates at 4.2×" is.
+**Name the next ceiling with its value.** "It scales" is not an answer. "Tested to saturation at
+4.2× current peak; the database connection pool is what saturated" is.
 
 **The tier multiples are a floor, not the requirement.** Derive the actual headroom the service
 needs and take whichever is larger:

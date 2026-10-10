@@ -23,7 +23,7 @@ gap in the output, handed to `operation-runbook`.
 | Metric | Healthy | Warning | Defect |
 |--------|---------|---------|--------|
 | Pages per 24h shift | ≤2 | 3–5 | >5 |
-| Off-hours pages (22:00–08:00) per shift | ≤1 | 2 | >2 |
+| Off-hours pages (22:00–08:00, responder's local time) per week on call | ≤1 | 2 | >2 |
 | Actionability ratio (pages requiring human action) | ≥80% | 50–79% | <50% |
 | Self-resolve rate | <10% | 10–25% | >25% |
 | MTTA (page → acknowledged) | <5 min | 5–15 min | >15 min |

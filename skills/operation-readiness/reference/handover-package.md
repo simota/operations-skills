@@ -36,9 +36,9 @@ of past incidents.
 - Log locations, retention, and useful queries
 
 ### 5. Runbooks
-Complete inventory with status. **Every runbook the tier requires must be `CURRENT`** — an
-`UNVERIFIED` runbook handed over is a document the receiving team will trust and that has never
-worked.
+Complete inventory with each runbook's proof state and expiry (`_operation/EXPIRY.md`).
+**Every runbook the tier requires must be `proved`** — a `stale` or `untested` runbook handed
+over is a document the receiving team will trust and that nobody has shown to work.
 
 ### 6. Known Issues and Debt
 - Open bugs with workarounds

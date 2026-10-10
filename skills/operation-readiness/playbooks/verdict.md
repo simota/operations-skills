@@ -20,8 +20,11 @@ non_blocking_findings:
     due: <YYYY-MM-DD>
 accepted_risks:
   - risk: "<blocking finding being launched with>"
+    consequence: "<what happens when this fires — specific>"
     accepted_by: "<named individual, not a team>"
+    accepted_on: <YYYY-MM-DD>
     review_by: <YYYY-MM-DD>
+    compensating_control: "<what reduces the risk meanwhile, or NONE>"
 capacity:
   current_peak: "<value>"
   headroom: "<multiple of current peak, verified how>"
@@ -39,14 +42,14 @@ than a narrow one that says so.
 |-------------|---------------|----------------|---------------|------------------|
 | Availability target | Defined SLO, error budget policy | Defined SLO | Target, no budget policy | None |
 | On-call | 24/7 primary + secondary | 24/7 primary | SEV1 only off-hours | Business hours |
-| Runbook coverage | All paging alerts, all `CURRENT` | All paging alerts | Top failure modes | Best effort |
+| Runbook coverage | All paging alerts, all `proved` (or `unprovable` with a named compensating control) | All paging alerts | Top failure modes | Best effort |
 | Rollback | Verified, exercised ≤90 days | Verified, exercised ≤180 days | Documented | Documented |
-| Capacity headroom | ≥3× current peak, load tested | ≥2× current peak | ≥1.5× | None |
+| Capacity headroom | ≥3× current peak, load tested | ≥2× current peak, load tested | ≥1.5× | None |
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |
 | Postmortem | All SEV1/SEV2 | All SEV1/SEV2 | SEV1 | On repeat |
-| Escalation depth | Full chain | Full chain, exec tier business hours | Two tiers | One tier |
-| Change approval | Two reviewers above risk 15 | Service owner | Service owner | None |
-| Dependency tier floor | All deps ≥ T0 | All deps ≥ T1 | All deps ≥ T2 | None |
+| Escalation depth | Full chain | Full chain without a secondary tier, exec tier business hours | Two tiers | One tier |
+| Change approval | Service owner; second reviewer at `operation-change` risk score ≥16/25 | Same as T0 | Same as T0 | None |
+| Dependency tier floor | All deps T0 | All deps T0–T1 | All deps T0–T2 | None |
 
 This table is canonical; `reference/service-tiering.md` covers how the tier is derived, not
 what it requires.

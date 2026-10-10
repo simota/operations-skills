@@ -45,12 +45,12 @@ quarterly reporting. The consumer nobody knew about is almost always a monthly j
 9. **Retain data** for the required period, offline, with a documented restore path.
 10. **Delete data** — `T4`, after the retention period, with explicit approval.
 
-**Observability is retired last, not first.** Steps 1–8 are reversible, and a reversal is only
+**Observability is retired last, not first.** Steps 1–9 are reversible, and a reversal is only
 safe if the service comes back with its detection intact — retiring alerts while the service
 can still be turned back on produces a running service nobody is watching.
 
 Step 10 is irreversible. The gap between step 8 and step 10 is the safety margin, and it
-should be measured in months for anything above T3.
+should be measured in months for any service tiered T0–T2.
 
 ### Darkening Test Design
 
@@ -74,7 +74,8 @@ as a 24-hour outage:
 - Determine the requirement **before** starting: regulatory, contractual, and internal.
 - Retain offline in a form that can actually be read later — a database dump requiring a version
   of the software nobody runs any more is not retention.
-- Document the restore path and test it once.
+- Document the restore path, prove it, and record its expiry — an interval, and the surface
+  that voids it (dump format, software version). Re-prove it before the retention period ends.
 - Record the deletion date and who approves it.
 - Verify no other system holds a foreign key or reference into the retained data.
 
@@ -98,7 +99,7 @@ Frequently forgotten, and it leaves debris that confuses responders for years:
 
 ## Post-Decommission Verification
 
-After each irreversible step, verify:
+After stopping serving (step 5) and undeploying (step 6), verify:
 
 - No error rate increase in any downstream or adjacent service
 - No new support tickets referencing the capability

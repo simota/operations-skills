@@ -10,9 +10,9 @@ Verified: 2026-08-21 — no automated check.
 
 | Tier | Target | Trigger | Timeout to next |
 |------|--------|---------|-----------------|
-| 0 | Automated remediation | Alert fires, pattern is known | 5 min (or on failure) |
+| 0 | Automated remediation | Alert fires, pattern is known | 2 min (or on failure) |
 | 1 | Primary on-call | Automation absent or failed | 5 min unacknowledged |
-| 2 | Secondary on-call | Primary unacknowledged, or primary requests help | 5 min unacknowledged |
+| 2 | Secondary on-call | Primary unacknowledged, or primary requests help | 3 min unacknowledged |
 | 3 | Service owner / team lead | Tier 2 unacknowledged, or scope exceeds on-call authority | 10 min |
 | 4 | Engineering manager + IC pool | Tier 3 unacknowledged, or SEV1 declared | 10 min |
 | 5 | Executive / customer-facing leadership | SEV1 past the communication threshold, or regulatory exposure | — |
@@ -22,8 +22,9 @@ the timer — but see "Acknowledged Is Not Handled" below.
 
 ## Total Escalation Budget
 
-From alert fire to a human definitely engaged: **≤15 minutes**. If the chain from Tier 1 to
-Tier 3 cannot complete inside that, the timeouts are too long. Work backwards from 15 minutes,
+From alert fire to a human definitely engaged: **≤15 minutes**. If the chain from Tier 0 to a
+Tier 3 acknowledgement cannot complete inside that, the timeouts are too long — the defaults
+above page Tier 3 at 2 + 5 + 3 = 10 minutes, leaving it 5 to acknowledge. Work backwards from 15 minutes,
 not forwards from what feels polite.
 
 ## Fallback When the Chain Fails
@@ -61,6 +62,10 @@ Countermeasures:
 | SEV3 | Ticket + team channel | Business hours | Next business day |
 | SEV4 | Ticket queue | Business hours | Next sprint |
 
+The acknowledgement SLA is the target reported per severity; the Tier Structure timeouts still
+govern escalation for every severity that pages, so an unacknowledged SEV2 reaches secondary
+after 5 minutes, not 15.
+
 **Only SEV1/SEV2 may page.** SEV3 arriving as a page is a routing defect, and it is how
 responders learn to treat pages as background noise.
 
@@ -88,7 +93,7 @@ never as an unwritten norm:
 | Service tier | Off-hours behaviour |
 |--------------|--------------------|
 | T0 | Full chain, 24/7, no degradation |
-| T1 | Full chain 24/7; Tier 4+ business hours only |
+| T1 | Full chain 24/7, with Tier 2 skipped where the rotation has no secondary; Tier 5 (executive) business hours only |
 | T2 | Page for SEV1 only; SEV2 becomes a business-hours ticket |
 | T3 | No off-hours paging; SEV2–4 queue to business hours. A genuine SEV1 still pages — and triggers a tier review, because a T3 service should not be able to produce one |
 
@@ -96,8 +101,8 @@ Service tiers are defined by `operation-readiness`.
 
 ## Common Defects
 
-- **Sequential-only escalation with long timeouts** — 15 minutes per tier means 45 minutes to
-  reach a service owner on a SEV1.
+- **Sequential-only escalation with long timeouts** — 15 minutes per tier means 30 minutes
+  before a service owner is even paged on a SEV1, and 45 before the IC pool is.
 - **Escalation target is a rotation with the same people** — Tier 2 pointing at a schedule
   where primary is also secondary.
 - **Group inbox as an escalation target** — diffuse ownership means no acknowledgement.

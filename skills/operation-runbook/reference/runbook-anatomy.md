@@ -8,7 +8,7 @@ Verified: 2026-08-21 — no automated check.
 
 ## Full Structure
 
-```markdown
+````markdown
 ---
 runbook: payments-api/rollback-failed-deploy
 purpose: "Return payments-api to the last known-good revision"
@@ -19,8 +19,10 @@ duration: "5-8 minutes"
 idempotent: yes
 dry_run: "deploy rollback --dry-run --service payments-api"
 owner: "<named individual>"
-last_executed: 2026-08-14
-review_by: 2026-11-14
+state: proved
+last_executed: "2026-08-14, <named individual>, production (incident)"
+expires: "2026-11-14 — the deploy tooling changes roughly quarterly"
+voided_by: "any change to the deploy CLI or the payments-api migration tooling"
 abort_if:
   - "A database migration ran with the deploy and is not backwards-compatible"
   - "The last known-good revision is older than 30 days"
@@ -64,7 +66,7 @@ attaching: <the specific outputs from steps N, M>.
 
 ## Notes
 <Known quirks. Why a surprising step exists. Links to the incident that produced this runbook.>
-```
+````
 
 ## Writing Verifiable Steps
 

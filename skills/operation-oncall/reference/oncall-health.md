@@ -30,7 +30,7 @@ low while incident duration is long, TTFDA is the real number.
 | Metric | Healthy | Warning | Defect |
 |--------|---------|---------|--------|
 | Pages per 24h shift | ≤2 | 3–5 | >5 |
-| Off-hours pages per shift | ≤1 | 2 | >2 |
+| Off-hours pages per week on call | ≤1 | 2 | >2 |
 | Actionability ratio | ≥80% | 50–79% | <50% |
 | Self-resolve rate | <10% | 10–25% | >25% |
 | MTTA | <5 min | 5–15 min | >15 min |

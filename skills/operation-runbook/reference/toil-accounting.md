@@ -69,7 +69,7 @@ in reducing it, and toil compounds.
 |---------------|---------|--------|
 | <25% | Healthy | Continue |
 | 25–50% | Acceptable | Track trend; reduce top items |
-| 50–70% | Over budget | Stop accepting new operational surface until reduced |
+| >50–70% | Over budget | Stop accepting new operational surface until reduced |
 | >70% | Critical | Escalate; the team is in a spiral it cannot exit unaided |
 
 Measurement is by sampled self-report or time tracking over ≥2 weeks. An unmeasured toil claim
