@@ -302,8 +302,11 @@ def v19_paths_resolve():
     probe = SKILL_DIRS[0]
     shared = sorted((SKILLS_ROOT / SHARED).glob("*.md"))
     for d in SKILL_DIRS:
-        readable = [d / "SKILL.md"] + sorted((d / "playbooks").glob("*.md")) \
-            if (d / "playbooks").exists() else [d / "SKILL.md"]
+        # reference/ is read by the skill exactly as playbooks/ is, so a bare
+        # sibling name there (`oncall-health.md`) breaks the same way.
+        readable = [d / "SKILL.md"]
+        for sub in ("playbooks", "reference"):
+            readable += sorted((d / sub).glob("*.md"))
         for f in readable:
             _check_paths(f, d, f"{d.name}/{f.relative_to(d)}")
     for f in shared:                      # checked once, against one skill dir
@@ -344,8 +347,8 @@ def v20_contract_vocabulary():
     """Every declared word is defined on a shared page, not merely named there.
 
     The earlier form asked whether the word appeared anywhere in CONTRACT.md,
-    and a word used in a sentence passed as defined — the check §5.7 names,
-    that one replaced definition does not trip. A definition is a row or a
+    and a word used in a sentence passed as defined — the check §5.7 of
+    `agent-toolkit`'s DESIGN.md names, that one replaced definition does not trip. A definition is a row or a
     heading, and every vocabulary key is held to it, not three.
     """
     pages = {p.name: read(p) for p in (SKILLS_ROOT / SHARED).glob("*.md")}

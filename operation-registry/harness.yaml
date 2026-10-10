@@ -63,7 +63,7 @@ permission_classes:
     tools: "Read, Grep, Glob, Bash, Write, Edit"   # unrestricted; the contract is narrower
     writes: true
   read-only:
-    tools: "Read, Grep, Glob, Bash"                # verdicts only, and cannot do otherwise
+    tools: "Read, Grep, Glob, Bash"                # no Write/Edit; Bash still can, so Never bounds it
     writes: false
 
 forbidden_description_terms:

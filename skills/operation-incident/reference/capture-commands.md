@@ -9,7 +9,7 @@ Claims not from either source — ingestion lag, retention windows, what a given
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook. With a CLI missing it reports SKIPPED for that tool and passes: a hole, announced rather than hidden.
 
 `_operation/CONTRACT.md` puts **command output captured now** at the top of the
-evidence ladder, and `impact-assessment.md` gives the capture 60 seconds. This
+evidence ladder, and `reference/impact-assessment.md` gives the capture 60 seconds. This
 page is what to run in them.
 
 Everything here is read-only. None of it operates the system; it is what makes

@@ -23,7 +23,7 @@ The binding constraint is not headcount — it is the per-person night burden.
 cold. Compensate with shadow shifts, game days, or split the rotation by domain rather than
 diluting one rotation across everyone.
 
-**Six is the floor for 24/7 primary coverage** (`operation-oncall/SKILL.md` Core Contract).
+**Six is the floor for 24/7 primary coverage** (`playbooks/paging.md`: night-shift burden ≤1 week in 6).
 Below it, never present a schedule as if it were sustainable — name the deficit first.
 
 ### Degraded Options When the Pool Is Too Small

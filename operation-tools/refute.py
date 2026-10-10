@@ -13,10 +13,11 @@ to default to refuted when uncertain — a claim that cannot survive a hostile
 reading is exactly what this exists to catch, and the cost of a false refutation
 is one argument while the cost of a false pass is a shipped defect.
 
-**Independence is counted by source, not by voice** (`DESIGN.md` §5.4b). Two
-verdicts from one engine are one verdict. The pool is therefore `runs_on` minus
-whichever engine is running, and the count is printed with every result: with
-three engines declared, a claim gets at most **two** independent readings.
+**Independence is counted by source, not by voice** (`DESIGN.md` §5.4b in the
+`agent-toolkit` repository). Two verdicts from one engine are one verdict. The
+pool is therefore `runs_on` minus whichever engine is running, and the count is
+printed with every result: with three engines declared, a claim gets at most
+**two** independent readings.
 
 **`STANDS` is not proof.** It means n engines looked and found nothing, which is
 a floor on scrutiny and never a ceiling on correctness. A split is reported as
@@ -119,9 +120,20 @@ def main() -> int:
               "framing is a second opinion, not an adversary", file=sys.stderr)
         return 1
 
-    claims = json.loads(pathlib.Path(a.claims).read_text(encoding="utf-8"))
+    try:
+        claims = json.loads(pathlib.Path(a.claims).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        print(f"cannot read claims from {a.claims}: {e}", file=sys.stderr)
+        return 2
     if isinstance(claims, dict):
         claims = [claims]
+    # A malformed claim is refused up front, before any engine is paid to read it.
+    bad = [i for i, c in enumerate(claims if isinstance(claims, list) else [None])
+           if not (isinstance(c, dict) and isinstance(c.get("claim"), str) and c["claim"].strip())]
+    if not isinstance(claims, list) or not claims or bad:
+        print(f"{a.claims}: expected a non-empty JSON list of {{id, claim, [evidence], "
+              f"[where]}} objects; entries without a `claim` string: {bad}", file=sys.stderr)
+        return 2
     try:
         pool = refuters(a.running)
     except engine.EngineError as e:

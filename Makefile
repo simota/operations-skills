@@ -22,9 +22,9 @@ help:
 	@echo "make check     validate + test + figures (what CI runs)"
 	@echo "make validate  static rules over the corpus"
 	@echo "make test      prove every rule still fires"
-	@echo "make figures   check the quoted kubectl claims against the installed client"
+	@echo "make figures   re-check the ansible / aws / gcloud claims against the installed CLIs"
 	@echo "make refute CLAIMS=f.json RUNNING=claude   put each claim to the engines that did not make it"
-	@echo "make engines  ask each checker engine for one object; reports what is unreachable"
+	@echo "make engines   ask each checker engine for one object; reports what is unreachable"
 	@echo "make render    write the delivered blocks back into every SKILL.md"
 	@echo "make hooks     install the pre-commit hook"
 	@echo "make link      symlink the skills into claude / codex / agy"
@@ -58,6 +58,11 @@ hooks:
 	@chmod +x .git/hooks/pre-commit
 	@echo "pre-commit installed"
 
+# A link is ours only when it resolves into this repository's skills/. Anything
+# else at the target — a real directory, or a symlink into another set — belongs
+# to someone else and is left alone by both link and unlink, as install.sh does.
+OURS = case "$$(readlink "$$target")" in "$(REPO)/skills/"*) true ;; *) false ;; esac
+
 # A skill is a directory holding a SKILL.md, under skills/ where the plugin
 # format expects it. The prefix alone is not the test: operation-registry/ and
 # operation-tools/ share it and must never be installed.
@@ -72,6 +77,8 @@ link:
 			name=$$(basename "$$path"); target="$$dir/$$name"; \
 			if [ -e "$$target" ] && [ ! -L "$$target" ]; then \
 				echo "  skip $$name (a real path is already there)"; \
+			elif [ -L "$$target" ] && ! $(OURS); then \
+				echo "  skip $$name (a symlink into $$(readlink "$$target") is already there)"; \
 			else \
 				ln -sfn "$(REPO)/$$path" "$$target"; echo "  link $$name"; \
 			fi; \
@@ -84,7 +91,8 @@ unlink:
 		echo "$$dir"; \
 		for path in $(SKILL_DIRS); do \
 			name=$$(basename "$$path"); target="$$dir/$$name"; \
-			if [ -L "$$target" ]; then rm "$$target"; echo "  unlink $$name"; fi; \
+			if [ -L "$$target" ] && $(OURS); then rm "$$target"; echo "  unlink $$name"; \
+			elif [ -L "$$target" ]; then echo "  skip $$name (not linked by this repo)"; fi; \
 		done; \
 	done
 
@@ -93,7 +101,8 @@ status:
 		echo "$$dir"; \
 		for path in $(SKILL_DIRS); do \
 			name=$$(basename "$$path"); target="$$dir/$$name"; \
-			if [ -L "$$target" ]; then echo "  linked   $$name"; \
+			if [ -L "$$target" ] && $(OURS); then echo "  linked   $$name"; \
+			elif [ -e "$$target" ] || [ -L "$$target" ]; then echo "  foreign  $$name"; \
 			else echo "  unlinked $$name"; fi; \
 		done; \
 	done

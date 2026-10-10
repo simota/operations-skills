@@ -44,6 +44,10 @@ def norm(s: str) -> str:
     return " ".join(s.split()).casefold()
 
 
+def text_of(p: pathlib.Path) -> str:
+    return p.read_text(encoding="utf-8")
+
+
 def help_of(*argv: str) -> str:
     try:
         r = subprocess.run(argv, capture_output=True, text=True, timeout=60)
@@ -53,7 +57,7 @@ def help_of(*argv: str) -> str:
 
 
 def body() -> str:
-    return norm(" ".join(p.read_text() for p in QUOTED))
+    return norm(" ".join(text_of(p) for p in QUOTED))
 
 
 # --- every command the pages cite exists -----------------------------------
@@ -65,7 +69,7 @@ def cited_commands() -> set[tuple[str, ...]]:
     out: set[tuple[str, ...]] = set()
     for p in ALL_PAGES:
         inside = False
-        for line in p.read_text().splitlines():
+        for line in text_of(p).splitlines():
             if line.startswith("```"):
                 inside = not inside
                 continue
@@ -124,20 +128,22 @@ def check_quotes() -> int:
     page = body()
     n = 0
     for cmd, phrases in QUOTES.items():
+        # The page side needs no CLI: a quote deleted from the page is caught on a
+        # machine without the tool too, rather than only where the tool happens to be.
+        for phrase in phrases:
+            if norm(phrase) not in page:
+                fail("quotes", f"the pages no longer quote {phrase!r} — "
+                               "the checker is enforcing a claim nobody makes")
         tool = cmd[0]
         if not shutil.which(tool):
             skipped.append(tool)
             continue
-        argv = list(cmd) + (["help"] if tool == "aws" else ["help"])
-        text = norm(help_of(*argv))
+        text = norm(help_of(*cmd, "help"))
         for phrase in phrases:
             n += 1
             if norm(phrase) not in text:
                 fail("quotes", f"`{' '.join(cmd)} help` no longer contains "
                                f"{phrase!r}, which the pages rest on")
-            if norm(phrase) not in page:
-                fail("quotes", f"the pages no longer quote {phrase!r} — "
-                               "the checker is enforcing a claim nobody makes")
     return n
 
 
@@ -170,7 +176,7 @@ def stated_recaps() -> tuple[dict[str, int], dict[str, int]]:
     Read from the page rather than restated here, so a page edited to claim the
     opposite fails instead of being graded against a copy kept in the checker.
     """
-    printed = [recap(l) for l in TRAPS.read_text().splitlines() if "localhost" in l]
+    printed = [recap(l) for l in text_of(TRAPS).splitlines() if "localhost" in l]
     printed = [r for r in printed if r]
     plain = next((r for r in printed if "skipped" not in r), {})
     checked = next((r for r in printed if "skipped" in r), {})
@@ -186,7 +192,7 @@ EXITS = re.compile(r"`([^`]*(?:list-hosts|--limit)[^`]*)`[^.]*?exits\s*\*\*(\d+)
 def stated_exits() -> dict[str, int]:
     """The exit statuses the page states for the two host-selection commands."""
     out = {}
-    for cmd, code in EXITS.findall(TRAPS.read_text()):
+    for cmd, code in EXITS.findall(text_of(TRAPS)):
         out["list-hosts" if "list-hosts" in cmd else "limit"] = int(code)
     if len(out) != 2:
         fail("ansible", f"observation-traps.md states {len(out)} of the two exit "
@@ -202,14 +208,29 @@ def unusable(tool: str, argv: list[str]) -> str | None:
     output, so a tool that never starts produces no output to read, and the
     checks would report the page as wrong about behaviour nothing observed.
     """
-    r = subprocess.run(argv, capture_output=True, text=True)
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return f"{tool} is installed but did not run: {e}"
     if r.returncode == 0:
         return None
     err = (r.stderr or r.stdout).strip().splitlines()
     return f"{tool} is installed but did not run: {err[0] if err else 'no output'}"
 
 
+def run(argv: list[str], cwd: pathlib.Path) -> subprocess.CompletedProcess:
+    """One Ansible invocation. A hang is reported as a failure, not waited out."""
+    try:
+        return subprocess.run(argv, capture_output=True, text=True, cwd=cwd, timeout=120)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(argv, -1, "", f"timed out: {' '.join(argv)}")
+
+
 def check_ansible() -> int:
+    # What the page states is read first, with or without Ansible installed: a page
+    # that stopped printing a recap or an exit status fails everywhere.
+    plain, checked = stated_recaps()
+    exits = stated_exits()
     if not shutil.which("ansible-playbook"):
         skipped.append("ansible not on PATH")
         return 0
@@ -225,10 +246,7 @@ def check_ansible() -> int:
         base = ["ansible-playbook", "-i", str(tmp / "inv.ini"), str(tmp / "play.yml"),
                 "-e", f"probe={probe}"]
 
-        plain, checked = stated_recaps()
-        exits = stated_exits()
-
-        r = subprocess.run(base, capture_output=True, text=True, cwd=tmp)
+        r = run(base, tmp)
         rec = recap(r.stdout)
         if not rec:
             # No recap line means the play did not run. Reading that as a wrong
@@ -242,7 +260,7 @@ def check_ansible() -> int:
         if plain and got != plain:
             fail("ansible", f"the play reported {got}, the page prints {plain}")
 
-        r = subprocess.run(base + ["--check"], capture_output=True, text=True, cwd=tmp)
+        r = run(base + ["--check"], tmp)
         rec = recap(r.stdout)
         if not rec:
             skipped.append("ansible --check printed no play recap")
@@ -251,14 +269,12 @@ def check_ansible() -> int:
         if checked and got != checked:
             fail("ansible", f"check mode reported {got}, the page prints {checked}")
 
-        r = subprocess.run(base + ["--limit", "nosuchhost"],
-                           capture_output=True, text=True, cwd=tmp)
+        r = run(base + ["--limit", "nosuchhost"], tmp)
         if "limit" in exits and r.returncode != exits["limit"]:
             fail("ansible", f"`--limit` matching nothing exited {r.returncode}; "
                             f"the page states {exits['limit']}")
 
-        r = subprocess.run(["ansible", "nosuchhost", "-i", str(tmp / "inv.ini"),
-                            "--list-hosts"], capture_output=True, text=True, cwd=tmp)
+        r = run(["ansible", "nosuchhost", "-i", str(tmp / "inv.ini"), "--list-hosts"], tmp)
         if "list-hosts" in exits and r.returncode != exits["list-hosts"]:
             fail("ansible", f"`--list-hosts` on a bad pattern exited {r.returncode}; "
                             f"the page states {exits['list-hosts']}, which is why it "

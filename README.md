@@ -7,13 +7,13 @@ budgets that keep the set from growing into something nobody can route through.
 mitigated, and the runbook executed by people; these produce the decision, the
 procedure, and the record.
 
-| Skill | Answers | Class |
+| Skill | Answers | Class ([grants](operation-registry/harness.yaml)) |
 |---|---|---|
-| [`operation-incident`](skills/operation-incident/SKILL.md) | Something is broken right now — what do we do? | advise |
-| [`operation-change`](skills/operation-change/SKILL.md) | Is it safe to ship this, and how do we undo it? | advise |
-| [`operation-oncall`](skills/operation-oncall/SKILL.md) | Who gets paged, when, and is this worth waking someone for? | advise |
-| [`operation-runbook`](skills/operation-runbook/SKILL.md) | How is this performed, and can it be automated? | advise |
-| [`operation-readiness`](skills/operation-readiness/SKILL.md) | Is this service fit to run, and by whom? | review — never edits |
+| [`operation-incident`](skills/operation-incident/SKILL.md) | Something is broken right now — what do we do? | `full` |
+| [`operation-change`](skills/operation-change/SKILL.md) | Is it safe to ship this, and how do we undo it? | `full` |
+| [`operation-oncall`](skills/operation-oncall/SKILL.md) | Who gets paged, when, and is this worth waking someone for? | `full` |
+| [`operation-runbook`](skills/operation-runbook/SKILL.md) | How is this performed, and can it be automated? | `full` |
+| [`operation-readiness`](skills/operation-readiness/SKILL.md) | Is this service fit to run, and by whom? | `read-only` — no Write or Edit |
 
 ## The four ideas the set is built on
 
@@ -148,7 +148,8 @@ operations-skills/
 ├── Makefile
 ├── install.sh
 ├── operation-registry/           # budgets, boundaries, routes, delivered blocks
-├── operation-tools/              # validate · test_validate · render · pre-commit
+├── operation-tools/              # validate · test_validate · render · figures_check
+│                                 # engine · refute · githooks/pre-commit
 └── skills/                       # where install.sh looks
     ├── _operation/               # contracts in force on every run
     └── operation-<facet>/
@@ -156,6 +157,7 @@ operations-skills/
         │                         # Always·Never / Verify with / Done when
         ├── _operation -> ../_operation
         ├── registry   -> ../../operation-registry
+        ├── refute.py  -> ../../operation-tools/refute.py
         ├── playbooks/            # judgement. Budgeted, and must not rot
         └── reference/            # what goes stale. No line budget, dated instead
 ```
@@ -167,16 +169,19 @@ as external so the path checker does not read them as references into this repo.
 ## Working on it
 
 ```sh
-make check      # what CI runs: the rules, then proof the rules still fire
+make check      # what CI runs: the rules, proof the rules still fire, the CLI figures
 make render     # after editing anything in operation-registry/delivered/
 make hooks      # run the rules on every commit
+make engines    # which checker engines (claude · codex · agy) answer here
+make refute CLAIMS=claims.json RUNNING=claude   # put claims to the other engines
 ```
 
 ## Installing
 
 ```sh
 ./install.sh                    # symlink skills/operation-* into ~/.claude/skills
-make link                       # the same thing, via make
+./install.sh --copy             # a self-contained copy; --uninstall removes either
+make link                       # symlink into every installed CLI: claude, codex, agy
 ```
 
 Each `operation-*` skill is linked individually and reaches its contracts through
@@ -185,8 +190,9 @@ the symlinks inside it. Nothing un-prefixed is copied anywhere.
 ## What this does not guarantee
 
 - **`allowed-tools` is one CLI's mechanism.** Where a tool grant is not
-  enforced, the `Never` lines are discipline and nothing more. Four of five
-  skills hold `Bash`, so a determined misuse is always reachable
+  enforced, the `Never` lines are discipline and nothing more. All five
+  skills hold `Bash` — `read-only` included, since `Bash` can write a file —
+  so a determined misuse is always reachable
 - **Nothing here stops a skill acting on production.** The class says what it may
   write locally; whether a command observes or changes is read by a person
 - **The fixtures do not model how a model chooses.** They catch a missing or

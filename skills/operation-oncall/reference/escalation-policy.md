@@ -50,7 +50,7 @@ Countermeasures:
 - **Re-escalate on stalled progress**: if no status update within 15 minutes of acknowledgement
   on a SEV1/SEV2, resume escalation automatically.
 - Require an explicit `taking-it` action distinct from `ack`, where the tooling supports it.
-- Track time-to-first-diagnostic-action alongside MTTA (see `oncall-health.md`).
+- Track time-to-first-diagnostic-action alongside MTTA (see `reference/oncall-health.md`).
 
 ## Severity-to-Channel Routing
 

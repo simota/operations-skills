@@ -40,8 +40,8 @@ unknown cannot be tiered, staffed, or funded correctly.
 
 ## Requirements by Tier
 
-The requirement matrix is canonical in `operation-readiness/SKILL.md` § Tier Requirements —
-it is always loaded, so it is not duplicated here. This file covers derivation, dependency
+The requirement matrix is canonical in `playbooks/verdict.md` § Tier Requirements —
+it is read whenever a verdict is issued, so it is not duplicated here. This file covers derivation, dependency
 inversion, cost, and review.
 
 ## Dependency Tier Inversion
