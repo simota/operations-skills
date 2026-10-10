@@ -15,7 +15,7 @@ OPERATION_HANDOFF:
   state:
     subject: "[service, change, or incident identifier]"
     phase: "[phase the sending skill completed]"
-    service_tier: T0 | T1 | T2 | T3
+    service_tier: ST0 | ST1 | ST2 | ST3
     safety_tier: T1 | T2 | T3 | T4
     terms: {}                  # the names this run used, as the glossary spells them
   carried:

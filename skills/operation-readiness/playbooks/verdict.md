@@ -5,7 +5,7 @@
 
 ```yaml
 service: "<name>"
-tier: T0 | T1 | T2 | T3
+tier: ST0 | ST1 | ST2 | ST3
 reviewed: <YYYY-MM-DD>
 reviewer: "<named individual>"
 verdict: GO | GO-WITH-CONDITIONS | NO-GO
@@ -38,7 +38,7 @@ than a narrow one that says so.
 
 ## Tier Requirements
 
-| Requirement | T0 (critical) | T1 (important) | T2 (standard) | T3 (best effort) |
+| Requirement | ST0 (critical) | ST1 (important) | ST2 (standard) | ST3 (best effort) |
 |-------------|---------------|----------------|---------------|------------------|
 | Availability target | Defined SLO, error budget policy | Defined SLO | Target, no budget policy | None |
 | On-call | 24/7 primary + secondary | 24/7 primary | SEV1 only off-hours | Business hours |
@@ -48,14 +48,14 @@ than a narrow one that says so.
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |
 | Postmortem | All SEV1/SEV2 | All SEV1/SEV2 | SEV1 | On repeat |
 | Escalation depth | Full chain | Full chain without a secondary tier, exec tier business hours | Two tiers | One tier |
-| Change approval | Service owner; second reviewer at `operation-change` risk score ≥16/25 | Same as T0 | Same as T0 | None |
-| Dependency tier floor | All deps T0 | All deps T0–T1 | All deps T0–T2 | None |
+| Change approval | Service owner; second reviewer at `operation-change` risk score ≥16/25 | Same as ST0 | Same as ST0 | None |
+| Dependency tier floor | All deps ST0 | All deps ST0–ST1 | All deps ST0–ST2 | None |
 
 This table is canonical; `reference/service-tiering.md` covers how the tier is derived, not
 what it requires.
 
 **A service cannot be more available than its least available dependency.** A dependency
-tiered below the service is a **blocking** finding at T0, T1, and T2 — not only at T0. The
+tiered below the service is a **blocking** finding at ST0, ST1, and ST2 — not only at ST0. The
 exceptions are narrow and must be demonstrated, not asserted: the dependency is genuinely
 optional (the service degrades gracefully and that path is tested), or it is redundant across
 independent providers. "We cache it" is an exception only if the service is verified to run

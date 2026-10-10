@@ -13,10 +13,10 @@ constraint that binds first.
 
 | Tier | Required headroom | Verification |
 |------|-------------------|--------------|
-| T0 | ≥3× current peak | Load tested to saturation, with the saturating resource named |
-| T1 | ≥2× | Load tested |
-| T2 | ≥1.5× | Estimated with a stated method |
-| T3 | None | — |
+| ST0 | ≥3× current peak | Load tested to saturation, with the saturating resource named |
+| ST1 | ≥2× | Load tested |
+| ST2 | ≥1.5× | Estimated with a stated method |
+| ST3 | None | — |
 
 **Name the next ceiling with its value.** "It scales" is not an answer. "Tested to saturation at
 4.2× current peak; the database connection pool is what saturated" is.
@@ -33,7 +33,7 @@ required = peak
 ```
 
 A service behind a two-region active/active with 10-minute autoscaling lead needs more than
-`2×` even at T1. Where the derived figure is below the tier floor, the floor wins.
+`2×` even at ST1. Where the derived figure is below the tier floor, the floor wins.
 
 ## Finding the Real Constraint
 

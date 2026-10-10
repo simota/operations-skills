@@ -70,8 +70,8 @@ after 5 minutes, not 15.
 responders learn to treat pages as background noise.
 
 **Precedence when this table and the service tier disagree**: the table above is the routing for
-T0 and T1. For T2 and T3, the tier's off-hours degradation (below) wins — a SEV2 on a T2 service
-becomes a business-hours ticket. **A SEV1 always pages, at every tier**; if a T3 service can
+ST0 and ST1. For ST2 and ST3, the tier's off-hours degradation (below) wins — a SEV2 on an ST2 service
+becomes a business-hours ticket. **A SEV1 always pages, at every tier**; if an ST3 service can
 produce a genuine SEV1, its tier is wrong.
 
 ## Escalation Authority
@@ -92,10 +92,10 @@ never as an unwritten norm:
 
 | Service tier | Off-hours behaviour |
 |--------------|--------------------|
-| T0 | Full chain, 24/7, no degradation |
-| T1 | Full chain 24/7, with Tier 2 skipped where the rotation has no secondary; Tier 5 (executive) business hours only |
-| T2 | Page for SEV1 only; SEV2 becomes a business-hours ticket |
-| T3 | No off-hours paging; SEV2–4 queue to business hours. A genuine SEV1 still pages — and triggers a tier review, because a T3 service should not be able to produce one |
+| ST0 | Full chain, 24/7, no degradation |
+| ST1 | Full chain 24/7, with Tier 2 skipped where the rotation has no secondary; Tier 5 (executive) business hours only |
+| ST2 | Page for SEV1 only; SEV2 becomes a business-hours ticket |
+| ST3 | No off-hours paging; SEV2–4 queue to business hours. A genuine SEV1 still pages — and triggers a tier review, because an ST3 service should not be able to produce one |
 
 Service tiers are defined by `operation-readiness`.
 

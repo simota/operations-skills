@@ -6,11 +6,10 @@ never let a lower rung masquerade as a higher one.
 
 **The rungs are `O<n>`, and the letter is load-bearing.** This ladder grades *how directly
 a claim was observed*, and `O1` is the strongest rung. Elsewhere in this ecosystem an
-`E<n>` ladder grades something else — distance from the hypothesis that produced the code —
-and it runs the other way, with `E0` weakest. Two ladders sharing one letter in one roster
-is how a single `E1` comes to mean both "captured now" and "static analysis" on the same
-page. **Never write `E<n>` for an observation rung**, and when a report crosses into a
-verification claim, name which ladder each rung came from.
+`E<n>` ladder grades distance from the hypothesis that produced the code, and runs the
+other way. Two ladders sharing one letter is how a single `E1` comes to mean both
+"captured now" and "static analysis". **Never write `E<n>` for an observation rung**, and
+when a report crosses into a verification claim, name which ladder each rung came from.
 
 | Rung | Name | What it is | Usable for |
 |------|------|------------|------------|
@@ -22,8 +21,9 @@ verification claim, name which ladder each rung came from.
 
 ## Rules
 
-- **A root cause requires `O2`.** "The cache was probably cold" is `O5` — it is a
-  hypothesis, and labelling it a cause closes the incident on a guess.
+- **A root cause requires `O2`** — or, where reproducing it is unsafe, the causal mechanism
+  itself observed (`O1`), never inferred from the fix working. A correlation, or a symptom
+  replayed without its trigger, stays a hypothesis: "the cache was probably cold" is `O5`.
 - **Mitigation may proceed on `O1`.** Stopping the bleeding does not wait for `O2`.
   Restore service first, prove cause second.
 - **`O4` never survives a postmortem unchallenged.** Human recollection of timing is

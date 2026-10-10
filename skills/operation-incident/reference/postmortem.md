@@ -74,7 +74,7 @@ What went well. What was slow, and why. Where the response structure held or bro
 <Not "the root cause". Complex systems fail through combinations.>
 1. <Factor> — <how it contributed> — <observation rung>
 2. ...
-Each factor states its observation rung. Any factor not reproduced (`O2`) is labelled "hypothesis, unverified".
+Each factor states its observation rung. Any factor neither reproduced (`O2`) nor, where reproducing is unsafe, observed in its mechanism (`O1`) is labelled "hypothesis, unverified".
 
 ## What Went Well
 <Genuine, specific. Not a courtesy section — these are the controls worth protecting.>

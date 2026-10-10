@@ -1,4 +1,4 @@
-- **Two scales, and neither is a ceremony dial.** The **service tier** (`T0`-`T3`)
+- **Two scales, and neither is a ceremony dial.** The **service tier** (`ST0`-`ST3`)
   says what this service failing costs and is assigned before any requirement is
   applied; the **safety tier** (`T1`-`T4`, `_operation/SAFETY_TIERS.md`) says what
   *this action* can destroy and is classified before the steps are designed. What scales is the depth of review

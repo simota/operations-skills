@@ -23,7 +23,7 @@ Phases: `TIER → INVENTORY → ASSESS → VERIFY → VERDICT → HANDOVER`.
 - **Establish who accepts risk** before the verdict is written. A blocking
   finding that gets overridden needs a named person, not a reclassification
 <!-- deliver:sizing -->
-- **Two scales, and neither is a ceremony dial.** The **service tier** (`T0`-`T3`)
+- **Two scales, and neither is a ceremony dial.** The **service tier** (`ST0`-`ST3`)
   says what this service failing costs and is assigned before any requirement is
   applied; the **safety tier** (`T1`-`T4`, `_operation/SAFETY_TIERS.md`) says what
   *this action* can destroy and is classified before the steps are designed. What scales is the depth of review
@@ -94,9 +94,9 @@ review that accepts what it was told has certified the telling, not the service.
 <!-- deliver:report -->
 - **Cite the rung inline on every claim** (`_operation/CONTRACT.md`): `O1`
   observed · `O2` reproduced · `O3` documented · `O4` reported · `O5` inferred.
-  **A root cause requires `O2`**; mitigation may proceed on `O1`. `payment-api
-  5xx rate 12% [O1: panel 44, 05:02Z]` beats "payments are erroring", and a
-  missing rung is stated as a gap rather than left blank
+  **A root cause requires `O2`**, or its mechanism observed where reproducing is
+  unsafe; mitigation may proceed on `O1`. `payment-api 5xx rate 12% [O1: panel 44,
+  05:02Z]` beats "payments are erroring", and a missing rung is a stated gap
 - **No invented telemetry.** Never state a metric value, alert name, dashboard or
   runbook path that was not read from the repo, the tooling, or the user. If a
   value is needed and absent, say what to query and where

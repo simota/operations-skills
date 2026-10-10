@@ -50,7 +50,7 @@ safe if the service comes back with its detection intact — retiring alerts whi
 can still be turned back on produces a running service nobody is watching.
 
 Step 10 is irreversible. The gap between step 8 and step 10 is the safety margin, and it
-should be measured in months for any service tiered T0–T2.
+should be measured in months for any service tiered ST0–ST2.
 
 ### Darkening Test Design
 
@@ -66,7 +66,7 @@ as a 24-hour outage:
 - **Return an explicit, identifiable error** (a distinct status and message naming the
   decommission), so a caller's logs point at the cause instead of a generic failure.
 - **Abort immediately** on any impact outside the expected consumer set.
-- **Never darken a T0 or T1 service without an incident-grade plan** — at those tiers, run the
+- **Never darken an ST0 or ST1 service without an incident-grade plan** — at those tiers, run the
   test in a mirrored or single-region scope first.
 
 ## Data Retention
