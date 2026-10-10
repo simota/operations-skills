@@ -25,8 +25,10 @@ recollection of timing is systematically wrong. A missing rung is stated as a
 gap, never left blank — and no metric, alert, dashboard or runbook path is
 stated that was not read.
 
-**Two scales, and neither is a ceremony dial.** The service tier says what the
-service failing costs; the safety tier says what *this action* can destroy. What
+**Two scales, and neither is a ceremony dial.** The service tier (`ST0`–`ST3`,
+`ST0` most critical) says what the service failing costs; the safety tier (`T1`–`T4`,
+`T4` most destructive) says what *this action* can destroy — two prefixes, because
+the two run in opposite directions. What
 scales is the depth of review and the number of people involved — never the
 observation rung or the approval the tier demands. **Incident pressure changes the
 approver, never the tier.**

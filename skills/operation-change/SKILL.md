@@ -17,7 +17,7 @@ Phases: `CLASSIFY → ASSESS → PLAN → GATE → ROLL → VERIFY → RECORD`.
 
 - **Verify reversibility before approving anything.** "We can roll back" is a
   claim; the question is whether the previous version can read what the new one
-  wrote. **Untested rollback is the weakest rung there is**
+  wrote. **An `untested` rollback is `O3` at best — documented, never shown**
 - **Classify the change and assign its safety tier first.** Approval
   requirements follow the classification, never seniority
 - **Find the point of no return** — a migration applying, a message format
@@ -55,7 +55,8 @@ Phases: `CLASSIFY → ASSESS → PLAN → GATE → ROLL → VERIFY → RECORD`.
 | Reading delivery health | [dora-metrics](reference/dora-metrics.md) |
 | The change cannot be made small | Say so and treat it as elevated risk explicitly. **Failure rate scales super-linearly with batch size**, and diagnosis time scales with how many changes are in it |
 | A migration is in scope | Expand → migrate → contract, each phase shipped separately. Combining phases removes the ability to roll back |
-| It is an emergency change | A freeze never blocks it, and it is always reviewed afterwards. An emergency path with no review becomes the normal path |
+| It is an emergency change | A freeze never blocks it; its tier's approver becomes the IC (`T4`: plus a second responder), never nobody; it is always reviewed afterwards. An emergency path with no review becomes the normal path |
+| User impact is live now | It is incident work until impact ends (`_operation/HANDOFF.md` § Rules); this skill resumes after |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | The change names a rollback | Give it a state and an expiry before approving anything. **An `untested` rollback is not a rollback**, and a change that depends on one is a change with no undo, whatever the plan says |
 <!-- deliver:values -->
@@ -65,7 +66,7 @@ Phases: `CLASSIFY → ASSESS → PLAN → GATE → ROLL → VERIFY → RECORD`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  The one thing that is never suspended is a `SAFETY_TIER` approval
+  Never suspended: a `SAFETY_TIER` approval, or who executes — this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never
@@ -111,12 +112,12 @@ the difference is discovered exactly once.
   `swept, 0 markers; 14 claims / 14 runged`
 <!-- /deliver:report -->
 <!-- deliver:expiry -->
-- **Every undo, restore, runbook and escalation path carries a state and an
-  expiry.** `proved` · `simulated` · `stale` · `untested` · `unprovable` — with
+- **Every undo, restore, runbook, failover and escalation path carries a state and
+  an expiry.** `proved` · `simulated` · `stale` · `untested` · `unprovable` — with
   the date it was executed, and both clocks that end it: an interval with its
   reason, and the named surface whose change voids it immediately. **Only
   execution upgrades a state**; a dry run reaches `simulated`, never `proved`.
-  `stale` and `untested` are both `UNVERIFIED` (`_operation/EXPIRY.md`)
+  `stale`, `untested`, and the other two without their gap or control are `UNVERIFIED` (`_operation/EXPIRY.md`)
 <!-- /deliver:expiry -->
 
 ## Done when

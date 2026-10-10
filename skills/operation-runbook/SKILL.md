@@ -1,6 +1,6 @@
 ---
 name: operation-runbook
-description: "Writing procedure that works at 3 a.m.: runbook anatomy, preconditions and abort conditions, testing it, the automation ladder, and toil accounting."
+description: "Writing reusable procedure that works at 3 a.m.: runbook anatomy, preconditions and abort conditions, testing it, the automation ladder, and toil accounting."
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 <!-- operation:contract -->
@@ -64,7 +64,7 @@ Phases: `SCOPE → CLASSIFY → DRAFT → TEST → AUTOMATE → GOVERN`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  The one thing that is never suspended is a `SAFETY_TIER` approval
+  Never suspended: a `SAFETY_TIER` approval, or who executes — this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never
@@ -77,8 +77,8 @@ Phases: `SCOPE → CLASSIFY → DRAFT → TEST → AUTOMATE → GOVERN`.
 - Always: name each mutating step's **reversal inline, beside the step** — not
   in a rollback section 200 lines down that nobody reaches under pressure
 - Always: state what a step does when run twice
-- Never: automate a procedure that has not been executed manually and
-  successfully at least twice. **Automation of an unproven procedure encodes a
+- Never: automate a procedure not executed manually and successfully at least
+  twice, by someone who did not write it. **Automation of an unproven procedure encodes a
   guess and executes it faster**
 - Never: write a step whose expected observation you cannot state
 - Never: annotate a step with what its command already says — the expected
@@ -113,12 +113,12 @@ evidences that a procedure exists and nothing about whether it works.
   `swept, 0 markers; 14 claims / 14 runged`
 <!-- /deliver:report -->
 <!-- deliver:expiry -->
-- **Every undo, restore, runbook and escalation path carries a state and an
-  expiry.** `proved` · `simulated` · `stale` · `untested` · `unprovable` — with
+- **Every undo, restore, runbook, failover and escalation path carries a state and
+  an expiry.** `proved` · `simulated` · `stale` · `untested` · `unprovable` — with
   the date it was executed, and both clocks that end it: an interval with its
   reason, and the named surface whose change voids it immediately. **Only
   execution upgrades a state**; a dry run reaches `simulated`, never `proved`.
-  `stale` and `untested` are both `UNVERIFIED` (`_operation/EXPIRY.md`)
+  `stale`, `untested`, and the other two without their gap or control are `UNVERIFIED` (`_operation/EXPIRY.md`)
 <!-- /deliver:expiry -->
 
 ## Done when

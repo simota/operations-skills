@@ -8,8 +8,8 @@ decides who may run it, whether a human confirms, and what must be verified afte
 
 | Tier | Blast radius | Reversibility | Who executes | Required before execution |
 |------|--------------|---------------|----------|---------------------------|
-| `T1` | Single process / single replica / read-only | Instant, no state change | A person or their automation; this agent only a bounded read-only observation | Target and command stated; output captured |
-| `T2` | Single service, one environment | Reversible within minutes (redeploy, flag flip) | A person or their automation, then post-verify | Target, command and rollback command stated |
+| `T1` | Single process / single replica / read-only | Instant, no state change | A person, or automation a person set up; this agent only a bounded read-only observation | Target and command stated; output captured |
+| `T2` | Single service, one environment | Reversible within minutes (redeploy, flag flip) | A person, or automation a person set up — never this agent, whatever tool it holds; then post-verify | Target, command and rollback command stated |
 | `T3` | Multiple services, or customer-visible behaviour | Reversible but slow (hours) or partially lossy | A person, after named approval | Named approver + rollback rehearsed |
 | `T4` | Irreversible mutation, destruction, or loss of access | Cannot be undone in place; recovery needs an external copy, or is impossible | Human invokes; agent advises only | Recovery path verified (table below) + two-person rule |
 
@@ -23,7 +23,7 @@ written down and exercised, classify it by that reversal:
 | Action | `T4` when | Lower when |
 |--------|-----------|------------|
 | Data mutation / backfill | No verified down-path; the prior values are not recoverable | Prior values are preserved (dual-write, versioned column, snapshot taken and restore-tested) → `T2`–`T3` by blast radius |
-| Cross-region failover | Failback is unexercised, or the regions diverge writes | Failback exercised within the tier's DR cadence and writes are single-primary → `T3` |
+| Cross-region failover | Failback is unexercised, or the regions diverge writes | Failback exercised within the service tier's DR cadence and writes are single-primary → `T3` |
 | Credential rotation | The old credential is revoked before the new one is confirmed | Old credential retained and revoked only after the new one is verified in use → `T3` |
 | Deletion | Any | — deletion is always `T4` |
 | Third-party side effect (charge, email, webhook) | Any | — never reversible; requires explicit acceptance, not approval |
@@ -38,10 +38,10 @@ documented. An unexercised reversal is `unknown reversibility`, which is `T4` by
 
 | Action | Verified recovery path means |
 |--------|------------------------------|
-| Data mutation / deletion | A backup covering the affected rows has been **restored** in a test, not merely taken |
+| Data mutation / deletion | A backup covering the affected rows has been **restored** in a test, not merely taken — `simulated`, so the gap is stated |
 | Credential rotation | The old credential is still valid and a rollback-to-old procedure is stated; revocation is a separate, later step |
 | Cross-region failover | Failback has been exercised, and the divergence-reconciliation procedure is written |
-| Restore-from-backup | The restore has been rehearsed against a copy at current data volume |
+| Restore-from-backup | The restore has been rehearsed against a copy at current data volume — `simulated`, gap stated |
 | Third-party side effect | No recovery path exists. Requires explicit written acceptance of the consequence by a named individual, in place of a recovery path |
 
 ## Classification Rules
@@ -66,7 +66,7 @@ Incident pressure does not lower a tier. It changes *who* approves, not *whether
 | Situation | Normal approver | Incident approver |
 |-----------|-----------------|-------------------|
 | `T3` | Service owner | Incident Commander |
-| `T4` | Service owner + change approver | Incident Commander + second responder (two-person rule holds) |
+| `T4` | Service owner + a second reviewer | Incident Commander + second responder (two-person rule holds) |
 
 If the approver cannot be reached, the correct action is to escalate, not to proceed.
 Record every skipped approval as an incident action item — a skipped approval is a control
@@ -85,4 +85,4 @@ SAFETY_TIER:
   verification: "[what proves the action worked]"
 ```
 
-`reversal: NONE` on anything below `T4` is a classification error — re-classify.
+`reversal: NONE` on a `T2` or `T3` action is a classification error — re-classify; a `T1` read writes `NONE (read-only)`.

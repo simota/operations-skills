@@ -36,13 +36,13 @@ OPERATION_HANDOFF:
 |-------|------|
 | `operation-readiness` → `operation-runbook` → `operation-oncall` | New service entering production |
 | `operation-oncall` → `operation-incident` | A page escalates into a declared incident |
-| `operation-incident` → `operation-runbook` | Postmortem produced a repeatable procedure |
+| `operation-incident` → `operation-runbook` or `operation-oncall` | A postmortem action item is a procedure, or an alert or escalation fix |
 | `operation-incident` → `operation-change` | Fix requires a controlled rollout |
 | `operation-change` → `operation-incident` | A change caused impact; rollback is now incident work |
 | `operation-runbook` → `operation-oncall` | New runbook must be linked from its alert |
 | `operation-change` or `operation-oncall` → `operation-runbook` | A rollout or an alert needs a procedure that outlives it |
 | `operation-incident` → `operation-readiness` (`systemic`) | A component has appeared in ≥3 postmortems |
-| `operation-oncall` → `operation-change` | A change's risk window can or cannot be staffed |
+| `operation-change` ↔ `operation-oncall` | An elevated change needs its risk window staffed, and on-call says whether it can be |
 
 ## Rules
 

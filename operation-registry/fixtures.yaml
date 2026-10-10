@@ -8,6 +8,8 @@
   expect: operation-incident
 - ask: "write the postmortem for yesterday"
   expect: operation-incident
+- ask: "there is an outage right now, what do we do"
+  expect: operation-incident
 - ask: "design the mitigation path before we touch anything"
   expect: operation-incident
 - ask: "how should we do this production change and roll it out"

@@ -106,8 +106,9 @@ Neither CLI puts the identity it used into ordinary output.
   made as the given service account … instead of the currently selected
   account". After that, `gcloud auth list` is not the identity that acted.
 
-So the first line of any capture is `aws sts get-caller-identity` or
-`gcloud config list` plus `gcloud auth list`, recorded in the timeline. Pass
+So the first line of any capture is `aws sts get-caller-identity`, or `gcloud config list`
+(its `impersonate_service_account`, when set, is who acts), compared with the target's
+account or project and recorded in the timeline. Pass
 `--profile` / `--region` / `--project` explicitly for the rest of the incident:
 a command that means something different in someone else's shell is not
 reproducible evidence.

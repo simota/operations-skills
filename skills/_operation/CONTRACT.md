@@ -13,7 +13,7 @@ when a report crosses into a verification claim, name which ladder each rung cam
 
 | Rung | Name | What it is | Usable for |
 |------|------|------------|------------|
-| `O1` | Observed | Metric, log line, trace, or command output captured now | Declaring, mitigating, closing |
+| `O1` | Observed | Metric, log line, trace, or command output captured now | Declaring, mitigating, closing; a cause's mechanism where reproducing is unsafe |
 | `O2` | Reproduced | The behaviour was triggered deliberately and repeated | Root cause claims |
 | `O3` | Documented | Runbook, ADR, config in version control | Procedure design |
 | `O4` | Reported | A human said so | Starting an investigation |

@@ -54,6 +54,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
 | The rota is unhealthy and you need the cause | [oncall-health](reference/oncall-health.md) — attribute before fixing |
 | Passing the pager | [shift-handoff](reference/shift-handoff.md) |
 | Bringing someone onto the rota | [onboarding](reference/onboarding.md) |
+| The page is firing now with user impact | It keeps paging; the live response is incident work, and the verdict waits until impact ends |
 | An alert points at no procedure | It stays, conditionally — the missing runbook is a blocking gap, not a reason to delete a real signal |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | The escalation policy is written or changed | An escalation path is proved by a page that reached a human, not by the tool agreeing with itself. Give the roster an expiry: it goes `stale` the moment the people change |
@@ -64,7 +65,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  The one thing that is never suspended is a `SAFETY_TIER` approval
+  Never suspended: a `SAFETY_TIER` approval, or who executes — this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never
@@ -90,8 +91,8 @@ Page load is `O1` — counted from the paging system, over a stated window. A
 rotation claimed to be sustainable without that count is `O5`, and sustainable
 is exactly the claim people are worst at estimating about their own rota.
 
-- **Every verdict names which of the four criteria decided it.** A verdict
-  without that is an opinion about an alert
+- **Every verdict names which of the four criteria decided it** — or, for `MERGE`,
+  the parent alert and the co-fire rate. A verdict without that is an opinion
 <!-- deliver:report -->
 - **Cite the rung inline on every claim** (`_operation/CONTRACT.md`): `O1`
   observed · `O2` reproduced · `O3` documented · `O4` reported · `O5` inferred.
@@ -111,12 +112,12 @@ is exactly the claim people are worst at estimating about their own rota.
   `swept, 0 markers; 14 claims / 14 runged`
 <!-- /deliver:report -->
 <!-- deliver:expiry -->
-- **Every undo, restore, runbook and escalation path carries a state and an
-  expiry.** `proved` · `simulated` · `stale` · `untested` · `unprovable` — with
+- **Every undo, restore, runbook, failover and escalation path carries a state and
+  an expiry.** `proved` · `simulated` · `stale` · `untested` · `unprovable` — with
   the date it was executed, and both clocks that end it: an interval with its
   reason, and the named surface whose change voids it immediately. **Only
   execution upgrades a state**; a dry run reaches `simulated`, never `proved`.
-  `stale` and `untested` are both `UNVERIFIED` (`_operation/EXPIRY.md`)
+  `stale`, `untested`, and the other two without their gap or control are `UNVERIFIED` (`_operation/EXPIRY.md`)
 <!-- /deliver:expiry -->
 
 ## Done when
