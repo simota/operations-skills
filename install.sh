@@ -28,7 +28,7 @@ while [[ $# -gt 0 ]]; do
     --copy)      MODE="copy";      shift ;;
     --uninstall) MODE="uninstall"; shift ;;
     --dest)
-      [[ $# -ge 2 && -n "$2" ]] || { echo "--dest needs a directory" >&2; usage; exit 1; }
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || { echo "--dest needs a directory" >&2; usage; exit 1; }
       DEST_DIR="$2"; shift 2 ;;
     --force)     FORCE=1;          shift ;;
     -h|--help)   usage; exit 0 ;;

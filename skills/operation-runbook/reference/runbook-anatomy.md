@@ -14,7 +14,7 @@ runbook: payments-api/rollback-failed-deploy
 purpose: "Return payments-api to the last known-good revision"
 trigger: "PaymentsAPIErrorRateHigh, or manual after a bad deploy"
 tier: T2
-approval: AUTONOMOUS
+approval: pre-approved
 duration: "5-8 minutes"
 idempotent: yes
 dry_run: "deploy rollback --dry-run --service payments-api"

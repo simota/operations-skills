@@ -8,8 +8,8 @@ decides who may run it, whether a human confirms, and what must be verified afte
 
 | Tier | Blast radius | Reversibility | Who executes | Required before execution |
 |------|--------------|---------------|----------|---------------------------|
-| `T1` | Single process / single replica / read-only | Instant, no state change | A person; the agent only a bounded read-only observation | Target and command stated; output captured |
-| `T2` | Single service, one environment | Reversible within minutes (redeploy, flag flip) | A person, then post-verify | Target, command and rollback command stated |
+| `T1` | Single process / single replica / read-only | Instant, no state change | A person or their automation; this agent only a bounded read-only observation | Target and command stated; output captured |
+| `T2` | Single service, one environment | Reversible within minutes (redeploy, flag flip) | A person or their automation, then post-verify | Target, command and rollback command stated |
 | `T3` | Multiple services, or customer-visible behaviour | Reversible but slow (hours) or partially lossy | A person, after named approval | Named approver + rollback rehearsed |
 | `T4` | Irreversible mutation, destruction, or loss of access | Cannot be undone in place; recovery needs an external copy, or is impossible | Human invokes; agent advises only | Recovery path verified (table below) + two-person rule |
 

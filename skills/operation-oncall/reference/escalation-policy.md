@@ -13,7 +13,7 @@ Verified: 2026-08-21 — no automated check.
 | 0 | Automated remediation | Alert fires, pattern is known | 2 min (or on failure) |
 | 1 | Primary on-call | Automation absent or failed | 5 min unacknowledged |
 | 2 | Secondary on-call | Primary unacknowledged, or primary requests help | 3 min unacknowledged |
-| 3 | Service owner / team lead | Tier 2 unacknowledged, or scope exceeds on-call authority | 10 min |
+| 3 | Service owner / team lead | Tier 2 unacknowledged, or scope exceeds on-call authority | 5 min |
 | 4 | Engineering manager + IC pool | Tier 3 unacknowledged, or SEV1 declared | 10 min |
 | 5 | Executive / customer-facing leadership | SEV1 past the communication threshold, or regulatory exposure | — |
 

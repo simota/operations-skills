@@ -90,8 +90,8 @@ at one raw record.
 `aws help`: with automatic pagination disabled "the AWS CLI will only make one
 call, for the first page of results". The only marker is a `NextToken` (or a
 service-specific `NextMarker` / `IsTruncated`) field in the output, and a
-`--query` or `--output table` discards it. `--max-items` truncates the same way,
-and emits `NextToken` only in unfiltered output. Check for it before reporting a count.
+`--query` that projects only the items discards it. `--max-items` truncates the same
+way and emits `NextToken` unless a query drops it. Check for it before reporting a count.
 
 During an incident this is how a fleet-wide problem gets reported as affecting
 the first N instances.

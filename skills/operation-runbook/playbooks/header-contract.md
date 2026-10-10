@@ -10,7 +10,7 @@ runbook: <service>/<procedure-name>
 purpose: "<the goal state, one line>"
 trigger: "<alert name, symptom, or schedule>"
 tier: T1 | T2 | T3 | T4          # max across all steps
-approval: AUTONOMOUS | "<role>"  # required before step 1
+approval: pre-approved | "<role>"  # before step 1; pre-approved is T1/T2 only, never this agent
 duration: "<expected wall-clock>"
 idempotent: yes | partial | no
 dry_run: "<command>" | none
