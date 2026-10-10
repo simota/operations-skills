@@ -9,7 +9,7 @@ it.
 Until user-visible impact ends, every decision is judged on whether it shortens
 impact. Root cause work happens after, or on a track that never blocks
 mitigation. **This inverts once impact has ended** — after that, a cause claimed
-without `O2` closes the incident on a guess and buys the same outage twice.
+without `O2` or an observed mechanism closes the incident on a guess — the same outage twice.
 
 ## 2. Honesty over reassurance
 
@@ -75,5 +75,5 @@ user impact, so this hatch is closer to hand here than anywhere else.
 - Two contracts in `_operation/` give conflicting instructions for this exact case
 
 When it fires: do the work, state which rule was suspended and why, and record
-the gap as `#TODO(agent): OUT-OF-SCOPE — <rule suspended>`, or in `open`. **The one thing it never suspends is a
-`SAFETY_TIER` approval** — that is not ceremony, it is the mechanism.
+the gap as `#TODO(agent): OUT-OF-SCOPE — <rule suspended>`, or in `open`. **It never suspends a
+`SAFETY_TIER` approval, or who executes** — that is not ceremony, it is the mechanism.

@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Physical paths throughout (`pwd -P`, which macOS's bash 3.2 and BSD tools have,
+# unlike `readlink -f`). A logical path made a run through a symlinked checkout
+# and a run through the real one refuse each other's links; the Makefile
+# resolves the same way.
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 SRC_DIR="$REPO_DIR/skills"
 DEST_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 MODE="link"
@@ -13,7 +17,8 @@ usage() {
 Usage: ./install.sh [--copy] [--uninstall] [--dest DIR] [--force]
 
   (default)     symlink skills/operation-* into ~/.claude/skills/
-  --copy        copy instead of symlinking (portable, but does not track updates)
+  --copy        copy instead of symlinking (does not track updates; tools stay
+                linked into this repo, which must remain in place)
   --uninstall   remove the operation-* skills THIS repo installed
   --dest DIR    install into DIR instead of ~/.claude/skills
   --force       overwrite a target that is not a symlink into this repo
@@ -43,9 +48,12 @@ STAMP=".installed-from"
 # Is $1 something this repo installed? A symlink resolving inside $SRC_DIR, or a
 # copy stamped with $SRC_DIR.
 ours() {
-  local target="$1" resolved
+  local target="$1" link resolved
   if [[ -L "$target" ]]; then
-    resolved="$(cd "$(dirname "$target")" && cd "$(readlink "$target")" 2>/dev/null && pwd)" || return 1
+    # Read the link before changing directory: with a relative --dest, the
+    # target's own path means nothing once the subshell has cd'd beside it.
+    link="$(readlink "$target")"
+    resolved="$(cd "$(dirname "$target")" && cd "$link" 2>/dev/null && pwd -P)" || return 1
     [[ "$resolved" == "$SRC_DIR"/* ]]
   else
     [[ -f "$target/$STAMP" && "$(cat "$target/$STAMP")" == "$SRC_DIR" ]]
@@ -91,6 +99,15 @@ for src in "$SRC_DIR"/operation-*; do
       rm -rf "$dest"
       # resolve the _operation symlink so the copy is self-contained
       cp -RL "$src" "$dest"
+      # A tool is not self-contained: refute.py imports engine.py beside it and
+      # reads the registry two levels up, so a dereferenced copy cannot start.
+      # Tools stay links into this repo, which a copy install still needs.
+      for tool in "$src"/*.py; do
+        [[ -L "$tool" ]] || continue
+        tool_dir="$(cd "$(dirname "$tool")" && cd "$(dirname "$(readlink "$tool")")" && pwd -P)"
+        rm -f "$dest/$(basename "$tool")"
+        ln -s "$tool_dir/$(basename "$(readlink "$tool")")" "$dest/$(basename "$tool")"
+      done
       printf '%s\n' "$SRC_DIR" > "$dest/$STAMP"
       echo "copied   $dest"
       ;;

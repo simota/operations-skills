@@ -45,12 +45,13 @@ quarterly reporting. The consumer nobody knew about is almost always a monthly j
 9. **Retain data** for the required period, offline, with a documented restore path.
 10. **Delete data** — `T4`, after the retention period, with explicit approval.
 
-**Observability is retired last, not first.** Steps 1–9 are reversible, and a reversal is only
+**Observability is retired last, not first.** Steps 1–7 and 9 are reversible; step 8 is not —
+its deletions and revocations are `T4` — which is why it waits for the verification window. A reversal is only
 safe if the service comes back with its detection intact — retiring alerts while the service
 can still be turned back on produces a running service nobody is watching.
 
-Step 10 is irreversible. The gap between step 8 and step 10 is the safety margin, and it
-should be measured in months for any service tiered T0–T2.
+Step 10 is irreversible too. The gap between step 8 and step 10 is the safety margin, and it
+should be measured in months for any service tiered ST0–ST2.
 
 ### Darkening Test Design
 
@@ -66,7 +67,7 @@ as a 24-hour outage:
 - **Return an explicit, identifiable error** (a distinct status and message naming the
   decommission), so a caller's logs point at the cause instead of a generic failure.
 - **Abort immediately** on any impact outside the expected consumer set.
-- **Never darken a T0 or T1 service without an incident-grade plan** — at those tiers, run the
+- **Never darken an ST0 or ST1 service without an incident-grade plan** — at those tiers, run the
   test in a mirrored or single-region scope first.
 
 ## Data Retention

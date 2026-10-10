@@ -13,12 +13,13 @@ Verified: 2026-08-21 — no automated check.
 runbook: payments-api/rollback-failed-deploy
 purpose: "Return payments-api to the last known-good revision"
 trigger: "PaymentsAPIErrorRateHigh, or manual after a bad deploy"
-tier: T2
+safety_tier: T2
 approval: pre-approved
 duration: "5-8 minutes"
 idempotent: yes
 dry_run: "deploy rollback --dry-run --service payments-api"
 owner: "<named individual>"
+backup_owner: "<a second named individual>"
 state: proved
 last_executed: "2026-08-14, <named individual>, production (incident)"
 expires: "2026-11-14 — the deploy tooling changes roughly quarterly"

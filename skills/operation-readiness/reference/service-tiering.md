@@ -1,8 +1,8 @@
 <!-- operation:deferred -->
 # Service Tiering
 
-Purpose: Assigning T0–T3, deriving requirements, dependency tier inversion.
-Read when: assigning T0–T3, deriving requirements, dependency tier inversion
+Purpose: Assigning ST0–ST3, deriving requirements, dependency tier inversion.
+Read when: assigning ST0–ST3, deriving requirements, dependency tier inversion
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
@@ -13,16 +13,16 @@ One hour is the default probe because it is comparable across services. It is th
 for **deadline-shaped** workloads — a monthly settlement job, a regulatory filing, a payroll
 run — where an hour of downtime costs nothing on most days and everything on one. For those,
 tier on the **impact of missing the deadline**, and record the window in which the service is
-effectively T0 even if it is T3 the rest of the month.
+effectively ST0 even if it is ST3 the rest of the month.
 
 ## Tier Definitions
 
 | Tier | Downtime impact in one hour | Examples |
 |------|----------------------------|----------|
-| `T0` | Revenue stops, regulatory exposure, or safety impact | Payment processing, authentication, order capture |
-| `T1` | Major feature unusable; customers notice and escalate | Search, notifications, primary API |
-| `T2` | Degraded experience with a workaround; internal disruption | Reporting, admin tooling, secondary features |
-| `T3` | Barely noticed within a business day | Internal dashboards, batch analytics, dev tooling |
+| `ST0` | Revenue stops, regulatory exposure, or safety impact | Payment processing, authentication, order capture |
+| `ST1` | Major feature unusable; customers notice and escalate | Search, notifications, primary API |
+| `ST2` | Degraded experience with a workaround; internal disruption | Reporting, admin tooling, secondary features |
+| `ST3` | Barely noticed within a business day | Internal dashboards, batch analytics, dev tooling |
 
 ## Deriving the Tier
 
@@ -47,7 +47,7 @@ inversion, cost, and review.
 ## Dependency Tier Inversion
 
 **A service cannot be more available than its least available dependency.** A dependency
-tiered below the service is a blocking finding at T0, T1, and T2.
+tiered below the service is a blocking finding at ST0, ST1, and ST2.
 
 Dependencies teams routinely omit from the list:
 
@@ -70,10 +70,10 @@ graceful degradation being the only one that does not require someone else's bud
 
 Tier requirements cost money and human nights. State the cost when assigning:
 
-- T0 needs a rotation of ≥6 people with secondary depth, plus 3× capacity headroom.
-- Tier inflation is expensive and self-defeating: when everything is T0, nothing is prioritised
+- ST0 needs a rotation of ≥6 people with secondary depth, plus 3× capacity headroom.
+- Tier inflation is expensive and self-defeating: when everything is ST0, nothing is prioritised
   during a multi-service incident.
-- **Tier inflation is detectable**: if more than roughly a quarter of services are T0, the
+- **Tier inflation is detectable**: if more than roughly a quarter of services are ST0, the
   tiering exercise has not been done — it has been negotiated.
 
 ## Reviewing Tiers

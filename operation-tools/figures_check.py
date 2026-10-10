@@ -14,6 +14,8 @@ tool and does not fail the run. That hole is announced rather than hidden: a che
 that silently passes when it cannot run is worse than no check, and one that reads
 its own inability to run as a wrong claim on the page is worse still.
 """
+from __future__ import annotations      # `str | None` on Python 3.9
+
 import pathlib
 import re
 import shutil
@@ -41,6 +43,10 @@ def norm(s: str) -> str:
     s = re.sub(r"^\s*>+", " ", s, flags=re.M)      # markdown block quotes
     for ch in "`'\"*":
         s = s.replace(ch, " ")
+    # Hyphens are dropped, not compared. help_of() rejoins a word groff split at
+    # the margin, and cannot tell that split from a break at a real hyphen
+    # ("command-" / "specific"), so both sides lose every hyphen alike.
+    s = s.replace("-", "")
     return " ".join(s.split()).casefold()
 
 
@@ -68,6 +74,31 @@ def body() -> str:
 
 # --- every command the pages cite exists -----------------------------------
 
+# Global options that take a value. Their value is not a subcommand:
+# `aws --profile prod ec2 ...` cites `aws ec2`, not `aws prod`.
+VALUE_FLAGS = {
+    "aws": {"--profile", "--region", "--output", "--query", "--endpoint-url",
+            "--color", "--ca-bundle", "--cli-read-timeout", "--cli-connect-timeout",
+            "--cli-binary-format", "--cli-input-json", "--cli-input-yaml"},
+    "gcloud": {"--project", "--account", "--configuration", "--format", "--verbosity",
+               "--impersonate-service-account", "--billing-project", "--flatten",
+               "--filter", "--limit", "--page-size", "--sort-by", "--zone", "--region",
+               "--access-token-file", "--trace-token"},
+}
+
+
+def subcommand_words(tool: str, rest: list[str]) -> list[str]:
+    words, skip = [], False
+    for w in rest:
+        if skip:
+            skip = False
+        elif w.startswith("-"):
+            skip = "=" not in w and w in VALUE_FLAGS.get(tool, set())
+        else:
+            words.append(w)
+    return words
+
+
 CMD = re.compile(r"(?:^|[`$(] ?)(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 -]+)")
 
 
@@ -85,7 +116,7 @@ def cited_commands() -> set[tuple[str, ...]]:
             if not m:
                 continue
             tool, rest = m.group(1), m.group(2).split()
-            words = [w for w in rest if not w.startswith("-")]
+            words = subcommand_words(tool, rest)
             depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
             if depth and len(words) >= depth:
                 out.add((tool, *words[:depth]))
@@ -100,7 +131,7 @@ def check_commands() -> int:
     n = 0
     for cmd in sorted(cmds):
         tool = cmd[0]
-        if not shutil.which(tool):
+        if not usable(tool):
             continue
         n += 1
         argv = list(cmd) + (["help"] if tool == "aws" else ["--help"])
@@ -141,8 +172,7 @@ def check_quotes() -> int:
                 fail("quotes", f"the pages no longer quote {phrase!r} — "
                                "the checker is enforcing a claim nobody makes")
         tool = cmd[0]
-        if not shutil.which(tool):
-            skipped.append(tool)
+        if not usable(tool):
             continue
         text = norm(help_of(*cmd, "help"))
         for phrase in phrases:
@@ -222,6 +252,25 @@ def unusable(tool: str, argv: list[str]) -> str | None:
         return None
     err = (r.stderr or r.stdout).strip().splitlines()
     return f"{tool} is installed but did not run: {err[0] if err else 'no output'}"
+
+
+_USABLE: dict[str, bool] = {}
+
+
+def usable(tool: str) -> bool:
+    """On PATH and able to start. Either failure is SKIPPED, never a finding:
+    a CLI that cannot run produces no help, and reading that as the page being
+    wrong sends someone to correct a page that is fine."""
+    if tool not in _USABLE:
+        if not shutil.which(tool):
+            skipped.append(tool)
+            _USABLE[tool] = False
+        else:
+            why = unusable(tool, [tool, "--version"])
+            if why:
+                skipped.append(why)
+            _USABLE[tool] = why is None
+    return _USABLE[tool]
 
 
 def run(argv: list[str], cwd: pathlib.Path) -> subprocess.CompletedProcess:

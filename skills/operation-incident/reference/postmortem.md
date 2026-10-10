@@ -74,7 +74,7 @@ What went well. What was slow, and why. Where the response structure held or bro
 <Not "the root cause". Complex systems fail through combinations.>
 1. <Factor> — <how it contributed> — <observation rung>
 2. ...
-Each factor states its observation rung. Any factor not reproduced (`O2`) is labelled "hypothesis, unverified".
+Each factor states its observation rung. Any factor neither reproduced (`O2`) nor, where reproducing is unsafe, observed in its mechanism (`O1`) is labelled "hypothesis, unverified".
 
 ## What Went Well
 <Genuine, specific. Not a courtesy section — these are the controls worth protecting.>
@@ -147,10 +147,11 @@ predicted, and are usually cheaper.
 Quarterly, across the postmortem corpus:
 
 - Cluster by contributing factor, by component, and by detection gap.
-- A factor appearing in ≥3 postmortems is a **systemic finding** — route it to
-  `operation-readiness`, not to another per-incident action item.
+- A component appearing in ≥3 postmortems is a **systemic finding** — route it to
+  `operation-readiness`, not to another per-incident action item. A contributing factor
+  recurring across components goes to the skill that owns that factor.
 - Track cumulative cost per cluster (total impact minutes, responder hours) — this is the
   argument that funds the durable fix.
 - Track action-item completion rate. Falling completion predicts repeat incidents.
-- Repeat incidents on the same component within 90 days: escalate to the service owner as a
-  fitness question, not as another incident.
+- Repeat incidents on the same component within 90 days: escalate to the service owner as an
+  ownership question, not as another incident. A third occurrence makes it systemic (above).

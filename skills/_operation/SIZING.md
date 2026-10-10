@@ -10,10 +10,10 @@ the subject, not off the request.**
 
 | Scale | Answers | Set by | Lives in |
 |---|---|---|---|
-| **Service tier** `T0`-`T3` | How much this service failing costs | the service, once | `operation-readiness` |
+| **Service tier** `ST0`-`ST3` | How much this service failing costs | the service, once | `operation-readiness` |
 | **Safety tier** `T1`-`T4` | How much *this action* can destroy | the action, every time | `_operation/SAFETY_TIERS.md` |
 
-**Neither is a ceremony dial.** A `T3` service still gets a real rollback plan;
+**Neither is a ceremony dial.** An `ST3` service still gets a real rollback plan;
 a `T4` action still requires its approver at 3 a.m. What scales is the depth of
 the review and the number of people involved, never the observation rung or the
 approval the tier demands.

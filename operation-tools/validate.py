@@ -9,6 +9,7 @@ belongs in a review, not in this file.
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 import unicodedata
@@ -62,22 +63,58 @@ def read(p: Path) -> str:
     return p.read_text(encoding="utf-8")
 
 
+FRONTMATTER_ERROR = "__error__"
+
+
 def frontmatter(text: str) -> dict:
+    """The frontmatter as YAML reads it, which is how every host reads it.
+
+    A line-by-line reading saw only the first line of a description that runs
+    onto a second one, so a 500-character description passed the length check.
+    Lists are joined the way `allowed-tools` is written as a string.
+    """
     if not text.startswith("---\n"):
         return {}
-    body = text.split("---\n", 2)[1]
-    out = {}
-    for line in body.splitlines():
-        if ":" in line:
-            k, _, v = line.partition(":")
-            out[k.strip()] = v.strip().strip('"')
+    parts = text.split("---\n", 2)
+    if len(parts) < 3:
+        return {FRONTMATTER_ERROR: "no closing ---"}
+    try:
+        data = yaml.safe_load(parts[1]) or {}
+    except yaml.YAMLError as e:
+        return {FRONTMATTER_ERROR: " ".join(str(e).split())}
+    if not isinstance(data, dict):
+        return {FRONTMATTER_ERROR: "not a mapping"}
+    return {str(k): ", ".join(map(str, v)) if isinstance(v, list) else
+            ("" if v is None else str(v)) for k, v in data.items()}
+
+
+FENCE_RE = re.compile(r"^\s{0,3}(```|~~~)")
+
+
+def unfenced(text: str) -> list[tuple[int, str]]:
+    """(line number, line) for every line outside a fenced code block."""
+    out, fence = [], None
+    for i, line in enumerate(text.splitlines(), 1):
+        m = FENCE_RE.match(line)
+        if m:
+            if fence is None:
+                fence = m.group(1)
+            elif m.group(1) == fence:
+                fence = None
+            continue
+        if fence is None:
+            out.append((i, line))
     return out
 
 
 def sections(text: str) -> dict[str, str]:
-    out, cur, buf = {}, None, []
+    """`## ` headings outside code fences. A heading quoted in an example is not one."""
+    out, cur, buf, fence = {}, None, [], None
     for line in text.splitlines():
-        if line.startswith("## "):
+        m = FENCE_RE.match(line)
+        if m:
+            fence = m.group(1) if fence is None else (None if m.group(1) == fence else fence)
+        if fence is None and not m and line.startswith("## "):
             if cur:
                 out[cur] = "\n".join(buf)
             cur, buf = line[3:].strip(), []
@@ -85,6 +122,59 @@ def sections(text: str) -> dict[str, str]:
             buf.append(line)
     if cur:
         out[cur] = "\n".join(buf)
+    return out
+
+
+CODE_SPAN_RE = re.compile(r"(`+)(?:(?!\1).)+?\1")
+SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+REF_DEF_RE = re.compile(r"^\s{0,3}\[[^\]]+\]:\s*(\S+)")
+
+
+def _link_target(raw: str) -> str:
+    """The path in `(target "title")` or `(<target>)`, as CommonMark reads it."""
+    t = raw.strip()
+    if t.startswith("<") and ">" in t:
+        return t[1:t.index(">")]
+    return re.sub(r"""\s+(?:"[^"]*"|'[^']*'|\([^)]*\))\s*$""", "", t)
+
+
+def links(text: str) -> list[str]:
+    """Every link target outside code: inline links and reference definitions."""
+    out = []
+    for _, line in unfenced(text):
+        # A code span becomes a placeholder, not nothing: `[`x`](y)` is still a
+        # link, and `` `[x](y)` `` no longer is one.
+        line = CODE_SPAN_RE.sub("code", line)
+        out += [_link_target(m) for m in LINK_RE.findall(line)]
+        m = REF_DEF_RE.match(line)
+        if m:
+            out.append(_link_target(m.group(1)))
+    return out
+
+
+def is_external(target: str) -> bool:
+    return bool(SCHEME_RE.match(target))
+
+
+def slug(heading: str) -> str:
+    """GitHub's heading anchor: lower case, punctuation dropped, spaces to hyphens."""
+    h = CODE_SPAN_RE.sub(lambda m: m.group(0).strip("`"), heading.strip()).lower()
+    h = re.sub(r"[^\w\- ]", "", h)
+    return h.replace(" ", "-")
+
+
+def anchors(text: str) -> set[str]:
+    seen: dict[str, int] = {}
+    out = set()
+    for _, line in unfenced(text):
+        m = re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", line)
+        if not m:
+            continue
+        s = slug(m.group(1))
+        n = seen.get(s, 0)
+        seen[s] = n + 1
+        out.add(s if n == 0 else f"{s}-{n}")
+    out |= set(re.findall(r"""<a\s+(?:name|id)=["']([^"']+)["']""", text))
     return out
 
 
@@ -100,7 +190,11 @@ def v1_sizes():
         n = len(t.splitlines())
         if n > LIM["skill_md_lines"]:
             fail("V1", f"{d.name}/SKILL.md is {n} lines (max {LIM['skill_md_lines']})")
-        desc = frontmatter(t).get("description", "")
+        fm = frontmatter(t)
+        if FRONTMATTER_ERROR in fm:
+            fail("V1", f"{d.name}/SKILL.md frontmatter is not valid YAML "
+                       f"({fm[FRONTMATTER_ERROR]}); no host can read its description")
+        desc = fm.get("description", "")
         if len(desc) > LIM["description_chars"]:
             fail("V1", f"{d.name} description is {len(desc)} chars "
                        f"(max {LIM['description_chars']}; the listing truncates)")
@@ -132,7 +226,7 @@ def v4_playbook_orphans():
         if not pb_dir.exists():
             continue
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m).name for m in LINK_RE.findall(body)}
+        linked = {Path(m.split("#")[0]).name for m in links(body)}
         for pb in sorted(pb_dir.glob("*.md")):
             if pb.name not in linked:
                 fail("V4", f"{d.name}/playbooks/{pb.name} is not linked from Decide first")
@@ -172,14 +266,31 @@ def v7_routes_real():
 
 
 def v8_links():
-    for f in ROOT.rglob("*.md"):
+    """Every link resolves, and so does the heading it points at.
+
+    Reference definitions count as links, a title or angle brackets around the
+    target do not make it a different file, and a link quoted in code is an
+    example rather than a pointer.
+    """
+    cache: dict[Path, set[str]] = {}
+    for f in sorted(ROOT.rglob("*.md")):
         if ".git" in f.parts:
             continue
-        for target in LINK_RE.findall(read(f)):
-            if target.startswith(("http", "#", "mailto:")):
+        for target in links(read(f)):
+            if not target or is_external(target):
                 continue
-            if not (f.parent / target.split("#")[0]).exists():
+            path, _, frag = target.partition("#")
+            dest = f.parent / path if path else f
+            if not dest.exists():
                 fail("V8", f"{f.relative_to(ROOT)} links to missing {target}")
+                continue
+            if frag and dest.suffix == ".md" and dest.is_file():
+                key = dest.resolve()
+                if key not in cache:
+                    cache[key] = anchors(read(dest))
+                if frag.lower() not in cache[key]:
+                    fail("V8", f"{f.relative_to(ROOT)} links to {target}, and "
+                               f"{path or f.name} has no heading #{frag}")
 
 
 def _norm(s: str) -> str:
@@ -228,6 +339,10 @@ def v12_prefix():
 def v13_route_budget():
     if len(ROUTES) > LIM["routes_max"]:
         fail("V13", f"{len(ROUTES)} routes (max {LIM['routes_max']})")
+    for name, r in ROUTES.items():
+        stages = len(r.get("chain", []))
+        if stages > LIM["route_stages_max"]:
+            fail("V13", f"route {name} chains {stages} stages (max {LIM['route_stages_max']})")
 
 
 def v14_patterns():
@@ -273,8 +388,18 @@ def v17_delivery():
             if open_m not in text or close_m not in text:
                 fail("V17", f"{d.name}/SKILL.md is missing the {key} delivery block")
                 continue
-            got = text.split(open_m, 1)[1].split(close_m, 1)[0].strip("\n")
-            if got != want:
+            # One block, in order. A second copy is never compared and never
+            # re-rendered, so it is the one that goes stale.
+            n_open, n_close = text.count(open_m), text.count(close_m)
+            if n_open != 1 or n_close != 1 or text.index(open_m) > text.index(close_m):
+                fail("V17", f"{d.name}/SKILL.md carries {n_open} open and {n_close} close "
+                            f"{key} markers; exactly one block, opened before it is closed")
+                continue
+            # Byte-for-byte what render.py writes. A looser comparison passed a
+            # block that `make render` then rewrites, which is green locally and
+            # red in CI's render-and-diff step.
+            got = text.split(open_m, 1)[1].split(close_m, 1)[0]
+            if got != f"\n{want}\n":
                 fail("V17", f"{d.name}/SKILL.md {key} block differs from "
                             f"operation-registry/delivered/{key}.md (run: make render)")
             body = sections(text).get(spec["section"], "")
@@ -309,19 +434,54 @@ def v19_paths_resolve():
             readable += sorted((d / sub).glob("*.md"))
         for f in readable:
             _check_paths(f, d, f"{d.name}/{f.relative_to(d)}")
+            _check_links(f, d / f.relative_to(d), f"{d.name}/{f.relative_to(d)}")
     for f in shared:                      # checked once, against one skill dir
         _check_paths(f, probe, f"{SHARED}/{f.name}")
+        _check_links(f, probe / SHARED / f.name, f"{SHARED}/{f.name}")
 
 
-# A backticked path is a reference to this set only if it names a file or sits
-# under one of the set's own roots. `node_modules/` in a search playbook is an
-# example of the reader's project, not a pointer into this repo.
+def _check_links(f: Path, seen_as: Path, label: str) -> None:
+    """A markdown link is followed from where the skill sees the file.
+
+    V8 resolves a link from the file's place in this repository, where
+    `_operation/../operation-runbook/` happens to exist. Read through a skill's
+    `_operation` symlink and normalised lexically, the same link lands inside
+    that skill and points at nothing.
+    """
+    for target in links(read(f)):
+        path = target.partition("#")[0]
+        if not path or is_external(path):
+            continue
+        lexical = Path(os.path.normpath(os.path.join(str(seen_as.parent), path)))
+        if not lexical.exists():
+            fail("V19", f"{label} links to {path!r}, which resolves lexically to "
+                        f"{lexical.relative_to(SKILLS_ROOT) if SKILLS_ROOT in lexical.parents else lexical} "
+                        "once read from a skill directory, and nothing is there")
+
+
+# A backticked path is a reference to this set only if it sits under one of the
+# set's own roots, or names a file this set has. `node_modules/` in a search
+# playbook, or a Helm `values.yaml`, is the reader's project, not a pointer into
+# this repo. A bare `SIZING.md` still counts: the set has one, and from a
+# playbook that name resolves to nothing.
+_OWN_NAMES: set[str] = set()
+
+
+def _own_names() -> set[str]:
+    if not _OWN_NAMES:
+        for top in (SKILLS_ROOT, ROOT / f"{SET}-registry", ROOT / f"{SET}-tools"):
+            _OWN_NAMES.update(p.name for p in top.rglob("*") if ".git" not in p.parts)
+    return _OWN_NAMES
+
+
 def _is_own_reference(p: str) -> bool:
     if any(p.startswith(x) or p == x for x in H.get("external_paths", [])):
         return False
-    if p.endswith((".md", ".yaml", ".py")):
+    if any(c in p for c in "*?["):
+        return False                      # a pattern, not a path
+    if p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/")):
         return True
-    return p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/"))
+    return p.endswith((".md", ".yaml", ".py")) and Path(p).name in _own_names()
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:
@@ -339,7 +499,8 @@ def _check_paths(f: Path, base: Path, label: str) -> None:
 # A definition, as against a mention: a table row or a heading that opens with
 # the word. `patterns` and `checkers` are route vocabulary and live in
 # routes.yaml, so no page is asked to define them.
-DEFINITION_FORMS = ("| `{w}` |", "| `[{w}]` |", "## `{w}`")
+# Matched per line: the row has to open with the word, the heading has to be one.
+DEFINITION_FORMS = (r"^\s*\|\s*`{w}`\s*\|", r"^\s*\|\s*`\[{w}\]`\s*\|", r"^#{{2,6}}\s+`{w}`")
 ROUTE_VOCAB = {"patterns", "checkers"}
 
 
@@ -351,14 +512,24 @@ def v20_contract_vocabulary():
     `agent-toolkit`'s DESIGN.md names, that one replaced definition does not trip. A definition is a row or a
     heading, and every vocabulary key is held to it, not three.
     """
-    pages = {p.name: read(p) for p in (SKILLS_ROOT / SHARED).glob("*.md")}
+    shared = {p.name: read(p) for p in (SKILLS_ROOT / SHARED).glob("*.md")}
+    elsewhere = H.get("vocabulary_defined_in") or {}
     for key, words in VOCAB.items():
         if key in ROUTE_VOCAB:
             continue
+        if key in elsewhere:
+            page = SKILLS_ROOT / elsewhere[key]
+            if not page.is_file():
+                fail("V20", f"vocabulary_defined_in[{key}] names {elsewhere[key]}, "
+                            "which does not exist")
+                continue
+            pages, where = {page.name: read(page)}, f"{elsewhere[key]} does not define"
+        else:
+            pages, where = shared, f"no page under {SHARED}/ defines"
         for word in words:
-            forms = [f.format(w=word) for f in DEFINITION_FORMS]
-            if not any(f in t for t in pages.values() for f in forms):
-                fail("V20", f"no page under {SHARED}/ defines {word!r} ({key}) — "
+            forms = [re.compile(f.format(w=re.escape(word)), re.M) for f in DEFINITION_FORMS]
+            if not any(f.search(t) for t in pages.values() for f in forms):
+                fail("V20", f"{where} {word!r} ({key}) — "
                             "a table row or a heading, not a mention")
 
 
@@ -382,13 +553,18 @@ def v22_markers_classified():
         if ".git" in f.parts or f.parts[-2:-1] == ("delivered",):
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
-            if MARKER_RE.search(line) and "`" not in line:
+            # A marker quoted in code is a mention; one beside code is still a marker.
+            if MARKER_RE.search(CODE_SPAN_RE.sub("", line)):
                 if not any(c in line for c in VOCAB["residual_classes"]):
                     fail("V22", f"{f.relative_to(ROOT)}:{i} marker carries no residual class")
 
 
 def v23_labels():
     import fnmatch
+    allowed = set(H["document_labels"])
+    for pat, label in H["label_by_path"].items():
+        if label not in allowed:
+            fail("V23", f"label_by_path[{pat!r}] is {label!r}, not one of {sorted(allowed)}")
     for f in sorted(ROOT.rglob("*.md")):
         if ".git" in f.parts:
             continue
@@ -418,8 +594,8 @@ def v24_rendered_tables():
         if name not in readme:
             fail("V24", f"README.md does not list {name}")
     for doc, text in ((SKILLS_ROOT / ROUTING_FILE, routing), (ROOT / "README.md", readme)):
-        for found in set(re.findall(rf"`({PREFIX}[a-z]+)`", text)):
-            if found not in SKILLS:
+        for found in set(re.findall(rf"`({re.escape(PREFIX)}[a-z0-9-]+)`", text)):
+            if found not in SKILLS and not (ROOT / found).is_dir():
                 fail("V24", f"{doc.relative_to(ROOT)} names {found}, which does not exist")
 
 
@@ -443,16 +619,30 @@ def v26_boundaries_real():
 
 
 def v27_symlinks_stay_inside():
-    """What a skill reaches must live in this repo, and must actually be there."""
+    """What a skill reaches must live in this repo, and must actually be there.
+
+    At any depth: a link under playbooks/ or reference/ is read the same way as
+    one at the top. The walk does not follow links, so `_operation` and
+    `registry` are checked as links and not descended into.
+    """
     for d in SKILL_DIRS:
-        for entry in sorted(d.iterdir()):
+        for entry in skill_entries(d):
             if not entry.is_symlink():
                 continue
-            target = (entry.parent / entry.readlink()).resolve()
+            rel = entry.relative_to(d)
+            target = (entry.parent / os.readlink(entry)).resolve()
             if not target.exists():
-                fail("V27", f"{d.name}/{entry.name} is a broken symlink")
+                fail("V27", f"{d.name}/{rel} is a broken symlink")
             elif ROOT.resolve() not in target.parents and target != ROOT.resolve():
-                fail("V27", f"{d.name}/{entry.name} points outside the repo ({target})")
+                fail("V27", f"{d.name}/{rel} points outside the repo ({target})")
+
+
+def skill_entries(d: Path) -> list[Path]:
+    """Every file, directory and link under a skill, without following links."""
+    out = []
+    for top, dirs, files in os.walk(d, followlinks=False):
+        out += [Path(top) / n for n in sorted(dirs + files)]
+    return sorted(out)
 
 
 def v28_namespace_agrees():
@@ -505,9 +695,9 @@ def v30_reference_orphans():
         if not ref_dir.exists():
             continue
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m).name for m in LINK_RE.findall(body)}
+        linked = {Path(m.split("#")[0]).name for m in links(body)}
         for pb in sorted((d / "playbooks").glob("*.md")) if (d / "playbooks").exists() else []:
-            linked |= {Path(m).name for m in LINK_RE.findall(read(pb))}
+            linked |= {Path(m.split("#")[0]).name for m in links(read(pb))}
             linked |= {Path(m).name for m in TICK_PATH_RE.findall(read(pb))}
         for f in sorted(ref_dir.glob("*.md")):
             if f.name not in linked:
@@ -632,9 +822,15 @@ def v34_tools_reachable():
                 fail("V34", f"{d.name}/{tool} points at {link.resolve()}, not "
                             "the set's own")
     for d in SKILL_DIRS:
-        for entry in sorted(d.iterdir()):
-            if entry.suffix == ".py" and entry.name not in declared_tools:
-                fail("V34", f"{d.name}/{entry.name} is a tool link nothing "
+        for entry in skill_entries(d):
+            if entry.suffix != ".py":
+                continue
+            rel = entry.relative_to(d)
+            if entry.parent != d:
+                fail("V34", f"{d.name}/{rel} is a tool below the skill's top level; "
+                            "a tool is linked at the top, where linked_tools checks it")
+            elif entry.name not in declared_tools:
+                fail("V34", f"{d.name}/{rel} is a tool link nothing "
                             "declares; add it to linked_tools or remove it")
 
 
@@ -644,7 +840,7 @@ def v35_signature():
     Each set declares one signature mechanism in `signature:` — the contract
     that carries it, the vocabulary it introduces, and the skills that owe it.
     The rule is identical in every set; only the declaration differs, which is
-    what keeps six copies of this file from becoming six dialects.
+    what keeps the copies of this file from becoming dialects.
 
     The delivered block states the rule inside every skill. A skill that owes
     the mechanism also names its own half of it, because a rule stated
@@ -752,7 +948,9 @@ def v37_source_pins_the_rot():
     page on test oracles depended on git, having found it inside "legitimate".
     """
     def names(text: str, name: str) -> bool:
-        return re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", text) is not None
+        # A hyphen joins a modifier, not a different name: `DORA-style` leans on
+        # DORA as much as `DORA` does.
+        return re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", text) is not None
 
     declared = H.get("source_authorities")
     none_marker = H.get("source_none_marker")
@@ -802,11 +1000,14 @@ def v37_source_pins_the_rot():
                                     f"{pin}; one of the two moved without the other")
 
 
-# `KEY: A | B | C` in a schema, or a bare `A | B | C` on a line of its own —
-# upper-case words joined by pipes. Underscored and parenthesised forms are not
+# `KEY: A | B | C` in a schema, or a bare `A | B | C` on a line of its own (or a
+# list item) — upper-case words, digits allowed after the first letter, each
+# optionally in backticks, joined by pipes, with a closing period or a
+# parenthetical allowed after. Underscored and lower-case forms are not
 # matched, so this is a floor.
-ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
-                     r"(?:\s*\|\s*(?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*))+)\s*(?:#.*)?$")
+_ENUM_WORD = r"`?[A-Z][A-Z0-9-]*(?: [A-Z][A-Z0-9-]*)*`?"
+ENUM_RE = re.compile(rf"(?:^\s*(?:[-*+]\s+)?|:\s*)({_ENUM_WORD}(?:\s*\|\s*{_ENUM_WORD})+)"
+                     r"(?:\s*\([^)]*\))?\s*[.,;]?\s*(?:#.*)?$")
 
 
 def v38_enumerations_declared():
@@ -825,7 +1026,7 @@ def v38_enumerations_declared():
             m = ENUM_RE.search(line)
             if not m:
                 continue
-            words = [w.strip() for w in m.group(1).split("|")]
+            words = [w.strip().strip("`") for w in m.group(1).split("|")]
             missing = [w for w in words if w not in declared]
             if missing:
                 fail("V38", f"{f.relative_to(ROOT)}:{i} switches on {', '.join(missing)}, "
@@ -850,10 +1051,24 @@ RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
          v38_enumerations_declared]
 
 
+def hook_installed() -> bool:
+    """Where git looks for hooks: a worktree's `.git` is a file, and
+    core.hooksPath moves them elsewhere."""
+    import subprocess
+    try:
+        r = subprocess.run(["git", "rev-parse", "--git-path", "hooks"], cwd=ROOT,
+                           capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if r.returncode != 0 or not r.stdout.strip():
+        return False
+    return (ROOT / r.stdout.strip() / "pre-commit").exists()
+
+
 def main() -> int:
     for rule in RULES:
         rule()
-    hooks = (ROOT / ".git" / "hooks" / "pre-commit").exists()
+    hooks = hook_installed()
     print(f"{len(RULES)} rules · {len(SKILLS)} skills · "
           f"hooks {'on' if hooks else 'off — run: make hooks'}")
     if FAILURES:

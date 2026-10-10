@@ -23,7 +23,9 @@ incidents. Demote back on any change-caused incident.
 
 ## Risk Dimensions
 
-Score 1–5 each. Any single 5 forces `T3`+ handling regardless of the total.
+Score 1–5 each. Any single 5 forces `T3`+ handling regardless of the total — and a
+Reversibility 5 that is irreversible or never exercised is `T4` (`_operation/SAFETY_TIERS.md`
+rule 2), never `T3`.
 
 ### Blast Radius
 | Score | Condition |
@@ -37,7 +39,7 @@ Score 1–5 each. Any single 5 forces `T3`+ handling regardless of the total.
 |-------|-----------|
 | 1 | Instant and verified — flag flip with a tested off-path |
 | 3 | Reversible in minutes, procedure `proved` and its expiry not passed (`_operation/EXPIRY.md`) |
-| 5 | Irreversible, or a rollback that has never been exercised |
+| 5 | Irreversible, or a rollback not `proved` within its expiry — `untested`, `stale`, or only `simulated` |
 
 **Unknown reversibility scores 5.** Nobody being able to state the rollback is the strongest
 available signal that there is not one.
@@ -68,7 +70,7 @@ available signal that there is not one.
 | Total | Handling |
 |-------|----------|
 | 5–9 | `Standard` **candidate** — grant the class only if it is also pre-approved, runbooked, and previously executed unchanged; a low score alone is not sufficient. Otherwise `Normal` |
-| 10–15 | `Normal`; service owner approval; staged rollout |
+| 10–15 | `Normal`; service owner approval; staged rollout, named watcher |
 | 16–20 | Elevated; explicit rollout plan, named watcher, coverage confirmed with `operation-oncall` |
 | 21–25 | High; **split it**. If it cannot be split, sequence the phases and treat each as elevated |
 

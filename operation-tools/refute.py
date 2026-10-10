@@ -153,9 +153,14 @@ def main() -> int:
                         "independent_readings": len(votes),
                         "votes": votes, "unreachable": silent})
 
+    # A claim no engine read was not checked, and a run that checked nothing is
+    # not a run that passed: any UNCHECKED claim makes the exit non-zero, in
+    # both output modes, so a caller reading only the status cannot mistake it.
+    status = 1 if any(r["verdict"] == "UNCHECKED" for r in results) else 0
+
     if a.json:
         print(json.dumps(results, ensure_ascii=False, indent=2))
-        return 0
+        return status
 
     for r in results:
         print(f"\n[{r['verdict']}] {r['id']}   "
@@ -169,7 +174,9 @@ def main() -> int:
     print(f"\n{kinds.count('REFUTED')} refuted · {kinds.count('CONTESTED')} contested · "
           f"{kinds.count('STANDS')} unrefuted · {kinds.count('UNCHECKED')} unchecked")
     print("Unrefuted means nothing was found, not that nothing is there.")
-    return 0
+    if status:
+        print("Some claims reached no engine; exit 1.", file=sys.stderr)
+    return status
 
 
 if __name__ == "__main__":

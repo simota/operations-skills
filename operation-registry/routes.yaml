@@ -10,7 +10,7 @@ ship-it:
   pattern: linear
   when: "a change is going to production"
   chain: [operation-change, operation-runbook]
-  gate: "the point of no return is named and the abort trigger is numeric"
+  gate: "the point of no return is named and the abort trigger is numeric; runbook stage only when no proved, unexpired procedure covers the rollout"
 
 go-live:
   pattern: linear

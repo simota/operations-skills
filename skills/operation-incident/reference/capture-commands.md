@@ -12,11 +12,11 @@ Claims not from either source — ingestion lag, retention windows, what a given
 evidence ladder, and `reference/impact-assessment.md` gives the capture 60 seconds. This
 page is what to run in them.
 
-Everything here is read-only, with two exceptions: a task marked `check_mode: false`
-runs for real even under `--check` (grep the play for `check_mode` first), and
-`--diff` prints file contents, so secrets reach the record unless the task has
-`no_log`. Log reads that may hold personal data are `T3`
-(`_operation/SAFETY_TIERS.md` rule 4).
+Nothing here is read-only by default. `--check` still runs any task marked
+`check_mode: false` — grep the play and every role and file it imports; `-m setup`
+executes `facts.d` scripts on the host; `--diff` prints secrets unless `no_log`. Each
+is a person's `T2` until that read clears it, and the agent runs only the cleared reads.
+Log reads that may hold personal data are `T3` (`_operation/SAFETY_TIERS.md` rule 4).
 
 ---
 
@@ -28,10 +28,10 @@ what a given action erases turns "capture everything" into three commands.
 | Mitigation | Destroyed the moment it runs | Grab first |
 |---|---|---|
 | Re-run the playbook | The diverged state itself. Convergence is the point of Ansible and it is also what erases the difference you were trying to explain | `--check --diff`, and the facts |
-| Terminate or replace an instance | Instance store, memory, anything not on a persistent disk | Console/serial output, a disk snapshot |
+| Terminate or replace an instance | Instance store, memory, anything not on a persistent disk | Console/serial output. A disk snapshot is a create, not a read: a person's `T2` |
 | Redeploy a service | The failing tasks and the reason each one stopped | The stopped tasks' own records, before they age out |
 | Roll a managed instance group | Every VM in the group, in sequence, on a schedule you started | Anything from one unhealthy member |
-| **An autoscaler or health check acting on its own** | The same, **on a clock you do not control** | Everything, immediately — this is the only row where waiting is itself the loss |
+| **An autoscaler or health check acting on its own** | The same, **on a clock you do not control** | Every read, immediately; pausing the autoscaler or snapshotting is a person's `T2` — ask now. The only row where waiting is itself the loss |
 | Time passing | Log ingestion windows, and any short-retention metric | The log export, scoped to the incident window |
 
 ## Ansible — before you converge
@@ -65,15 +65,15 @@ aws logs filter-log-events --log-group-name <g> --start-time <ms> --end-time <ms
   --profile <p> --region <r>                              # the incident window, not "recent"
 ```
 
-Run `get-caller-identity` first and put its output in the timeline. Every other
-command on this page is meaningless if it ran against the wrong account, and
-nothing in their output says which account that was.
+Run `get-caller-identity` first, record it, and compare its `Account` with the account
+that owns the target. On a mismatch nothing after it is `O1` for this incident — and
+nothing in the other commands' output says which account they ran against.
 
 ## Google Cloud — before you roll
 
 ```sh
 gcloud config list                       # the project this shell is pointed at
-gcloud auth list                         # which account is active
+gcloud config get-value auth/impersonate_service_account  # when set, this acts, not auth list
 gcloud compute instances describe <vm> --zone <z> --project <p>
 gcloud compute instances get-serial-port-output <vm> --zone <z> --project <p>
 gcloud logging read 'resource.type="gce_instance" AND resource.labels.instance_id="<id>"

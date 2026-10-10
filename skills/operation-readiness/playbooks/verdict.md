@@ -5,19 +5,26 @@
 
 ```yaml
 service: "<name>"
-tier: T0 | T1 | T2 | T3
+service_tier: ST0 | ST1 | ST2 | ST3
 reviewed: <YYYY-MM-DD>
 reviewer: "<named individual>"
 verdict: GO | GO-WITH-CONDITIONS | NO-GO
 blocking_findings:
   - finding: "<what is missing or wrong>"
+    consequence: "<what happens when this fires — specific>"
+    verification: "<the method that tested it>"
     evidence: "<rung and source>"
     owner: "<named individual>"
     due: <YYYY-MM-DD>
 non_blocking_findings:
   - finding: "<...>"
+    verification: "<...>"
     owner: "<...>"
     due: <YYYY-MM-DD>
+proof_states:
+  - path: "<undo, restore, runbook, failover, or escalation path>"
+    state: proved | simulated | stale | untested | unprovable
+    expires: "<YYYY-MM-DD> or on any change to <named surface>"
 accepted_risks:
   - risk: "<blocking finding being launched with>"
     consequence: "<what happens when this fires — specific>"
@@ -34,11 +41,13 @@ not_covered:
 ```
 
 `not_covered` is mandatory. A review that implies full coverage it did not perform is worse
-than a narrow one that says so.
+than a narrow one that says so. So is `proof_states`: every undo, restore, runbook, failover
+and escalation path the verdict relies on, with its state and expiry (`_operation/EXPIRY.md`) —
+a `stale` or `untested` one is named there, never left implied.
 
 ## Tier Requirements
 
-| Requirement | T0 (critical) | T1 (important) | T2 (standard) | T3 (best effort) |
+| Requirement | ST0 (critical) | ST1 (important) | ST2 (standard) | ST3 (best effort) |
 |-------------|---------------|----------------|---------------|------------------|
 | Availability target | Defined SLO, error budget policy | Defined SLO | Target, no budget policy | None |
 | On-call | 24/7 primary + secondary | 24/7 primary | SEV1 only off-hours | Business hours |
@@ -46,16 +55,16 @@ than a narrow one that says so.
 | Rollback | Verified, exercised ≤90 days | Verified, exercised ≤180 days | Documented | Documented |
 | Capacity headroom | ≥3× current peak, load tested | ≥2× current peak, load tested | ≥1.5× | None |
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |
-| Postmortem | All SEV1/SEV2 | All SEV1/SEV2 | SEV1 | On repeat |
-| Escalation depth | Full chain | Full chain without a secondary tier, exec tier business hours | Two tiers | One tier |
-| Change approval | Service owner; second reviewer at `operation-change` risk score ≥16/25 | Same as T0 | Same as T0 | None |
-| Dependency tier floor | All deps T0 | All deps T0–T1 | All deps T0–T2 | None |
+| Postmortem | All SEV1/SEV2 | All SEV1/SEV2 | All SEV1/SEV2 | SEV1/SEV2; SEV3 on repeat (≥3× in 90 days) |
+| Escalation depth | Full chain | Full chain without the secondary level, executive level business hours | Two levels | One level |
+| Change approval | Service owner; second reviewer at `operation-change` risk score ≥16/25 | Same as ST0 | Same as ST0 | None beyond the change class and the safety tier (`_operation/SAFETY_TIERS.md`) |
+| Dependency tier floor | All deps ST0 | All deps ST0–ST1 | All deps ST0–ST2 | None |
 
 This table is canonical; `reference/service-tiering.md` covers how the tier is derived, not
 what it requires.
 
 **A service cannot be more available than its least available dependency.** A dependency
-tiered below the service is a **blocking** finding at T0, T1, and T2 — not only at T0. The
+tiered below the service is a **blocking** finding at ST0, ST1, and ST2 — not only at ST0. The
 exceptions are narrow and must be demonstrated, not asserted: the dependency is genuinely
 optional (the service degrades gracefully and that path is tested), or it is redundant across
 independent providers. "We cache it" is an exception only if the service is verified to run

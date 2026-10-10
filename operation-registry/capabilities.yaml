@@ -16,7 +16,7 @@ operation-incident:
       go: operation-change
     - what: "the alert that should have caught it, or should not have paged"
       go: operation-oncall
-  signals: [incident, declaring, command roles, impact assessment, mitigation, comms, postmortem]
+  signals: [incident, outage, declaring, command roles, impact assessment, mitigation, comms, postmortem]
 
 operation-change:
   class: full

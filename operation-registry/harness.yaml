@@ -13,27 +13,25 @@ skills_dir: skills
 platform_dirs: [.git, .github, .claude, skills, docs]
 
 limits:
-  skill_md_lines: 150         # derived, not chosen: 90 for the skill's own words plus
-                              # the 58 lines of delivered contract every file in this
-                              # set now carries, the last 16 of them the sixth axis:
-                              # what the run says at the end. The raises before it
-                              # (120 -> 128 -> 140) were the
-                              # same move for a smaller block; the blocks have
-                              # grown since, and the cap had come to govern about
-                              # 78 lines of actual skill. Measured own-content max
-                              # in this set: 75 lines, in operation-incident
+  skill_md_lines: 150         # derived, not chosen: the 73 lines of delivered contract
+                              # every file in this set carries (five blocks and their
+                              # markers, the last 17 the sixth axis: what the run says
+                              # at the end) leave 77 for the skill's own words. The
+                              # raises before it (120 -> 128 -> 140) were the same
+                              # move for a smaller block. Measured own-content max in
+                              # this set: 75 lines, in operation-runbook
   description_chars: 200      # the listing truncates past this
   playbook_lines: 300
   playbooks_per_skill: 8
   shared_file_lines: 115   # raised for the sixth axis. REPORT.md is the densest of the
-                              # six — four moments, the order at the end, the ceiling and the
+                              # nine pages (CONTRACT.md is longer, not denser) — four moments, the order at the end, the ceiling and the
                               # proportion rule — and 100 was the figure from when there were
                               # five. Two compression passes over the file came back with the
                               # same content in fewer words and no fewer lines
   shared_lines_total: 700   # raised by the sixth axis: REPORT.md arrived and
                               # every set landed at 97-99% of the old figure at once,
                               # which is a budget that has stopped leaving room to think
-                              # rather than seven sets each being careless. The room
+                              # rather than every set each being careless. The room
                               # above the family figure is this set’s own — it is the
                               # only one whose deliverables assert a capability that is
                               # never exercised until the night it is needed
@@ -140,12 +138,20 @@ vocabulary:
   residual_classes: [BLOCKED, OUT-OF-SCOPE, DEFERRED, UNVERIFIED]
   statuses: [DONE, PARTIAL, BLOCKED]
   tiers: [T1, T2, T3, T4]     # SAFETY_TIERS, not a ceremony scale
+  service_tiers: [ST0, ST1, ST2, ST3]   # what a failure costs; see vocabulary_defined_in
   proof_states: [proved, simulated, stale, untested, unprovable]
   # The readiness review and the change record both close on one of these.
   # Hyphenated like every other multi-word value in the family; V38 is what
   # makes a page spelling it with spaces fail rather than quietly diverge.
   verdicts: [GO, GO-WITH-CONDITIONS, NO-GO]
 
+
+# A vocabulary key whose definition table lives outside _operation/. V20 holds
+# it to the same form — a row or a heading that opens with the word — on the
+# page named here, relative to the skills directory. Service tiers are defined
+# where they are assigned, and _operation/ is at its line budget.
+vocabulary_defined_in:
+  service_tiers: operation-readiness/reference/service-tiering.md
 
 label_by_path:
   "skills/_operation/ROUTING.md": guidance
@@ -203,8 +209,8 @@ verified_markers:
 external_paths: [".agents/", ".operations/", "runbooks/", "CLAUDE.md", "AGENTS.md", "GEMINI.md", "settings.json"]
 
 # The one mechanism this set has that its siblings do not. The rule that checks
-# it is identical in all six sets; this block is the whole difference, which is
-# what keeps six copies of the validator from becoming six dialects.
+# it is identical in every set; this block is the whole difference, which is
+# what keeps the copies of the validator from becoming dialects.
 #
 # `required_of` is every skill: each of them asserts, somewhere in its output,
 # that a path nobody has walked recently will work. `own_word` is the substring
