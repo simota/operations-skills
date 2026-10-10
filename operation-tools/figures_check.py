@@ -53,7 +53,13 @@ def help_of(*argv: str) -> str:
         r = subprocess.run(argv, capture_output=True, text=True, timeout=60)
     except (OSError, subprocess.TimeoutExpired):
         return ""
-    return r.stdout
+    # A man page is typeset: groff hyphenates at the right margin, and on a
+    # narrower terminal or a newer CLI the break lands inside a quoted word
+    # ("DryRun-" / "Operation"). That is layout, not a change in what the
+    # documentation says, so a word split at a line end is joined back.
+    out = re.sub(r"\x1b\[[0-9;]*m", "", r.stdout)
+    out = re.sub(r".\x08", "", out)
+    return re.sub(r"(\w)-[ \t]*\n\s*(\w)", r"\1\2", out)
 
 
 def body() -> str:
