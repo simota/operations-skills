@@ -32,7 +32,7 @@ when it rots.
 |-------|-------------|
 | Owner | Named individual, currently employed, verified quarterly |
 | Backup owner | A second individual, for the case where the owner is the incident |
-| Expiry interval | By tier, shorter where the system changes faster: T4 quarterly, T3 semi-annually, T1–T2 annually |
+| Expiry interval | By safety tier, shorter where the system changes faster: T4 quarterly, T3 semi-annually, T1–T2 annually — and never longer than the service tier's cadence for the same path (`operation-readiness`'s tier requirements: rollback ≤90 days at ST0, ≤180 at ST1) |
 | Voiding surface | The named surface whose change expires the proof at once (`_operation/EXPIRY.md`) |
 | Last executed | Date, by whom, and where — updated only by a real execution |
 
@@ -50,7 +50,7 @@ the content does not have.
 | Executed in production within its expiry, voiding surface unchanged | `proved` | None |
 | Executed only in a lower environment, or the destructive step stubbed | `simulated` | Rely on it only with the gap stated; schedule a real execution |
 | Expiry interval passed, or the voiding surface changed | `stale` | `UNVERIFIED` — no plan may depend on it; mark the header and re-run |
-| Never executed | `untested` | `UNVERIFIED` — must be tested before an alert may link to it |
+| Never executed | `untested` | `UNVERIFIED` — an alert may link to it only with the `untested` state visible at the link, and the alert stays `KEEP (conditional)` until it is executed |
 | Cannot be exercised without unacceptable cost or risk | `unprovable` | Name the compensating control and its owner |
 
 Runbooks for rare events (disaster recovery, region failover) will never accumulate real
@@ -82,9 +82,10 @@ The single most valuable catalog metric.
 | Paging alerts with a runbook link | 100% |
 | Links resolving to a specific procedure (not an index) | 100% |
 | Linked runbooks `proved`, or `unprovable` with a compensating control | 100% — each `stale` one is an `UNVERIFIED` residual, named |
-| Linked runbooks never executed | 0 |
+| Linked runbooks never executed | 0 — each one is an `UNVERIFIED` residual, its alert `KEEP (conditional)` |
 
-Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented.
+Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented,
+or documented by a runbook nobody has executed.
 
 ## Audit Verdicts
 
@@ -93,7 +94,9 @@ Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy 
 | `proved` | Executed within its expiry, owner valid, content matches reality | None |
 | `stale` | Content plausible, expiry passed or voiding surface changed | Schedule a rehearsal |
 | `DRIFTED` | Content contradicts the current system (commands, paths, flags changed) | Fix now; a drifted runbook is worse than none |
-| `untested` | Never executed end to end | Test before any alert links to it |
+| `simulated` | Executed only in a lower environment, or with the destructive step stubbed | Rely on it only with the gap stated; schedule a production rehearsal |
+| `untested` | Never executed end to end | Execute it; until then any alert linking to it shows `untested` and stays `KEEP (conditional)` |
+| `unprovable` | Cannot be exercised without unacceptable cost or risk | Confirm the compensating control and its owner; prove the smallest part that can be |
 | `ORPHANED` | Owner has left, or no owner | Reassign or retire |
 | `RETIRE` | The procedure or the system it targets no longer exists | Delete, and check nothing links to it |
 

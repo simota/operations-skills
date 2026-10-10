@@ -36,7 +36,7 @@ outage from the public status page is a process failure.
 ## Internal Update
 
 ```
-INCIDENT <id> — SEV<n> — <status> — update <n>
+INCIDENT <id> — SEV<n> — <status, as the live state block spells it> — update <n>
 IMPACT:    <who, what, since when — user terms>
 CURRENT:   <what is being done right now>
 NEXT:      <the next decision or action, and when>
@@ -103,7 +103,7 @@ Executives need decisions, not diagnostics:
 <Service> SEV<n> — <elapsed>
 Customer impact: <one line, quantified>
 Revenue/regulatory exposure: <one line, or none identified>
-Status: <mitigating | monitoring | resolved>
+Status: <declared | mitigating | monitoring | resolved>
 Decision needed from you: <specific ask, or none>
 Next update: <HH:MM>
 ```

@@ -64,7 +64,7 @@ Gate explicitly:
 
 When someone leaves the rotation, before their last shift:
 
-- [ ] Remove from all escalation tiers, including ones they are only named in as a fallback
+- [ ] Remove from all escalation levels, including ones they are only named in as a fallback
 - [ ] Reassign carry-forward items they own
 - [ ] Check whether they are the only escalation target anywhere — this is how silent gaps form
 - [ ] Capture undocumented knowledge: what do they know that is not in a runbook?

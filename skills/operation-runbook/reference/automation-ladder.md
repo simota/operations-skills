@@ -110,8 +110,10 @@ Only reachable with all of:
 - **Rarely-executed procedures — unless a rehearsal cadence keeps them warm.** Below roughly a
   dozen executions a year, automation is stale when it fires and nobody trusts it, so rung 2 is
   usually the right ceiling. The exception is a high-risk, unambiguous procedure (DR failover,
-  restore) where the *manual* path is more dangerous than the automated one: there, automate but
-  bind it to a scheduled rehearsal, and treat a missed rehearsal as expiring the automation.
+  restore) where the *manual* path is more dangerous than the automated one: there, take it as
+  far up the ladder as its tier allows — a `T4` restore, or a failover with unexercised failback,
+  stops at rung 2, scripted and human-invoked — bind it to a scheduled rehearsal, and treat a
+  missed rehearsal as expiring the automation.
 - **Procedures nobody currently understands.** Automating a procedure to avoid learning it
   guarantees nobody can debug it when it breaks.
 - **Novel failures.** Automation handles known patterns. The value of a human on-call is

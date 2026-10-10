@@ -73,6 +73,10 @@ mechanism with extra latency.
 | 21–25 | Explicit review with a rollout plan; split recommendation first |
 | Emergency | IC during the incident; post-review within 5 business days |
 
+The score sets the change approval; the safety tier's approver (`_operation/SAFETY_TIERS.md`) is
+required in addition, whatever the score and whatever the service tier: `T3` a named approver,
+`T4` the service owner plus a second reviewer under the two-person rule.
+
 ### What an Approver Needs
 
 An approval request without these cannot be evaluated, and will be rubber-stamped:

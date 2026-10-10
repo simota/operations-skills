@@ -9,12 +9,13 @@ Every runbook opens with this block. It is what a responder reads before decidin
 runbook: <service>/<procedure-name>
 purpose: "<the goal state, one line>"
 trigger: "<alert name, symptom, or schedule>"
-tier: T1 | T2 | T3 | T4          # max across all steps
+safety_tier: T1 | T2 | T3 | T4   # max across all steps
 approval: pre-approved | "<role>"  # before step 1; pre-approved is T1/T2 only, never this agent
 duration: "<expected wall-clock>"
 idempotent: yes | partial | no
 dry_run: "<command>" | none
 owner: "<named individual>"
+backup_owner: "<a second named individual>"
 state: proved | simulated | stale | untested | unprovable   # _operation/EXPIRY.md
 last_executed: "<YYYY-MM-DD>, <by whom>, <environment>" | never
 expires: "<YYYY-MM-DD> — <why this interval>"

@@ -9,6 +9,10 @@ Verified: 2026-08-21 — no automated check.
 A handoff is a deliverable. Its quality metric: **did the incoming shift have to re-derive
 anything?** If yes, the handoff failed.
 
+A shift handoff passes the pager between people. It is not an `OPERATION_HANDOFF`
+(`_operation/HANDOFF.md`), which passes work between skills, and neither is a `handover`, which
+passes a service to a team.
+
 ## Handoff Template
 
 ```markdown

@@ -42,7 +42,8 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 |------|--------------|--------------|
 | On-call rotation exists with capacity for this service | Confirm with `operation-oncall`; check pool size | ST0, ST1, ST2 |
 | Escalation path defined and exercised | Run a no-acknowledge test | ST0, ST1 |
-| Runbooks for the top failure modes, state `proved` and within expiry | Execute one end to end | ST0, ST1 |
+| A runbook for every paging alert; at ST0 each `proved` within expiry, or `unprovable` with a named compensating control | Execute one end to end; record the state it reached | ST0, ST1 |
+| Runbooks for the top failure modes | Read them; record each one's state | ST2 |
 | Every paging alert links to a specific runbook | Follow each link | ST0, ST1 |
 | Severity definitions and declaration criteria agreed | Read them | ST0, ST1 |
 | Communication path to support and customers exists | Confirm the channel and the owner | ST0, ST1 |
@@ -51,7 +52,7 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 
 | Item | Verification | Blocking for |
 |------|--------------|--------------|
-| Rollback procedure documented and **exercised** | Run it in a non-production environment | ST0, ST1 |
+| Rollback procedure documented and **exercised** | Run it; record the state reached — a non-production run is `simulated`, and ST0/ST1 need `proved` within the tier's cadence, or the gap accepted as a risk | ST0, ST1 |
 | **RPO defined** — how much data the business accepts losing | Read the figure; confirm the owner agreed it | ST0, ST1 |
 | **RTO defined** — how long recovery may take | Read the figure; confirm the owner agreed it | ST0, ST1 |
 | Backup frequency actually satisfies the RPO | Compare schedule to RPO — hourly backups cannot meet a 5-minute RPO | ST0, ST1 |
