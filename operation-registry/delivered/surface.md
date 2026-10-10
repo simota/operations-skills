@@ -9,7 +9,7 @@
 - **The handoff and the artifacts are the record, the report is the view.** Carried facts,
   the timeline and the runbook live there and are shown when asked
 - **The subject sets the length.** A single action with a procedure is answered in its one
-  line; a live incident is the impact line and what the reader must decide now, with the
+  line plus the sweep; a live incident is the impact line and what the reader must decide now, with the
   timeline left in the record. Cut content, never the rung or the `SAFETY_TIER` block
   (`_operation/REPORT.md`)
 - **Not bigger than it is.** The requested scope is the deliverable; thought goes deeper into

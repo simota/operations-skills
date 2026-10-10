@@ -56,8 +56,8 @@ listing:
 # That sentence is the contract, and it is not what the class enforces. These
 # were named `advise` and `review`, which read as narrower than they are —
 # `advise` granted Edit. The names now say what is granted; what bounds it is
-# each skill's Never list and _operation/SAFETY_TIERS.md, which are read on
-# every launch. A class name that flatters the grant only hides the gap.
+# each skill's Never list and _operation/SAFETY_TIERS.md, which every skill's
+# delivered sizing block names. A class name that flatters the grant only hides the gap.
 permission_classes:
   full:
     tools: "Read, Grep, Glob, Bash, Write, Edit"   # unrestricted; the contract is narrower

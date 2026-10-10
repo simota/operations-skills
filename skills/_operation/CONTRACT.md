@@ -64,7 +64,7 @@ A readiness review and a change record close on one of three, and nothing else.
 | Verdict | Means |
 |---|---|
 | `GO` | No blocking findings |
-| `GO-WITH-CONDITIONS` | Blocking findings resolved before the action, or accepted with a named accepter |
+| `GO-WITH-CONDITIONS` | Blocking findings resolved before the action, or accepted by a named person with a review date |
 | `NO-GO` | Blocking findings unresolved and unaccepted. Always names what would change it to `GO` |
 
 ## Residuals

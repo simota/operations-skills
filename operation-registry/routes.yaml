@@ -4,7 +4,7 @@ outage:
   pattern: linear
   when: "production is broken now"
   chain: [operation-incident, operation-runbook]
-  gate: "user-visible impact has ended before any root-cause work starts"
+  gate: "user-visible impact has ended before root-cause work starts or the baton passes"
 
 ship-it:
   pattern: linear
@@ -40,7 +40,7 @@ learn:
   pattern: linear
   when: "the incident is over"
   chain: [operation-incident, operation-readiness]
-  gate: "every reported time is reconciled against an observed one"
+  gate: "every reported time is reconciled against an observed one; readiness only once the component is systemic (≥3 postmortems)"
 
 review-to-ready:
   pattern: loop

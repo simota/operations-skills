@@ -51,8 +51,8 @@ that blocks a team — it stopped being the agent's to make.
 | Situation | Resolution |
 |---|---|
 | Mitigation would destroy the evidence for the postmortem | §1 — mitigate, and capture what you can on the way past. An unmitigated outage produces excellent evidence about a problem you still have |
-| The rollback is untested and the change is due today | §4 — untested rollback is the weakest rung there is. Say so, and let the owner choose with that stated |
-| An incident wants a `T4` action and the approver is asleep | Sizing — the tier holds, the approver is substituted, and the substitution is recorded |
+| The rollback is untested and the change is due today | §4 — an `untested` rollback is no evidence of reversibility, `O3` at best. Say so, and let the owner choose with that stated |
+| An incident wants a `T4` action and the approver is asleep | `_operation/SIZING.md` — the tier holds, the approver is substituted, and the substitution is recorded |
 | The readiness review would block a launch nobody can move | §6 — the finding stands as blocking. Accepting it is a named person's decision with a review date, not a reclassification |
 | Deleting an alert that once caught something real | §5 — ask what a human would do with it now. Historic value is not current value |
 | The number nobody measured would settle the argument | §2 — say it is unmeasured and what to query. Never state telemetry that was not read |
@@ -75,5 +75,5 @@ user impact, so this hatch is closer to hand here than anywhere else.
 - Two contracts in `_operation/` give conflicting instructions for this exact case
 
 When it fires: do the work, state which rule was suspended and why, and record
-the gap as `#TODO(agent): OUT-OF-SCOPE`. **The one thing it never suspends is a
+the gap as `#TODO(agent): OUT-OF-SCOPE — <rule suspended>`, or in `open`. **The one thing it never suspends is a
 `SAFETY_TIER` approval** — that is not ceremony, it is the mechanism.

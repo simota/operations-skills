@@ -1,17 +1,17 @@
 - **Two scales, and neither is a ceremony dial.** The **service tier** (`T0`-`T3`)
   says what this service failing costs and is assigned before any requirement is
-  applied; the **safety tier** (`T1`-`T4`) says what *this action* can destroy and
-  is classified before the steps are designed. What scales is the depth of review
+  applied; the **safety tier** (`T1`-`T4`, `_operation/SAFETY_TIERS.md`) says what
+  *this action* can destroy and is classified before the steps are designed. What scales is the depth of review
   and the number of people — never the observation rung or the approval the tier demands
 - **Incident pressure changes the approver, never the tier.** A database drop is
   `T4` at 14:00 and `T4` at 03:00. What an outage may change is who is available
   to approve and how fast, and that substitution is recorded rather than assumed
-- **A dialogue comes first** when a threshold is implied but unstated ("acceptable
-  error rate", "enough monitoring" are numbers somebody has to choose), when the
-  work sets a gate or an escalation path that binds other people, or when the
+- **A dialogue comes first** when the deliverable's shape is open, when a threshold
+  is implied but unstated ("acceptable error rate", "enough monitoring"), when the
+  work sets a gate, a freeze or an escalation path that binds other people, or when the
   action is `T3` or above and its approver is not identified. **State the checks
   you deliberately skipped** (`_operation/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
-  a silent choice** — one question with its default, the answer into the
-  handoff's `terms` and `.agents/glossary.md`, and the glossary's names only from
-  then on (`_operation/SIZING.md` § Terms)
+  a silent choice** — one question with its default, the answer into the handoff's
+  `terms` and, only where `_operation/SIZING.md` § Terms allows, the host glossary;
+  the settled names only from then on

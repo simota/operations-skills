@@ -27,12 +27,12 @@ in exactly one.
 |---|---|---|
 | `proved` | Executed end to end, in an environment that matters, on a named date, by a named person or job | Yes |
 | `simulated` | Executed only in a lower environment, or with the destructive step stubbed | Only with the gap stated in the same sentence |
-| `stale` | Was `proved`, and its expiry has passed | No — treat as `untested` until re-run |
+| `stale` | Was `proved` or `simulated`, and its expiry has passed | No — treat as `untested` until re-run |
 | `untested` | Never executed | No. It is a plan, not a capability |
 | `unprovable` | Cannot be executed without unacceptable cost or risk | Only with a named compensating control and its owner |
 
-`untested` and `stale` are both `UNVERIFIED` in the completion contract. They
-are kept apart here because they fail differently: one was never built, the
+`untested` and `stale` are both `UNVERIFIED` in the completion contract; so are
+`simulated` and `unprovable` stated without their gap or control. They are kept apart here because they fail differently: one was never built, the
 other rotted, and only the second gives a false sense of coverage.
 
 ## What sets the expiry

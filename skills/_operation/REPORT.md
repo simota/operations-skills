@@ -58,7 +58,7 @@ record (`_operation/HANDOFF.md`, the artifacts) is what they open when they ask.
 
 | Subject | The whole report |
 |---|---|
-| One action with an existing procedure | the operational answer, and nothing under it |
+| One action with an existing procedure | the operational answer and the sweep line, nothing else |
 | A procedure, a review, a rota, a decision | the four end lines, plus the artifact's location |
 | A live incident | the impact line, then only what the reader must decide now. The timeline is the record |
 

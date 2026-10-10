@@ -25,21 +25,21 @@ Phases: `DECLARE → COMMAND → ASSESS → MITIGATE → VERIFY → COMMUNICATE 
 <!-- deliver:sizing -->
 - **Two scales, and neither is a ceremony dial.** The **service tier** (`T0`-`T3`)
   says what this service failing costs and is assigned before any requirement is
-  applied; the **safety tier** (`T1`-`T4`) says what *this action* can destroy and
-  is classified before the steps are designed. What scales is the depth of review
+  applied; the **safety tier** (`T1`-`T4`, `_operation/SAFETY_TIERS.md`) says what
+  *this action* can destroy and is classified before the steps are designed. What scales is the depth of review
   and the number of people — never the observation rung or the approval the tier demands
 - **Incident pressure changes the approver, never the tier.** A database drop is
   `T4` at 14:00 and `T4` at 03:00. What an outage may change is who is available
   to approve and how fast, and that substitution is recorded rather than assumed
-- **A dialogue comes first** when a threshold is implied but unstated ("acceptable
-  error rate", "enough monitoring" are numbers somebody has to choose), when the
-  work sets a gate or an escalation path that binds other people, or when the
+- **A dialogue comes first** when the deliverable's shape is open, when a threshold
+  is implied but unstated ("acceptable error rate", "enough monitoring"), when the
+  work sets a gate, a freeze or an escalation path that binds other people, or when the
   action is `T3` or above and its approver is not identified. **State the checks
   you deliberately skipped** (`_operation/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
-  a silent choice** — one question with its default, the answer into the
-  handoff's `terms` and `.agents/glossary.md`, and the glossary's names only from
-  then on (`_operation/SIZING.md` § Terms)
+  a silent choice** — one question with its default, the answer into the handoff's
+  `terms` and, only where `_operation/SIZING.md` § Terms allows, the host glossary;
+  the settled names only from then on
 <!-- /deliver:sizing -->
 
 ## Decide first
@@ -56,7 +56,7 @@ Phases: `DECLARE → COMMAND → ASSESS → MITIGATE → VERIFY → COMMUNICATE 
 | Citing command output as `O1`, or calling the mitigation done | [observation-traps](reference/observation-traps.md) — `changed=` is a module's claim rather than an observation, `--dry-run` reports success as an error, and the account is ambient |
 | Telling people | [comms-templates](reference/comms-templates.md) — drop hedging entirely. Ambiguity costs minutes |
 | Afterwards | [postmortem](reference/postmortem.md) |
-| A diagnostic line of enquiry is running long | Time-box it — 15 minutes at the top severity — and at expiry say what it cost and pick another. Unbounded enquiry is how mitigation stops happening |
+| A diagnostic line of enquiry is running long | Time-box it — 15 minutes at the top severity. At expiry the IC extends it with a stated reason or switches — at SEV1, to a blunt mitigation ([mitigation-playbook](reference/mitigation-playbook.md) § Time-Boxing). Unbounded enquiry is how mitigation stops happening |
 | No scribe is available | Mitigation proceeds and the commander timestamps decisions in the channel until one arrives. Waiting for a scribe violates mitigation-first |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | A mitigation depends on a documented path | Check its state first — a `stale` or `untested` path chosen under pressure is where an incident acquires a second incident. Expired proof is treated as absent, not as probably fine |
@@ -97,7 +97,7 @@ why is a finding**, not a loose end: it means the next occurrence is unhandled.
 - **Cite the rung inline on every claim** (`_operation/CONTRACT.md`): `O1`
   observed · `O2` reproduced · `O3` documented · `O4` reported · `O5` inferred.
   **A root cause requires `O2`**; mitigation may proceed on `O1`. `payment-api
-  5xx rate 12% [O1: panel 44, 14:02]` beats "payments are erroring", and a
+  5xx rate 12% [O1: panel 44, 05:02Z]` beats "payments are erroring", and a
   missing rung is stated as a gap rather than left blank
 - **No invented telemetry.** Never state a metric value, alert name, dashboard or
   runbook path that was not read from the repo, the tooling, or the user. If a
@@ -137,7 +137,7 @@ action carries its tier, and what remains unverified is named.
 - **The handoff and the artifacts are the record, the report is the view.** Carried facts,
   the timeline and the runbook live there and are shown when asked
 - **The subject sets the length.** A single action with a procedure is answered in its one
-  line; a live incident is the impact line and what the reader must decide now, with the
+  line plus the sweep; a live incident is the impact line and what the reader must decide now, with the
   timeline left in the record. Cut content, never the rung or the `SAFETY_TIER` block
   (`_operation/REPORT.md`)
 - **Not bigger than it is.** The requested scope is the deliverable; thought goes deeper into

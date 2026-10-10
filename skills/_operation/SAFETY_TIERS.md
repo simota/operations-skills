@@ -6,11 +6,11 @@ decides who may run it, whether a human confirms, and what must be verified afte
 
 ## Tier Table
 
-| Tier | Blast radius | Reversibility | Autonomy | Required before execution |
+| Tier | Blast radius | Reversibility | Who executes | Required before execution |
 |------|--------------|---------------|----------|---------------------------|
-| `T1` | Single process / single replica / read-only | Instant, no state change | Autonomous | Dry-run output logged |
-| `T2` | Single service, one environment | Reversible within minutes (redeploy, flag flip) | Autonomous with post-verify | Dry-run + rollback command stated |
-| `T3` | Multiple services, or customer-visible behaviour | Reversible but slow (hours) or partially lossy | Human confirmation required | Named approver + rollback rehearsed |
+| `T1` | Single process / single replica / read-only | Instant, no state change | A person; the agent only a bounded read-only observation | Target and command stated; output captured |
+| `T2` | Single service, one environment | Reversible within minutes (redeploy, flag flip) | A person, then post-verify | Target, command and rollback command stated |
+| `T3` | Multiple services, or customer-visible behaviour | Reversible but slow (hours) or partially lossy | A person, after named approval | Named approver + rollback rehearsed |
 | `T4` | Irreversible mutation, destruction, or loss of access | Cannot be undone in place; recovery needs an external copy, or is impossible | Human invokes; agent advises only | Recovery path verified (table below) + two-person rule |
 
 ## Reversibility Decides the Tier, Not the Action Category
@@ -48,8 +48,8 @@ documented. An unexercised reversal is `unknown reversibility`, which is `T4` by
 
 1. **Take the highest tier that any single step reaches.** A runbook with nine `T1` steps
    and one `T4` step is a `T4` runbook.
-2. **Unknown reversibility is `T4`.** If nobody can state how to undo the action, it is
-   irreversible until proven otherwise.
+2. **Unknown reversibility is `T4`.** If nobody can state how to undo the action — or, for a
+   row of the table above, the undo was never exercised — it is irreversible until proven.
 3. **Reversibility is measured in restored user experience, not in reverted config.**
    Rolling back a deploy that already wrote a new schema version is not reversible.
 4. **Production data reads are `T1` only if they exclude PII.** PII reads are `T3` — they
@@ -69,19 +69,19 @@ Incident pressure does not lower a tier. It changes *who* approves, not *whether
 | `T4` | Service owner + change approver | Incident Commander + second responder (two-person rule holds) |
 
 If the approver cannot be reached, the correct action is to escalate, not to proceed.
-Record every tier-skip as an incident action item — a skipped tier is a control failure
-even when the outcome was fine.
+Record every skipped approval as an incident action item — a skipped approval is a control
+failure even when the outcome was fine.
 
 ## Emission
 
-When any skill in this repo proposes or executes an action, it emits:
+When any skill in this repo proposes an action, or runs a read-only observation, it emits:
 
 ```yaml
 SAFETY_TIER:
   tier: T1 | T2 | T3 | T4
   rationale: "[why this tier — blast radius and reversibility]"
   reversal: "[the exact command or procedure that undoes it, or NONE]"
-  approver: "[role, or AUTONOMOUS]"
+  approver: "[role — a person; the agent never approves]"
   verification: "[what proves the action worked]"
 ```
 

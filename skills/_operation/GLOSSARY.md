@@ -38,7 +38,7 @@ from response quality — but label it, and never report it as MTTM.
 |-------|------------|----------|
 | `Standard` | Pre-approved, runbooked, previously executed unchanged | None — logged only |
 | `Normal` | New or modified change with lead time | Service owner |
-| `Emergency` | Required to restore or protect service now | IC, reviewed after the fact |
+| `Emergency` | Required to restore or protect service now | IC (+ second responder at `T4`), reviewed after the fact |
 
 ## Other
 
