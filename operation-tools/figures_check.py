@@ -155,7 +155,7 @@ PLAY = """- hosts: web
   tasks:
     - name: a shell task that changes nothing
       shell: "true"
-    - name: an idempotent file task
+    - name: a file task that touches its target (changed on every run)
       file: path={{ probe }} state=touch mode=0644
 """
 

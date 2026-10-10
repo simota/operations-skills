@@ -19,7 +19,9 @@ migration:
 point_of_no_return: "<the moment after which rollback is unavailable, or NONE>"
 rollback:
   procedure: "<runbook link or command>"
-  last_exercised: <YYYY-MM-DD> | NEVER
+  state: proved | simulated | stale | untested | unprovable
+  proved_on: <YYYY-MM-DD> | NEVER
+  expires: "<YYYY-MM-DD> or on any change to <named surface>"
   duration: "<expected>"
 rollout:
   strategy: canary | blue-green | rolling | flag | shadow | direct
@@ -40,8 +42,8 @@ the handling band, round **up** and say that you did.
 
 | Dimension | 1 | 3 | 5 |
 |-----------|---|---|---|
-| **Blast radius** | One instance, one non-critical service | One customer-facing service | Multiple services, or shared infrastructure |
-| **Reversibility** | Instant, verified | Reversible in minutes, procedure exists | Irreversible, or rollback never exercised |
+| **Blast radius** | One instance, or a non-customer-facing internal service | One customer-facing service, one region | Multiple services, shared infrastructure, or all regions |
+| **Reversibility** | Instant, verified | Reversible in minutes, procedure `proved` and not expired | Irreversible, or rollback never exercised |
 | **Coupling** | No dependents | Dependents tolerate the change | Requires coordinated multi-service change |
 | **Novelty** | Routine, done many times | Uncommon path | First time, or first time on this system |
 | **Batch size** | One logical change | 2–5 | >5, or unknown |

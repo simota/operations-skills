@@ -17,7 +17,7 @@ Run before approving any change. Any unchecked box moves reversibility to score 
 - [ ] Cache key formats and serialisation are unchanged, or the cache can be flushed safely
 - [ ] No dependent service has already been upgraded to require the new behaviour
 - [ ] Feature flags introduced by this change have a defined revert state
-- [ ] The rollback procedure has been exercised within 90 days
+- [ ] The rollback is `proved` and neither its interval nor its named surface has expired (`_operation/EXPIRY.md`)
 - [ ] Rollback duration is known and acceptable given the impact rate
 - [ ] Rolling back does not lose data written during the forward window
 
@@ -68,8 +68,8 @@ The only reliable pattern for schema and format changes. **Each phase ships sepa
 Rules:
 - Never ship expand and contract together. Combining them removes the rollback path silently,
   and the change will still be labelled low-risk because the diff looks small.
-- Leave a **soak period** between phases — at minimum one full business cycle, so that weekly
-  batch jobs and monthly reports exercise the new state.
+- Leave a **soak period** between phases — at minimum the period of the slowest scheduled job
+  that reads the field (a month, if a monthly report reads it), so every job exercises the new state.
 - The contract phase is a separate, explicitly approved `T4` change, executed only after
   confirming no reads of the old field remain. Verify with instrumentation, not with grep.
 - Backfills are their own change, with their own rate limiting, progress tracking, and abort path.
@@ -80,7 +80,8 @@ Deploy success means the artifact is running. It does not mean it works.
 
 Verify in order:
 
-1. **User-path probe** — a real transaction through the real path. The only `O1` evidence.
+1. **User-path probe** — a real transaction through the real path. The only `O1` about the
+   user's experience; metrics and logs are `O1` about the system (`_operation/CONTRACT.md`).
 2. **SLI check** — the user-facing indicator at baseline, not merely "not alerting".
 3. **Error budget** — burn rate unchanged.
 4. **Downstream health** — dependents unaffected.
@@ -112,11 +113,13 @@ State it plainly and plan accordingly:
 - Verify with the user-path probe, exactly as for a forward deploy.
 - If rollback does not restore service, **do not conclude the change was innocent.** Three
   readings are live, and they need different responses:
+
   | Reading | Check |
   |---------|-------|
   | The rollback was incomplete | Did every side effect revert? Flags, migrations, cache formats, queued messages (see the table above) |
   | The change caused a persistent effect | Is there state written during the forward window that the old version is now tripping over? |
   | The change was not the cause | Is there an independent trigger in the same window — a dependency, a traffic shift, an expiry? |
+
   Work the first two before adopting the third. Concluding "not the change" while a partial
   revert is still in place sends responders hunting a fresh hypothesis with the real cause
   still in production.

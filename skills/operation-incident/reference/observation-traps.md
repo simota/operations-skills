@@ -3,7 +3,7 @@
 
 Purpose: Read-only commands whose output is routinely read as evidence for a claim it does not support, and the command that does support it.
 Read when: citing any command output as `O1`, verifying that a mitigation worked, or explaining why two responders disagree while quoting the same command.
-Source: none — nothing outside this page can move what it states.
+Source: none pinned — the installed `ansible`, `aws` and `gcloud` CLIs, unversioned; `make figures` re-reads them.
 Verified: 2026-08-21 — the Ansible behaviour was produced by running it against a local inventory (`O1`). The `aws` and `gcloud` behaviour is quoted from `aws help` / `gcloud help` on the installed CLIs (`O3`); no credentials were available, so nothing on those two was executed.
 Claims from neither source are `O5` and are worth confirming against the environment in use.
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook, and reports SKIPPED per missing tool rather than passing quietly.
@@ -27,8 +27,9 @@ Measured on a two-task play whose shell task ran `true`:
 localhost : ok=2  changed=2  unreachable=0  failed=0
 ```
 
-Nothing changed. So `changed=0` does not mean the run was a no-op, and a
-non-zero `changed` does not mean anything was modified. What it means is
+The shell task changed nothing and still counted as changed. So `changed=0`
+does not mean the run was a no-op, and a non-zero `changed` does not mean
+anything was modified. What it means is
 `declarative tasks that reported a difference + every shell task you ran`.
 
 The evidence for whether the system changed is `--diff` on the declarative
@@ -87,8 +88,10 @@ at one raw record.
 ## `--no-paginate` truncates silently
 
 `aws help`: with automatic pagination disabled "the AWS CLI will only make one
-call, for the first page of results". There is no marker in the output saying a
-page boundary was reached. `--max-items` behaves the same way.
+call, for the first page of results". The only marker is a `NextToken` (or a
+service-specific `NextMarker` / `IsTruncated`) field in the output, and a
+`--query` or `--output table` discards it. `--max-items` truncates the same way,
+and emits `NextToken` only in unfiltered output. Check for it before reporting a count.
 
 During an incident this is how a fleet-wide problem gets reported as affecting
 the first N instances.
@@ -140,4 +143,4 @@ that is easiest to reach rather than the one that carries user impact.
 
 Until that indicator is back, impact has not ended, whatever the infrastructure
 view says. State the window and the value: `checkout success 99.4% over 10 min
-[O1: <dashboard>, 14:32 JST]` beats "recovered".
+[O1: <dashboard>, 05:32Z (14:32 JST)]` beats "recovered".

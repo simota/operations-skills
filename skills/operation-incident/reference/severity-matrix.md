@@ -13,7 +13,8 @@ it a SEV1.
 
 **The dimensions are scaled, not binary.** A single corrupted record that is detectable and
 recoverable is not the same event as unbounded corruption, and the table says so — read the
-qualifiers, not just the noun. Where scope is genuinely unknown, rule 1 of scoping applies:
+qualifiers, not just the noun. Where scope is genuinely unknown, the first rule of `reference/impact-assessment.md` § Scoping
+Discipline applies:
 assume the worst plausible case, declare at that level, and correct as evidence arrives.
 Correcting downward is free; that is the point of declaring early.
 
@@ -31,7 +32,7 @@ Correcting downward is free; that is the point of declaring early.
 | Severity | Ack | IC required | Scribe | Comms cadence | Postmortem |
 |----------|-----|-------------|--------|---------------|------------|
 | SEV1 | 5 min | Yes, dedicated | Yes | 30 min, no exceptions | Mandatory, within 5 business days |
-| SEV2 | 15 min | Yes (may also be OL if pool is thin) | Yes | 60 min | Mandatory, within 10 business days |
+| SEV2 | 15 min | Yes (may also carry CL if pool is thin) | Yes | 60 min | Mandatory, within 10 business days |
 | SEV3 | Next business hour | No | No | On state change | If repeated ≥3× in 90 days |
 | SEV4 | Next business day | No | No | On resolution | No |
 
@@ -45,7 +46,9 @@ next update at HH:MM" is a valid and necessary update — silence is read as aba
 - Mitigation attempt fails and no alternative is ready.
 - Duration exceeds the severity's expectation (SEV2 past 2 hours → reassess as SEV1).
 - Data integrity moves from "unaffected" to "unknown". Unknown is not "fine".
-- A second incident starts and shares the responder pool.
+
+A second incident sharing the responder pool is not an upgrade: escalate for responders
+(§ Concurrent Incidents) and do not relabel.
 
 **Downgrade when** impact is genuinely reduced — mitigation is verified from the user's
 perspective and holding. Downgrading requires the IC's explicit call and a comms update; a

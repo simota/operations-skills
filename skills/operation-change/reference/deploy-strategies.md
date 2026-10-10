@@ -35,7 +35,7 @@ would for a deploy. A flag guarding a write path has a point of no return like a
 | 1 | 1% | ≥ slowest feedback loop | Error rate and latency within tolerance of baseline | Any abort trigger fires |
 | 2 | 10% | ≥ 15 min | Same, with statistically meaningful volume | Same |
 | 3 | 50% | ≥ 30 min | Same, plus downstream systems healthy | Same |
-| 4 | 100% | ≥ 30 min monitoring | All SLIs at baseline, backlogs drained | Rollback |
+| 4 | 100% | ≥ 30 min monitoring | All SLIs at baseline, backlogs drained | Any abort trigger fires → roll back |
 
 **Promotion is gated on metrics, with time as a floor, never on time alone.** A timer-based
 promotion ships a broken canary on schedule.

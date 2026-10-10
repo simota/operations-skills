@@ -3,7 +3,7 @@
 
 Purpose: The read-only commands that produce `O1` evidence on the platforms this set is used against, ordered by how fast the evidence disappears, and what each mitigation destroys as it runs.
 Read when: an incident is live and a playbook re-run, an instance replacement, a service redeploy, or a rollout is about to happen — or has just happened and the evidence is being reconstructed.
-Source: none — nothing outside this page can move what it states.
+Source: none pinned — the installed `ansible`, `aws` and `gcloud` CLIs, unversioned; `make figures` re-reads them.
 Verified: 2026-08-21 — the Ansible behaviour below was produced by running it against a local inventory (`O1`). The `aws` and `gcloud` behaviour is quoted from `aws help` / `gcloud help` on the installed CLIs (`O3`); no credentials were available in this session, so nothing on those two was executed.
 Claims not from either source — ingestion lag, retention windows, what a given account has configured — are `O5` and are worth confirming against the environment actually in use.
 `make figures` re-checks every quoted claim against the CLIs on PATH, in `make check` and the pre-commit hook. With a CLI missing it reports SKIPPED for that tool and passes: a hole, announced rather than hidden.
@@ -12,8 +12,11 @@ Claims not from either source — ingestion lag, retention windows, what a given
 evidence ladder, and `reference/impact-assessment.md` gives the capture 60 seconds. This
 page is what to run in them.
 
-Everything here is read-only. None of it operates the system; it is what makes
-the difference between a postmortem with a cause and one with a theory.
+Everything here is read-only, with two exceptions: a task marked `check_mode: false`
+runs for real even under `--check` (grep the play for `check_mode` first), and
+`--diff` prints file contents, so secrets reach the record unless the task has
+`no_log`. Log reads that may hold personal data are `T3`
+(`_operation/SAFETY_TIERS.md` rule 4).
 
 ---
 
@@ -54,11 +57,12 @@ declarative tasks and about nothing else.
 ## AWS — before you replace
 
 ```sh
-aws sts get-caller-identity              # which account and identity this is
-aws ec2 describe-instances --instance-ids <id>
-aws ec2 get-console-output --instance-id <id>     # survives the instance, briefly
-aws ecs describe-tasks --cluster <c> --tasks <arn> # stoppedReason, before it ages out
-aws logs tail <group> --since 15m                 # scoped, not the whole group
+aws sts get-caller-identity --profile <p>             # which account and identity this is
+aws ec2 describe-instances --instance-ids <id> --profile <p> --region <r>
+aws ec2 get-console-output --instance-id <id> --profile <p> --region <r>
+aws ecs describe-tasks --cluster <c> --tasks <arn> --profile <p> --region <r>  # stoppedReason, before it ages out
+aws logs filter-log-events --log-group-name <g> --start-time <ms> --end-time <ms> \
+  --profile <p> --region <r>                              # the incident window, not "recent"
 ```
 
 Run `get-caller-identity` first and put its output in the timeline. Every other
@@ -70,9 +74,10 @@ nothing in their output says which account that was.
 ```sh
 gcloud config list                       # the project this shell is pointed at
 gcloud auth list                         # which account is active
-gcloud compute instances describe <vm> --zone <z>
-gcloud compute instances get-serial-port-output <vm> --zone <z>
-gcloud logging read 'resource.type="gce_instance"' --limit 200 --freshness 1h
+gcloud compute instances describe <vm> --zone <z> --project <p>
+gcloud compute instances get-serial-port-output <vm> --zone <z> --project <p>
+gcloud logging read 'resource.type="gce_instance" AND resource.labels.instance_id="<id>"
+  AND timestamp>="<start>" AND timestamp<="<end>"' --project <p> --format=json
 ```
 
 `gcloud help` states that `--project`, when omitted, means "the current project

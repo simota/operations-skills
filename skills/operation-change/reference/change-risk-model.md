@@ -36,7 +36,7 @@ Score 1–5 each. Any single 5 forces `T3`+ handling regardless of the total.
 | Score | Condition |
 |-------|-----------|
 | 1 | Instant and verified — flag flip with a tested off-path |
-| 3 | Reversible in minutes, documented procedure, exercised within 90 days |
+| 3 | Reversible in minutes, procedure `proved` and its expiry not passed (`_operation/EXPIRY.md`) |
 | 5 | Irreversible, or a rollback that has never been exercised |
 
 **Unknown reversibility scores 5.** Nobody being able to state the rollback is the strongest
@@ -123,7 +123,7 @@ procedure itself is unverified.
 | Off-hours for low-traffic reasons | Only when the failure mode is traffic-dependent **and** coverage is arranged |
 | Friday afternoon | Only `Standard`, or genuinely urgent — otherwise the failure surfaces with nobody watching |
 | Immediately before a freeze | Avoid; there is no room to iterate on the fix |
-| Immediately after a freeze exit | Elevated — see freeze-exit risk concentration |
+| Immediately after a freeze exit | Elevated — see `reference/freeze-and-approval.md` § Freeze Exit |
 | During a declared incident | `Emergency` class only |
 
 "Deploy at low traffic" is a weak argument when the failure mode is not load-related — it trades

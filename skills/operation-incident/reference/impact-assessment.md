@@ -71,8 +71,8 @@ The dimension most often assessed too late.
 4. **Is it recoverable?** From backup, from replay, from an upstream source, or not at all.
 5. **Has it propagated?** Caches, replicas, downstream systems, exports, third parties.
 
-Data impact is a `T4` domain (`_operation/SAFETY_TIERS.md`) — repair actions are proposed, never
-executed autonomously.
+Data repair is `T4` unless its reversal has been exercised (`_operation/SAFETY_TIERS.md`
+§ Reversibility Decides the Tier) — repair actions are proposed, never executed autonomously.
 
 ## Regulatory Trigger Check
 
