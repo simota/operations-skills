@@ -113,6 +113,11 @@ def _(r):
     (r / "operation-registry/routes.yaml").write_text(t, encoding="utf-8")
 
 
+@case("V13-stages")
+def _(r): sub(r / "operation-registry/routes.yaml", "chain: [operation-oncall, operation-runbook]",
+              "chain: [" + ", ".join(["operation-runbook"] * 7) + "]")
+
+
 @case("V14")
 def _(r): sub(r / "operation-registry/routes.yaml", "  pattern: loop", "  pattern: spiral")
 
@@ -169,6 +174,13 @@ def _(r): sub(r / f"{S}operation-runbook/SKILL.md", "## Done when",
 
 @case("V23")
 def _(r): sub(r / f"{S}_operation/CONTRACT.md", "<!-- operation:contract -->", "<!-- operation:guidance -->")
+
+
+@case("V23-undeclared")
+def _(r):
+    """A label nothing declares, on a pattern no file matches: only the new check can fire."""
+    sub(r / "operation-registry/harness.yaml", "label_by_path:\n",
+        'label_by_path:\n  "skills/nosuch/*.md": advice\n')
 
 
 @case("V24")

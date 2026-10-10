@@ -228,6 +228,10 @@ def v12_prefix():
 def v13_route_budget():
     if len(ROUTES) > LIM["routes_max"]:
         fail("V13", f"{len(ROUTES)} routes (max {LIM['routes_max']})")
+    for name, r in ROUTES.items():
+        stages = len(r.get("chain", []))
+        if stages > LIM["route_stages_max"]:
+            fail("V13", f"route {name} chains {stages} stages (max {LIM['route_stages_max']})")
 
 
 def v14_patterns():
@@ -389,6 +393,10 @@ def v22_markers_classified():
 
 def v23_labels():
     import fnmatch
+    allowed = set(H["document_labels"])
+    for pat, label in H["label_by_path"].items():
+        if label not in allowed:
+            fail("V23", f"label_by_path[{pat!r}] is {label!r}, not one of {sorted(allowed)}")
     for f in sorted(ROOT.rglob("*.md")):
         if ".git" in f.parts:
             continue
@@ -644,7 +652,7 @@ def v35_signature():
     Each set declares one signature mechanism in `signature:` — the contract
     that carries it, the vocabulary it introduces, and the skills that owe it.
     The rule is identical in every set; only the declaration differs, which is
-    what keeps six copies of this file from becoming six dialects.
+    what keeps the copies of this file from becoming dialects.
 
     The delivered block states the rule inside every skill. A skill that owes
     the mechanism also names its own half of it, because a rule stated

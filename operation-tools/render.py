@@ -3,7 +3,7 @@
 
 A contract kept only in the shared directory is not read on most launches, so the operative
 part is carried verbatim in each skill. That only stays true if changing one
-line does not cost eight hand edits — this is that cost, paid once.
+line does not cost one hand edit per skill — this is that cost, paid once.
 
 Idempotent: run it, commit the diff.
 """
