@@ -4,7 +4,9 @@
 # individually into every installed CLI's skills directory (claude, codex,
 # agy), so each of those directories keeps whatever else it already carries.
 
-REPO       := $(CURDIR)
+# The physical path: install.sh resolves the same way, so a link either one made
+# through a symlinked checkout is recognised by the other.
+REPO       := $(shell pwd -P)
 CLAUDE_DIR ?= $(HOME)/.claude/skills
 CODEX_DIR  ?= $(HOME)/.codex/skills
 AGY_DIR    ?= $(HOME)/.gemini/antigravity-cli/skills
@@ -52,16 +54,21 @@ refute:
 render:
 	@python3 operation-tools/render.py
 
+# Wherever git looks for hooks: a worktree's .git is a file, and core.hooksPath
+# moves them. Linked, not copied, so a change to the hook reaches every clone.
 hooks:
-	@mkdir -p .git/hooks
-	@cp operation-tools/githooks/pre-commit .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
-	@echo "pre-commit installed"
+	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
+		ln -sf "$(REPO)/operation-tools/githooks/pre-commit" "$$d/pre-commit" && \
+		chmod +x operation-tools/githooks/pre-commit && \
+		echo "pre-commit installed in $$d"
 
 # A link is ours only when it resolves into this repository's skills/. Anything
 # else at the target — a real directory, or a symlink into another set — belongs
 # to someone else and is left alone by both link and unlink, as install.sh does.
-OURS = case "$$(readlink "$$target")" in "$(REPO)/skills/"*) true ;; *) false ;; esac
+# Resolved physically, so a link made through a symlinked checkout still counts;
+# a dangling link falls back to its literal text.
+OURS = { r="$$(cd "$$target" 2>/dev/null && pwd -P)" || r="$$(readlink "$$target")"; \
+	case "$$r" in "$(REPO)/skills/"*) true ;; *) false ;; esac; }
 
 # A skill is a directory holding a SKILL.md, under skills/ where the plugin
 # format expects it. The prefix alone is not the test: operation-registry/ and

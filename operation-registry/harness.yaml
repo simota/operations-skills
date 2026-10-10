@@ -138,12 +138,20 @@ vocabulary:
   residual_classes: [BLOCKED, OUT-OF-SCOPE, DEFERRED, UNVERIFIED]
   statuses: [DONE, PARTIAL, BLOCKED]
   tiers: [T1, T2, T3, T4]     # SAFETY_TIERS, not a ceremony scale
+  service_tiers: [ST0, ST1, ST2, ST3]   # what a failure costs; see vocabulary_defined_in
   proof_states: [proved, simulated, stale, untested, unprovable]
   # The readiness review and the change record both close on one of these.
   # Hyphenated like every other multi-word value in the family; V38 is what
   # makes a page spelling it with spaces fail rather than quietly diverge.
   verdicts: [GO, GO-WITH-CONDITIONS, NO-GO]
 
+
+# A vocabulary key whose definition table lives outside _operation/. V20 holds
+# it to the same form — a row or a heading that opens with the word — on the
+# page named here, relative to the skills directory. Service tiers are defined
+# where they are assigned, and _operation/ is at its line budget.
+vocabulary_defined_in:
+  service_tiers: operation-readiness/reference/service-tiering.md
 
 label_by_path:
   "skills/_operation/ROUTING.md": guidance

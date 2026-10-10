@@ -12,12 +12,18 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # 3.9 is the python3 macOS ships; the tools have to start there, and a
+    # `str | None` annotation once kept one of them from doing so.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: pip install pyyaml
+          python-version: ${{ matrix.python-version }}
+      - run: pip install pyyaml==6.0.2
       - name: Static rules
         run: python3 operation-tools/validate.py
       - name: Every rule still fires

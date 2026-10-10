@@ -1,6 +1,14 @@
 #!/bin/sh
 # Budgets enforced by a mechanism rather than by remembering.
 # Install with: make hooks
+#
+# The checks run against what is being committed — the index — not the working
+# tree. Checking the tree passed a commit whose staged content failed, whenever
+# the tree had been fixed and the fix not staged.
 set -e
-python3 "$(git rev-parse --show-toplevel)/operation-tools/validate.py"
-python3 "$(git rev-parse --show-toplevel)/operation-tools/figures_check.py"
+top="$(git rev-parse --show-toplevel)"
+snap="$(mktemp -d "${TMPDIR:-/tmp}/operation-precommit.XXXXXX")"
+trap 'rm -rf "$snap"' EXIT INT TERM
+git -C "$top" checkout-index --all --prefix="$snap/"
+python3 "$snap/operation-tools/validate.py"
+python3 "$snap/operation-tools/figures_check.py"
