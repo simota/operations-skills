@@ -41,7 +41,7 @@ conditions: [<what must be true>]
 
 Score each dimension 1–5; the total orders the queue, and any single 5 takes at least the 16–20
 approval band. The score never sets the safety tier — except that a Reversibility 5 (irreversible,
-`untested` or `stale`) is `T4` by `_operation/SAFETY_TIERS.md` rule 2.
+`untested`, `stale`, or simulated with the undo stubbed) is `T4` by `_operation/SAFETY_TIERS.md` rule 2.
 The table anchors 1, 3, and 5. **2 and 4 are the interpolations** — use 4 when the case is
 closer to the 5 anchor than the 3, and 2 likewise. When a score sits on a boundary that changes
 the handling band, round **up** and say that you did.
@@ -49,7 +49,7 @@ the handling band, round **up** and say that you did.
 | Dimension | 1 | 3 | 5 |
 |-----------|---|---|---|
 | **Blast radius** | One instance, or a non-customer-facing internal service | One customer-facing service, one region | Multiple services, shared infrastructure, or all regions |
-| **Reversibility** | Instant, verified | Reversible in minutes, procedure `proved` and unexpired, or `simulated` with its gap stated | Irreversible, or rollback `untested` or `stale` |
+| **Reversibility** | Instant, verified | Reversible in minutes, procedure `proved` and unexpired, or `simulated` end to end in a lower environment, gap stated | Irreversible, or rollback `untested`, `stale`, or `simulated` with its undo step stubbed |
 | **Coupling** | No dependents | Dependents tolerate the change | Requires coordinated multi-service change |
 | **Novelty** | Routine, done many times | Uncommon path | First time, or first time on this system |
 | **Batch size** | One logical change | 2–5 | >5, or unknown |

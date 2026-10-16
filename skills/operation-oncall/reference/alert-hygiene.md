@@ -23,7 +23,7 @@ Which criterion fails decides the verdict — they are not interchangeable:
 |---------|---------|---------|
 | (2) agency | `DELETE` the page | No human action (fix, comms, escalation) can ever change the outcome |
 | (1) impact, but (2) holds | `DEMOTE` to ticket | Real and actionable, but no user consequence |
-| (3) not automated — working automation already handles it | `DEMOTE` to auto-remediation; a failed run pages primary | A human is doing a machine's job. Until the automation runs, the other criteria decide |
+| (3) not automated — working automation already handles it | `DEMOTE` to auto-remediation; a failed run is re-judged on (1), (2) and (4) | A human is doing a machine's job. Until the automation runs, the other criteria decide |
 | (4) documented | `KEEP (conditional)` | Still pages; the missing or `untested` runbook is a blocking gap |
 
 Failing both (1) and (2) is `DELETE`. Note that a `KEEP (conditional)` alert **keeps paging** —

@@ -8,7 +8,7 @@ Apply to every alert. The first row that matches decides.
 | Condition | Verdict | Channel |
 |-----------|---------|---------|
 | No human action (fix, comms, escalation) can change the outcome | `DELETE` the page; keep the signal if forensics reads it | — |
-| Action exists and working automation already performs it | `DEMOTE` | Auto-remediation; a failed run pages primary (`reference/escalation-policy.md` Level 1) |
+| Action exists and working automation already performs it | `DEMOTE` | Auto-remediation; a failed run is judged by the rows below, and pages only if one of them pages |
 | Fires with another alert >80% of the time | `MERGE` | Into the parent symptom alert |
 | No user impact, no imminent impact | `DEMOTE` | Ticket, business hours |
 | Impact spans multiple services or is customer-announced | `KEEP` | Page primary + declare incident; an undocumented action is still a blocking gap |

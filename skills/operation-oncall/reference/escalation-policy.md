@@ -11,7 +11,7 @@ Verified: 2026-08-21 — no automated check.
 | Level | Target | Trigger | Timeout to next |
 |------|--------|---------|-----------------|
 | 0 | Automated remediation | Alert fires, pattern is known | 2 min (or on failure) |
-| 1 | Primary on-call | Automation absent or failed | 5 min unacknowledged |
+| 1 | Primary on-call | An alert that pages, with automation absent or failed | 5 min unacknowledged |
 | 2 | Secondary on-call | Primary unacknowledged, or primary requests help | 3 min unacknowledged |
 | 3 | Service owner / team lead | Level 2 unacknowledged, or scope exceeds on-call authority | 5 min |
 | 4 | Engineering manager + IC pool | Level 3 unacknowledged, or SEV1 declared | 10 min |
