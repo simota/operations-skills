@@ -738,6 +738,15 @@ def tool_engine_checks_schema() -> str:
     if not engine.unchecked({"type": "object", "additionalProperties": {"type": "string"}}):
         return ("engine.unchecked accepted a schema-valued additionalProperties, which "
                 "strict() would replace with false")
+    if not engine.unchecked({"type": "object", "additionalProperties": True}):
+        return "engine.unchecked accepted additionalProperties: true, which strict() makes false"
+    partial = {"type": "object", "properties": {"kind": {"type": "string"}}, "required": ["kind"],
+               "oneOf": [{"type": "object", "properties": {"a": {"type": "string"}}}]}
+    if not engine.unchecked(partial):
+        return "engine.unchecked accepted partial alternatives, which strict() closes apart"
+    if engine.unchecked({"oneOf": [{"type": "object", "properties": {"a": {"type": "string"}}},
+                                   {"type": "string"}]}):
+        return "engine.unchecked refused whole alternatives"
     if not engine.unchecked({"allOf": [{"type": "object"}]}):
         return "engine.unchecked accepted allOf, whose branches strict() closes"
     if not engine.unchecked({"type": "array", "items": False}):

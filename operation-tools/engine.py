@@ -174,9 +174,9 @@ _FORMS = {
     "enum": lambda v: isinstance(v, list),
     "required": lambda v: isinstance(v, list) and all(isinstance(x, str) for x in v),
     "properties": lambda v: isinstance(v, dict) and all(isinstance(x, dict) for x in v.values()),
-    # Only a boolean: strict() closes every object (codex requires it), so a
-    # schema-valued form could never reach an engine with its meaning intact.
-    "additionalProperties": lambda v: isinstance(v, bool),
+    # Only `false`: strict() closes every object (codex requires it), so `true`
+    # or a schema would reach the engine meaning the opposite.
+    "additionalProperties": lambda v: v is False,
     "items": lambda v: isinstance(v, dict),
     "contains": lambda v: isinstance(v, dict),
     "anyOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
@@ -191,6 +191,11 @@ def unchecked(schema, where: str = "$") -> list[str]:
     out = [f"{where}.{k}" for k in schema if k not in CHECKED | ANNOTATIONS]
     out += [f"{where}.{k} (this form)" for k, ok in _FORMS.items()
             if k in schema and not ok(schema[k])]
+    # Alternatives beside fields of the node's own are partial: strict() closes
+    # each branch, which then rejects the shared fields. Whole alternatives only.
+    if any(k in schema for k in ("anyOf", "oneOf")) and \
+            any(k in schema for k in ("properties", "required")):
+        out.append(f"{where} (alternatives beside the node's own fields)")
     for k in _SUBSCHEMA_MAPS:
         if isinstance(schema.get(k), dict):
             for name, sub in schema[k].items():
