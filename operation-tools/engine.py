@@ -61,13 +61,15 @@ def strict(schema: dict) -> dict:
     if not isinstance(schema, dict):
         return schema
     out = dict(schema)
-    for key in ("anyOf", "oneOf", "allOf"):
+    for key in ("anyOf", "oneOf", "allOf", "prefixItems"):
         if isinstance(schema.get(key), list):
             out[key] = [strict(s) for s in schema[key]]
-    for key in ("$defs", "definitions", "properties"):
+    for key in ("$defs", "definitions", "properties", "patternProperties",
+                "dependentSchemas"):
         if isinstance(schema.get(key), dict):
             out[key] = {k: strict(v) for k, v in schema[key].items()}
-    for key in ("items", "additionalItems", "not"):
+    for key in ("items", "additionalItems", "contains", "not", "if", "then", "else",
+                "propertyNames", "unevaluatedItems"):
         if isinstance(schema.get(key), dict):
             out[key] = strict(schema[key])
     if out.get("type") == "object":
@@ -146,6 +148,11 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
 
 
 def _ask(engine: str, prompt: str, schema: dict):
+    # Every engine takes the prompt as an argument, and a prompt opening with `-`
+    # — a markdown list, say — is read as an unknown option (`claude -p "--x"`
+    # exits "unknown option"). A leading newline is invisible to the model.
+    if prompt.startswith("-"):
+        prompt = "\n" + prompt
     known = ENGINES.get("runs_on") or []
     if engine not in known:
         raise EngineError(f"{engine} is not one of {known}")
@@ -273,6 +280,10 @@ def main() -> int:
         print("need --prompt-file and --schema", file=sys.stderr)
         return 2
     try:
+        known = ENGINES.get("runs_on") or []
+        if a.running not in known:
+            raise EngineError(f"the running engine {a.running!r} is not one of {known}; "
+                              "a misspelt one would let it check its own work")
         engine = a.engine or other_than(a.running)
         if a.running and engine == a.running:
             raise EngineError(f"{engine} is the engine running this; "

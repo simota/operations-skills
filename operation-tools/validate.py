@@ -9,9 +9,11 @@ belongs in a review, not in this file.
 """
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import sys
+import urllib.parse
 import unicodedata
 from pathlib import Path
 
@@ -127,7 +129,8 @@ def sections(text: str) -> dict[str, str]:
 
 CODE_SPAN_RE = re.compile(r"(`+)(?:(?!\1).)+?\1")
 SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
-REF_DEF_RE = re.compile(r"^\s{0,3}\[[^\]]+\]:\s*(\S+)")
+# `[^1]: ...` is a footnote, not a link definition.
+REF_DEF_RE = re.compile(r"^\s{0,3}\[(?!\^)[^\]]+\]:\s*(\S+)")
 
 
 def _link_target(raw: str) -> str:
@@ -158,7 +161,8 @@ def is_external(target: str) -> bool:
 
 def slug(heading: str) -> str:
     """GitHub's heading anchor: lower case, punctuation dropped, spaces to hyphens."""
-    h = CODE_SPAN_RE.sub(lambda m: m.group(0).strip("`"), heading.strip()).lower()
+    h = CODE_SPAN_RE.sub(lambda m: m.group(0).strip("`"), heading.strip())
+    h = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", h).lower()   # a link keeps only its text
     h = re.sub(r"[^\w\- ]", "", h)
     return h.replace(" ", "-")
 
@@ -288,7 +292,7 @@ def v8_links():
                 key = dest.resolve()
                 if key not in cache:
                     cache[key] = anchors(read(dest))
-                if frag.lower() not in cache[key]:
+                if urllib.parse.unquote(frag).lower() not in cache[key]:
                     fail("V8", f"{f.relative_to(ROOT)} links to {target}, and "
                                f"{path or f.name} has no heading #{frag}")
 
@@ -481,7 +485,14 @@ def _is_own_reference(p: str) -> bool:
         return False                      # a pattern, not a path
     if p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/")):
         return True
-    return p.endswith((".md", ".yaml", ".py")) and Path(p).name in _own_names()
+    if not p.endswith((".md", ".yaml", ".py")):
+        return False
+    if "/" in p or ".." in p:
+        return True                       # a path into somewhere: check it resolves
+    # A bare name is the set's when the set has it — or nearly has it: `SIZNG.md`
+    # is a typo of an own page, while `values.yaml` is the reader's project.
+    own = _own_names()
+    return p in own or bool(difflib.get_close_matches(p, own, n=1, cutoff=0.85))
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:
@@ -1053,8 +1064,11 @@ RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
 
 def hook_installed() -> bool:
     """Where git looks for hooks: a worktree's `.git` is a file, and
-    core.hooksPath moves them elsewhere."""
+    core.hooksPath moves them elsewhere. Run from the hook itself, this is a
+    snapshot of the index outside any repository — and the hook is plainly on."""
     import subprocess
+    if os.environ.get("OPERATION_PRECOMMIT") == "1":
+        return True
     try:
         r = subprocess.run(["git", "rev-parse", "--git-path", "hooks"], cwd=ROOT,
                            capture_output=True, text=True, timeout=10)

@@ -13,10 +13,10 @@ skills_dir: skills
 platform_dirs: [.git, .github, .claude, skills, docs]
 
 limits:
-  skill_md_lines: 150         # derived, not chosen: the 73 lines of delivered contract
+  skill_md_lines: 150         # derived, not chosen: the 74 lines of delivered contract
                               # every file in this set carries (five blocks and their
-                              # markers, the last 17 the sixth axis: what the run says
-                              # at the end) leave 77 for the skill's own words. The
+                              # markers, 17 of them the sixth axis, `surface`: what the
+                              # run says at the end) leave 76 for the skill's own words. The
                               # raises before it (120 -> 128 -> 140) were the same
                               # move for a smaller block. Measured own-content max in
                               # this set: 75 lines, in operation-runbook

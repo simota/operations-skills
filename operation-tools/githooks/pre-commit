@@ -10,5 +10,5 @@ top="$(git rev-parse --show-toplevel)"
 snap="$(mktemp -d "${TMPDIR:-/tmp}/operation-precommit.XXXXXX")"
 trap 'rm -rf "$snap"' EXIT INT TERM
 git -C "$top" checkout-index --all --prefix="$snap/"
-python3 "$snap/operation-tools/validate.py"
+OPERATION_PRECOMMIT=1 python3 "$snap/operation-tools/validate.py"
 python3 "$snap/operation-tools/figures_check.py"

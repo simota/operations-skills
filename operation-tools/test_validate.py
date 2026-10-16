@@ -9,6 +9,7 @@ Run: make test
 """
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -517,6 +518,29 @@ def _(r):
     app(r / TRAPS, "\nEvery page under `reference/*.md`. Diff the Helm `values.yaml` first.\n")
 
 
+@case("V19-typo", "'SIZNG.md', which does not resolve")
+def _(r):
+    """A bare name one letter off an own page is a broken reference, not the reader's file."""
+    app(r / TRAPS, "\nRead `SIZNG.md` first.\n")
+
+
+@case("V19-missing-dotdot", "'../_operation/CONTRAKT.md'; paths are normalised")
+def _(r): app(r / TRAPS, "\nRead `../_operation/CONTRAKT.md` first.\n")
+
+
+@quiet("V8-footnote", "V8", "V19")
+def _(r):
+    """A footnote definition is not a link."""
+    app(r / TRAPS, "\nThe pager is the floor.[^1]\n\n[^1]: Measured over the last quarter.\n")
+
+
+@quiet("V8-link-heading", "V8")
+def _(r):
+    """GitHub drops a link's target from the anchor and decodes a percent-encoded one."""
+    app(r / TRAPS, "\n## See [the contract](../_operation/CONTRACT.md) first\n\n## 手順\n\n"
+                   "[a](#see-the-contract-first) [b](#%E6%89%8B%E9%A0%86)\n")
+
+
 @case("V20-column", "defines 'O3'")
 def _(r):
     """The word is still in a row, but the row no longer opens with it."""
@@ -628,7 +652,15 @@ def tool_engine_requires_running() -> str:
         r = subprocess.run([sys.executable, str(ROOT / "operation-tools/engine.py"), "codex",
                             "--prompt-file", str(p), "--schema", str(s)],
                            capture_output=True, text=True)
-        return "" if r.returncode == 2 else f"engine.py without --running exited {r.returncode}"
+        if r.returncode != 2 or "--running is required" not in r.stderr:
+            return f"engine.py without --running exited {r.returncode}: {r.stderr.strip()[:200]}"
+        # A misspelt running engine must not let the named checker be the maker.
+        r = subprocess.run([sys.executable, str(ROOT / "operation-tools/engine.py"), "claude",
+                            "--running", "cluade", "--prompt-file", str(p), "--schema", str(s)],
+                           capture_output=True, text=True)
+        if r.returncode == 0 or "is not one of" not in r.stderr:
+            return f"engine.py accepted --running cluade (exit {r.returncode})"
+        return ""
 
 
 def tool_engine_checks_schema() -> str:
@@ -650,6 +682,32 @@ def tool_engine_checks_schema() -> str:
     # enum/const hold instance values, not schemas: strict() must leave them alone.
     if engine.strict({"enum": [{"type": "object"}]}) != {"enum": [{"type": "object"}]}:
         return "engine.strict rewrote an enum value as if it were a schema"
+    inner = engine.strict({"type": "array", "contains": {"type": "object"}})["contains"]
+    if inner.get("additionalProperties") is not False:
+        return "engine.strict left an object under `contains` open"
+    return ""
+
+
+def tool_engine_dash_prompt() -> str:
+    """A prompt opening with `-` reaches the engine as the prompt, not as an option."""
+    import engine
+    tmp = tempfile.TemporaryDirectory()
+    with tmp:
+        d = Path(tmp.name)
+        fake = d / "claude"
+        fake.write_text("#!/bin/sh\nprintf '%s\\n' \"$2\" > \"$(dirname \"$0\")/argv\"\n"
+                        "echo '{\"structured_output\": {\"ok\": true}}'\n")
+        fake.chmod(0o755)
+        old = os.environ.get("PATH", "")
+        os.environ["PATH"] = f"{d}:{old}"
+        try:
+            engine.run("claude", "- check the rollback", {"type": "object",
+                       "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]})
+        finally:
+            os.environ["PATH"] = old
+        sent = (d / "argv").read_text()
+        if sent.startswith("-"):
+            return f"engine passed a dash-leading prompt as {sent[:30]!r}, read as an option"
     return ""
 
 
@@ -661,7 +719,9 @@ def tool_refute_unchecked_fails() -> str:
         r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
                             "--running", "claude", str(c)], capture_output=True, text=True,
                            env={"PATH": tmp.name, "HOME": tmp.name})
-        return "" if r.returncode == 1 else f"refute.py with no engine exited {r.returncode}"
+        if r.returncode != 1 or "[UNCHECKED]" not in r.stdout or "Traceback" in r.stderr:
+            return f"refute.py with no engine exited {r.returncode}: {(r.stdout + r.stderr)[-200:]}"
+        return ""
 
 
 def tool_figures_parsing() -> str:
@@ -676,6 +736,7 @@ def tool_figures_parsing() -> str:
 
 
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
+               tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing]
 
 
@@ -703,6 +764,11 @@ def main() -> int:
             print(f"  {rule} did not fire with {needle!r}\n{out}")
     for name, (mutate, rules) in QUIET.items():
         out = _run_case(mutate)
+        # Silence from a crash is not silence: the validator has to have finished.
+        if "Traceback" in out or not re.search(r"^(green|\d+ failure\(s\))$", out, re.M):
+            bad.append(name)
+            print(f"  {name}: the validator did not finish\n{out}")
+            continue
         loud = [l.strip() for l in out.splitlines()
                 if any(re.match(rf"\s*{r}: ", l) for r in rules)]
         if loud:
