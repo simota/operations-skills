@@ -723,6 +723,15 @@ def tool_engine_checks_schema() -> str:
     # enum/const hold instance values, not schemas: strict() must leave them alone.
     if engine.strict({"enum": [{"type": "object"}]}) != {"enum": [{"type": "object"}]}:
         return "engine.strict rewrote an enum value as if it were a schema"
+    if not engine.conforms([], {"type": "array", "contains": {"type": "object"}}):
+        return "engine.conforms accepted an empty array against `contains`"
+    try:
+        engine.run("codex", "x", {"type": "object", "properties": {"a": {"type": "string",
+                                  "minLength": 2}}})
+        return "engine.run accepted a schema with a keyword conforms cannot verify"
+    except engine.EngineError as e:
+        if "cannot verify" not in str(e):
+            return f"engine.run refused the schema for the wrong reason: {e}"
     cond = {"if": {"type": "object", "properties": {"k": {"const": "a"}}},
             "then": {"type": "object", "properties": {"r": {"type": "string"}}}}
     if engine.strict(cond) != cond:

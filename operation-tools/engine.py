@@ -118,6 +118,8 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
             return [f"{where}: expected {t}, got {type(value).__name__}"]
     if "enum" in schema and value not in schema["enum"]:
         errs.append(f"{where}: {value!r} is not one of {schema['enum']}")
+    if "const" in schema and value != schema["const"]:
+        errs.append(f"{where}: {value!r} is not {schema['const']!r}")
     if isinstance(value, dict):
         props = schema.get("properties") or {}
         for k in schema.get("required") or []:
@@ -131,7 +133,38 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
     if isinstance(value, list) and isinstance(schema.get("items"), dict):
         for i, v in enumerate(value):
             errs += conforms(v, schema["items"], f"{where}[{i}]")
+    if isinstance(value, list) and isinstance(schema.get("contains"), dict):
+        if all(conforms(v, schema["contains"], where) for v in value):
+            errs.append(f"{where}: no item matches `contains`")
     return errs
+
+
+# What `conforms` evaluates, plus annotations that constrain nothing. A schema
+# using anything else would be sent to the engine and then waved through here,
+# so it is refused before any engine is asked.
+CHECKED = {"type", "enum", "const", "properties", "required", "additionalProperties",
+           "items", "contains", "anyOf", "oneOf", "allOf"}
+ANNOTATIONS = {"$schema", "$id", "title", "description", "default", "examples",
+               "$comment", "deprecated", "readOnly", "writeOnly"}
+_SUBSCHEMA_MAPS = ("properties",)
+_SUBSCHEMA_LISTS = ("anyOf", "oneOf", "allOf")
+_SUBSCHEMAS = ("items", "contains")
+
+
+def unchecked(schema, where: str = "$") -> list[str]:
+    """Keywords in `schema` that `conforms` would silently ignore."""
+    if not isinstance(schema, dict):
+        return []
+    out = [f"{where}.{k}" for k in schema if k not in CHECKED | ANNOTATIONS]
+    for k in _SUBSCHEMA_MAPS:
+        for name, sub in (schema.get(k) or {}).items():
+            out += unchecked(sub, f"{where}.{k}.{name}")
+    for k in _SUBSCHEMA_LISTS:
+        for i, sub in enumerate(schema.get(k) or []):
+            out += unchecked(sub, f"{where}.{k}[{i}]")
+    for k in _SUBSCHEMAS:
+        out += unchecked(schema.get(k), f"{where}.{k}")
+    return out
 
 
 def run(engine: str, prompt: str, schema: dict) -> dict:
@@ -141,6 +174,10 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
     with the wrong keys is not an answer, and passing it on turned into a
     KeyError three frames later in whoever read the verdict.
     """
+    gaps = unchecked(schema)
+    if gaps:
+        raise EngineError("the schema uses keywords this checker cannot verify, so an "
+                          f"answer breaking them would pass: {', '.join(gaps[:5])}")
     got = _ask(engine, prompt, schema)
     errs = conforms(got, strict(schema))
     if errs:
