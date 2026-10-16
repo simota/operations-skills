@@ -84,6 +84,19 @@ _TYPES = {"object": dict, "array": list, "string": str, "boolean": bool,
           "null": type(None), "number": (int, float), "integer": int}
 
 
+def json_equal(a, b) -> bool:
+    """Equality as JSON sees it: `true` is not `1`, though `1` is `1.0`."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a == b
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(json_equal(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(json_equal(a[k], b[k]) for k in a)
+    return type(a) is type(b) and a == b
+
+
 def conforms(value, schema: dict, where: str = "$") -> list[str]:
     """What in `value` breaks `schema`: the subset these tools write, checked
     here because an engine's own validation is a claim, not an observation."""
@@ -116,9 +129,9 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
                 ok = True
         if not ok:
             return [f"{where}: expected {t}, got {type(value).__name__}"]
-    if "enum" in schema and value not in schema["enum"]:
+    if "enum" in schema and not any(json_equal(value, e) for e in schema["enum"]):
         errs.append(f"{where}: {value!r} is not one of {schema['enum']}")
-    if "const" in schema and value != schema["const"]:
+    if "const" in schema and not json_equal(value, schema["const"]):
         errs.append(f"{where}: {value!r} is not {schema['const']!r}")
     if isinstance(value, dict):
         props = schema.get("properties") or {}
@@ -130,6 +143,8 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
                 errs += conforms(v, props[k], f"{where}.{k}")
             elif schema.get("additionalProperties") is False:
                 errs.append(f"{where}: unexpected property {k!r}")
+            elif isinstance(schema.get("additionalProperties"), dict):
+                errs += conforms(v, schema["additionalProperties"], f"{where}.{k}")
     if isinstance(value, list) and isinstance(schema.get("items"), dict):
         for i, v in enumerate(value):
             errs += conforms(v, schema["items"], f"{where}[{i}]")
@@ -151,19 +166,43 @@ _SUBSCHEMA_LISTS = ("anyOf", "oneOf", "allOf")
 _SUBSCHEMAS = ("items", "contains")
 
 
+# The value forms `conforms` evaluates for each keyword. A legal form outside
+# these (`items: false`, `type: 7`) would be waved through just the same.
+_FORMS = {
+    "type": lambda v: isinstance(v, str) or (isinstance(v, list)
+                                             and all(isinstance(x, str) for x in v)),
+    "enum": lambda v: isinstance(v, list),
+    "required": lambda v: isinstance(v, list) and all(isinstance(x, str) for x in v),
+    "properties": lambda v: isinstance(v, dict) and all(isinstance(x, dict) for x in v.values()),
+    "additionalProperties": lambda v: isinstance(v, (bool, dict)),
+    "items": lambda v: isinstance(v, dict),
+    "contains": lambda v: isinstance(v, dict),
+    "anyOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
+    "oneOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
+    "allOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
+}
+
+
 def unchecked(schema, where: str = "$") -> list[str]:
-    """Keywords in `schema` that `conforms` would silently ignore."""
+    """Keywords, or keyword forms, in `schema` that `conforms` would silently ignore."""
     if not isinstance(schema, dict):
-        return []
+        return [f"{where} (not a schema object)"]
     out = [f"{where}.{k}" for k in schema if k not in CHECKED | ANNOTATIONS]
+    out += [f"{where}.{k} (this form)" for k, ok in _FORMS.items()
+            if k in schema and not ok(schema[k])]
+    if isinstance(schema.get("additionalProperties"), dict):
+        out += unchecked(schema["additionalProperties"], f"{where}.additionalProperties")
     for k in _SUBSCHEMA_MAPS:
-        for name, sub in (schema.get(k) or {}).items():
-            out += unchecked(sub, f"{where}.{k}.{name}")
+        if isinstance(schema.get(k), dict):
+            for name, sub in schema[k].items():
+                out += unchecked(sub, f"{where}.{k}.{name}")
     for k in _SUBSCHEMA_LISTS:
-        for i, sub in enumerate(schema.get(k) or []):
-            out += unchecked(sub, f"{where}.{k}[{i}]")
+        if isinstance(schema.get(k), list):
+            for i, sub in enumerate(schema[k]):
+                out += unchecked(sub, f"{where}.{k}[{i}]")
     for k in _SUBSCHEMAS:
-        out += unchecked(schema.get(k), f"{where}.{k}")
+        if isinstance(schema.get(k), dict):
+            out += unchecked(schema[k], f"{where}.{k}")
     return out
 
 
