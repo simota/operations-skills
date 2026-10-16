@@ -101,8 +101,9 @@ Service tiers are defined by `operation-readiness`.
 
 ## Common Defects
 
-- **Sequential-only escalation with long timeouts** — 15 minutes per level means 30 minutes
-  before a service owner is even paged on a SEV1, and 45 before the IC pool is.
+- **Sequential-only escalation with long timeouts** — 15 minutes per level after Level 0 means
+  30 minutes before a service owner is even paged; on a SEV1 the IC pool is paged on
+  declaration (Level 4's trigger), so only the owner's wait is the defect here.
 - **Escalation target is a rotation with the same people** — Level 2 pointing at a schedule
   where primary is also secondary.
 - **Group inbox as an escalation target** — diffuse ownership means no acknowledgement.

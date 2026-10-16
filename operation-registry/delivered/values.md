@@ -4,4 +4,4 @@
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  Never suspended: a `SAFETY_TIER` approval, or who executes — this agent runs only `T1` reads
+  Never suspended: a `SAFETY_TIER` approval, or who executes — against a live system this agent runs only `T1` reads

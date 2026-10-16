@@ -41,7 +41,7 @@ is indistinguishable from the working version until the night you need it.
 untested rollback is byte-for-byte identical to a working one until the night it
 is needed, and a restore proved a year ago against a since-migrated schema reads
 in the record exactly like one proved on Tuesday. So every undo, restore,
-runbook and escalation path carries a state — `proved` · `simulated` · `stale` ·
+runbook, failover and escalation path carries a state — `proved` · `simulated` · `stale` ·
 `untested` · `unprovable` — and two clocks, whichever fires first: an interval
 with a stated reason, and a **named surface** whose change voids the proof
 immediately. Naming the surface is what gives the date something to fail against.

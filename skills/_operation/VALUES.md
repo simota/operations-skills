@@ -9,7 +9,7 @@ it.
 Until user-visible impact ends, every decision is judged on whether it shortens
 impact. Root cause work happens after, or on a track that never blocks
 mitigation. **This inverts once impact has ended** — after that, a cause claimed
-without `O2` or an observed mechanism closes the incident on a guess — the same outage twice.
+without `O2` (or, unsafe to reproduce, an observed mechanism) closes it on a guess and buys the outage twice.
 
 ## 2. Honesty over reassurance
 

@@ -29,9 +29,10 @@ Choose by **shortest verified path to impact ending**, not by elegance.
 2. Is rollback genuinely reversible? Check migrations, schema versions, data formats,
    feature-flag dependencies, and cache/message formats. If a migration ran, rollback may be
    `T4`, not `T2`.
-3. Is there a runbook for this failure mode, `proved` and unexpired? → The OL runs it; the
-   agent names it, its state and its tier. This is what `operation-runbook` exists for.
-4. Is the cause known with `O2` evidence? → Fix forward is viable.
+3. Is there a runbook for this failure mode, `proved` and unexpired — or `simulated`, with the gap
+   said aloud? → The OL runs it; the agent names it, its state and its tier.
+4. Is the cause known — `O2`, or its mechanism observed where reproducing is unsafe? → Fix
+   forward is viable.
 5. Cause unknown and impact severe? → Degrade or fail over. Restore service, then diagnose.
 6. None available? → Escalate for more expertise; state explicitly that no mitigation is
    currently identified. This is a valid, communicable state.

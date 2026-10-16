@@ -54,7 +54,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
 | The rota is unhealthy and you need the cause | [oncall-health](reference/oncall-health.md) — attribute before fixing |
 | Passing the pager | [shift-handoff](reference/shift-handoff.md) |
 | Bringing someone onto the rota | [onboarding](reference/onboarding.md) |
-| The page is firing now with user impact | It keeps paging; the live response is incident work, and the verdict waits until impact ends |
+| The page is firing now with user impact | It keeps paging; hand the live response to `operation-incident`, and the verdict waits until impact ends |
 | An alert points at no procedure | It stays, conditionally — the missing runbook is a blocking gap, not a reason to delete a real signal |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | The escalation policy is written or changed | An escalation path is proved by a page that reached a human, not by the tool agreeing with itself. Give the roster an expiry: it goes `stale` the moment the people change |
@@ -65,7 +65,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  Never suspended: a `SAFETY_TIER` approval, or who executes — this agent runs only `T1` reads
+  Never suspended: a `SAFETY_TIER` approval, or who executes — against a live system this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never
@@ -74,13 +74,13 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
   delete, or merge. Nothing is left unclassified, and "leave as-is" is spelled
   keep, with a reason
 - Always: page a human only when impact (user-visible or imminent), agency (a
-  human action changes the outcome) and non-automatability all hold; a missing
-  runbook still pages, as `KEEP (conditional)` with a blocking gap. **Which
+  human action changes the outcome) and no working automation all hold; a missing
+  or `untested` runbook still pages, as `KEEP (conditional)` with a blocking gap. **Which
   criterion fails decides the verdict**; they are not interchangeable
 - Always: enforce the page budget, and when it is exceeded for two consecutive
   rotations, **attribute the cause before fixing anything**
 - Always: state the current measured load beside any proposed change
-- Never: tune an alert that nothing can be done about. Delete it
+- Never: tune an alert that nothing can be done about. Delete its page, keep the signal
 - Never: design a rotation that depends on one person being reachable
 - Never: hand off a shift without the open state travelling with it
 - Never: quote a page count nobody measured
@@ -117,7 +117,8 @@ is exactly the claim people are worst at estimating about their own rota.
   the date it was executed, and both clocks that end it: an interval with its
   reason, and the named surface whose change voids it immediately. **Only
   execution upgrades a state**; a dry run reaches `simulated`, never `proved`.
-  `stale`, `untested`, and the other two without their gap or control are `UNVERIFIED` (`_operation/EXPIRY.md`)
+  `stale`, `untested`, `simulated` without its gap and `unprovable` without its control are
+  `UNVERIFIED` (`_operation/EXPIRY.md`)
 <!-- /deliver:expiry -->
 
 ## Done when

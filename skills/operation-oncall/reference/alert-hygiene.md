@@ -14,8 +14,8 @@ An alert pages a human cleanly only if **all four** hold (failing only (4) still
 1. **Impact** — it indicates user-visible impact, or impact that will occur without action.
 2. **Agency** — a human action can change the outcome. A fix, a customer communication and an
    escalation all count; waiting on a provider with customers to inform is not "no agency".
-3. **Non-automatable** — that action cannot be reliably automated today.
-4. **Documented** — the action is written down and reachable from the alert.
+3. **Not automated** — no working automation performs that action today.
+4. **Documented** — written down, reachable from the alert, and not `untested`.
 
 Which criterion fails decides the verdict — they are not interchangeable:
 
@@ -23,8 +23,8 @@ Which criterion fails decides the verdict — they are not interchangeable:
 |---------|---------|---------|
 | (2) agency | `DELETE` the page | No human action (fix, comms, escalation) can ever change the outcome |
 | (1) impact, but (2) holds | `DEMOTE` to ticket | Real and actionable, but no user consequence |
-| (3) non-automatable — working automation already handles it | `DEMOTE` to auto-remediation + ticket on failure | A human is doing a machine's job. Until the automation runs, the alert stays `KEEP` |
-| (4) documented | `KEEP (conditional)` | Still pages; the missing runbook is a blocking gap |
+| (3) not automated — working automation already handles it | `DEMOTE` to auto-remediation; a failed run pages primary | A human is doing a machine's job. Until the automation runs, the other criteria decide |
+| (4) documented | `KEEP (conditional)` | Still pages; the missing or `untested` runbook is a blocking gap |
 
 Failing both (1) and (2) is `DELETE`. Note that a `KEEP (conditional)` alert **keeps paging** —
 the "conditional" marks the runbook debt, it does not suspend the page. Silencing a real
@@ -52,7 +52,7 @@ is even reachable. Untested alerts fail silently when they are finally needed.
 | Verdict | Meaning | Required output |
 |---------|---------|-----------------|
 | `KEEP` | Passes all four criteria | Reason + runbook link |
-| `KEEP (conditional)` | Passes 1–3, missing runbook | Blocking gap handed to `operation-runbook` |
+| `KEEP (conditional)` | Passes 1–3, runbook missing or `untested` | Blocking gap handed to `operation-runbook` |
 | `DEMOTE` | Real but not page-worthy | Target channel + response SLA |
 | `MERGE` | Redundant with a parent symptom alert | Parent alert name |
 | `DELETE` | No agency (with or without impact) | What would be lost, and what still covers it. Removes the page, not the signal: telemetry forensics reads is kept as a non-paging recording |

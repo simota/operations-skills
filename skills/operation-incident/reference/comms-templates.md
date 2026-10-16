@@ -103,7 +103,7 @@ Executives need decisions, not diagnostics:
 <Service> SEV<n> — <elapsed>
 Customer impact: <one line, quantified>
 Revenue/regulatory exposure: <one line, or none identified>
-Status: <declared | mitigating | monitoring | resolved>
+Status: <DECLARED | MITIGATING | MONITORING | RESOLVED>
 Decision needed from you: <specific ask, or none>
 Next update: <HH:MM>
 ```

@@ -7,8 +7,8 @@ never let a lower rung masquerade as a higher one.
 **The rungs are `O<n>`, and the letter is load-bearing.** This ladder grades *how directly
 a claim was observed*, and `O1` is the strongest rung. Elsewhere in this ecosystem an
 `E<n>` ladder grades distance from the hypothesis that produced the code, and runs the
-other way. Two ladders sharing one letter is how a single `E1` comes to mean both
-"captured now" and "static analysis". **Never write `E<n>` for an observation rung**, and
+other way. Were the two to share a letter, a single `E1` would mean both "captured
+now" and "static analysis". **Never write `E<n>` for an observation rung**, and
 when a report crosses into a verification claim, name which ladder each rung came from.
 
 | Rung | Name | What it is | Usable for |

@@ -149,9 +149,10 @@ Quarterly, across the postmortem corpus:
 - Cluster by contributing factor, by component, and by detection gap.
 - A component appearing in ≥3 postmortems is a **systemic finding** — route it to
   `operation-readiness`, not to another per-incident action item. A contributing factor
-  recurring across components goes to the skill that owns that factor.
+  recurring across components goes where it lives: an alert or rota gap to `operation-oncall`,
+  a procedure to `operation-runbook`, a change-process gap to `operation-change`.
 - Track cumulative cost per cluster (total impact minutes, responder hours) — this is the
   argument that funds the durable fix.
 - Track action-item completion rate. Falling completion predicts repeat incidents.
-- Repeat incidents on the same component within 90 days: escalate to the service owner as an
-  ownership question, not as another incident. A third occurrence makes it systemic (above).
+- Repeat incidents on the same component within 90 days: escalate to the service owner as a
+  fitness question, not as another incident. It becomes systemic only at ≥3 postmortems (above).

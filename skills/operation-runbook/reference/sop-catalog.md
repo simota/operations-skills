@@ -95,7 +95,7 @@ or documented by a runbook nobody has executed.
 | `stale` | Content plausible, expiry passed or voiding surface changed | Schedule a rehearsal |
 | `DRIFTED` | Content contradicts the current system (commands, paths, flags changed) | Fix now; a drifted runbook is worse than none |
 | `simulated` | Executed only in a lower environment, or with the destructive step stubbed | Rely on it only with the gap stated; schedule a production rehearsal |
-| `untested` | Never executed end to end | Execute it; until then any alert linking to it shows `untested` and stays `KEEP (conditional)` |
+| `untested` | Never executed end to end | Have a person execute it; until then any alert linking to it shows `untested` and stays `KEEP (conditional)` |
 | `unprovable` | Cannot be exercised without unacceptable cost or risk | Confirm the compensating control and its owner; prove the smallest part that can be |
 | `ORPHANED` | Owner has left, or no owner | Reassign or retire |
 | `RETIRE` | The procedure or the system it targets no longer exists | Delete, and check nothing links to it |

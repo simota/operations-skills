@@ -3,4 +3,5 @@
   the date it was executed, and both clocks that end it: an interval with its
   reason, and the named surface whose change voids it immediately. **Only
   execution upgrades a state**; a dry run reaches `simulated`, never `proved`.
-  `stale`, `untested`, and the other two without their gap or control are `UNVERIFIED` (`_operation/EXPIRY.md`)
+  `stale`, `untested`, `simulated` without its gap and `unprovable` without its control are
+  `UNVERIFIED` (`_operation/EXPIRY.md`)
