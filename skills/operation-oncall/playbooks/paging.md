@@ -14,7 +14,7 @@ makes it `KEEP (conditional)` — so no row order can let an unproven runbook pa
 | Fires with another alert >80% of the time | `MERGE` | Into the parent symptom alert |
 | No user impact, no imminent impact | `DEMOTE` | Ticket, business hours |
 | Impact spans multiple services or is customer-announced | `KEEP` | Page primary + declare incident |
-| User impact, no working automation | `KEEP` | Page primary |
+| User-visible or imminent impact, no working automation | `KEEP` | Page primary |
 
 `KEEP (conditional)` is a debt marker: the alert pages today but is listed as a blocking
 gap in the output, handed to `operation-runbook`.
