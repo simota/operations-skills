@@ -479,6 +479,13 @@ def _own_names() -> set[str]:
     return _OWN_NAMES
 
 
+def _own_roots() -> set[str]:
+    """The first path segments that can only mean this set."""
+    roots = {SHARED, "registry", "playbooks", "reference", H.get("skills_dir") or "skills"}
+    roots |= {d.name for d in ROOT.iterdir() if d.is_dir() and d.name.startswith(PREFIX)}
+    return roots | set(SKILLS)
+
+
 def _is_own_reference(p: str) -> bool:
     if any(p.startswith(x) or p == x for x in H.get("external_paths", [])):
         return False
@@ -488,10 +495,17 @@ def _is_own_reference(p: str) -> bool:
         return True
     if not p.lower().endswith((".md", ".yaml", ".py")):
         return False
-    if "/" in p or ".." in p:
-        return True                       # a path into somewhere: check it resolves
-    # A bare name is the set's when the set has it, or is a typo of one of its
-    # pages: `SIZNG.md`, `contract.md`. Only pages are near-matched — a reader's
+    if ".." in p or p.startswith("./"):
+        return True                       # relative to the file: check it resolves
+    if "/" in p:
+        # A path into one of the set's own roots is the set's; any other directory
+        # (`config/service.yaml`, `docs/runbook.md`) is the reader's project, unless
+        # the file at its end is one of the set's names.
+        if p.split("/", 1)[0] in _own_roots():
+            return True
+        p = p.rsplit("/", 1)[1]
+    # A name is the set's when the set has it, or is a typo of one of its pages:
+    # `SIZNG.md`, `contract.md`. Only pages are near-matched — a reader's
     # `rules.yaml` is not a typo of `routes.yaml` — at 0.85, which still catches a
     # swapped pair in a short name (`EXPRIY.md`); and a plural or singular of a
     # page (`deploy-strategy.md`) is a different word, not a misspelling.

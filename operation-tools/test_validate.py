@@ -536,6 +536,12 @@ def _(r):
     app(r / TRAPS, "\nCheck the Prometheus `rules.yaml` and the team's `deploy-strategy.md`.\n")
 
 
+@quiet("V19-reader-dirs", "V19")
+def _(r):
+    """A path into a directory the set does not own is the reader's project."""
+    app(r / TRAPS, "\nDiff `config/service.yaml`, `docs/runbook.md` and `scripts/rollback.py`.\n")
+
+
 @quiet("V8-code-span-heading", "V8")
 def _(r):
     """Link syntax inside a code span is literal text in GitHub's anchor."""
