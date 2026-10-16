@@ -26,7 +26,7 @@ incidents. Demote back on any change-caused incident.
 Score 1–5 each. Any single 5 takes at least the 16–20 approval band regardless of the total.
 The score never sets the safety tier — except that a Reversibility 5 is `T4`: an irreversible
 action by the tier table, an undo that never ran by rule 2 (`_operation/SAFETY_TIERS.md`; `stale`
-counts as `untested`, per `_operation/EXPIRY.md`).
+counts as `untested`, per `_operation/EXPIRY.md`; so does `simulated` with its gap unstated, which no plan may depend on).
 
 ### Blast Radius
 | Score | Condition |

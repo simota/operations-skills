@@ -49,7 +49,7 @@ the content does not have.
 |-----------|-------|--------|
 | Executed in production within its expiry, voiding surface unchanged | `proved` | None |
 | Executed only in a lower environment, or the destructive step stubbed | `simulated` | Rely on it only with the gap stated; schedule a real execution |
-| Expiry interval passed, or the voiding surface changed | `stale` | `UNVERIFIED` — no plan may depend on it; mark the header and re-run |
+| Expiry interval passed, or the voiding surface changed | `stale` | `UNVERIFIED` — no plan may depend on it; mark the header and re-run, and its alert is `KEEP (conditional)` |
 | Never executed | `untested` | `UNVERIFIED` — an alert may link to it only with the `untested` state visible at the link, and the alert stays `KEEP (conditional)` until it is executed |
 | Cannot be exercised without unacceptable cost or risk | `unprovable` | Name the compensating control and its owner |
 
@@ -85,7 +85,7 @@ The single most valuable catalog metric.
 | Linked runbooks never executed | 0 — each one is an `UNVERIFIED` residual, its alert `KEEP (conditional)` |
 
 Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented,
-or documented by a runbook nobody has executed.
+or documented by a runbook that is `UNVERIFIED`: never executed, or its proof expired.
 
 ## Audit Verdicts
 

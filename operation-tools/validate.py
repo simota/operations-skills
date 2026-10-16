@@ -57,7 +57,7 @@ LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 # only on the slash misses the bare sibling reference (`SIZING.md`), which is
 # the form that breaks: it resolves against the skill directory, not against
 # the directory the file writing it lives in.
-TICK_PATH_RE = re.compile(r"`([^`\s]*(?:/[^`\s]*|\.(?:md|yaml|py)))`")
+TICK_PATH_RE = re.compile(r"`([^`\s]*(?:/[^`\s]*|\.(?i:md|yaml|py)))`")
 MARKER_RE = re.compile(r"#" + r"TODO\(agent\):")
 
 
@@ -486,20 +486,21 @@ def _is_own_reference(p: str) -> bool:
         return False                      # a pattern, not a path
     if p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/")):
         return True
-    if not p.endswith((".md", ".yaml", ".py")):
+    if not p.lower().endswith((".md", ".yaml", ".py")):
         return False
     if "/" in p or ".." in p:
         return True                       # a path into somewhere: check it resolves
     # A bare name is the set's when the set has it, or is a typo of one of its
     # pages: `SIZNG.md`, `contract.md`. Only pages are near-matched — a reader's
-    # `rules.yaml` is not a typo of `routes.yaml` — and a plural or singular of a
+    # `rules.yaml` is not a typo of `routes.yaml` — at 0.85, which still catches a
+    # swapped pair in a short name (`EXPRIY.md`); and a plural or singular of a
     # page (`deploy-strategy.md`) is a different word, not a misspelling.
     if p in _own_names():
         return True
     pages = {n.lower() for n in _own_names() if n.endswith(".md")}
     if p.lower() in pages:
         return True                       # case only: resolves on macOS, not on Linux
-    near = difflib.get_close_matches(p.lower(), pages, n=1, cutoff=0.9)
+    near = difflib.get_close_matches(p.lower(), pages, n=1, cutoff=0.85)
     return bool(near) and _stem(near[0]) != _stem(p)
 
 

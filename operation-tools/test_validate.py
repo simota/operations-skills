@@ -542,6 +542,16 @@ def _(r):
     app(r / TRAPS, "\n## Use `[x](y)` syntax\n\n[a](#use-xy-syntax)\n")
 
 
+@case("V19-swap", "'EXPRIY.md', which does not resolve")
+def _(r):
+    """A swapped pair in a short page name is a typo, not a reader's file."""
+    app(r / TRAPS, "\nRead `EXPRIY.md` first.\n")
+
+
+@case("V19-upper-ext", "'CONTRACT.MD', which does not resolve")
+def _(r): app(r / TRAPS, "\nRead `CONTRACT.MD` first.\n")
+
+
 @case("V19-missing-dotdot", "'../_operation/CONTRAKT.md'; paths are normalised")
 def _(r): app(r / TRAPS, "\nRead `../_operation/CONTRAKT.md` first.\n")
 

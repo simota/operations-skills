@@ -42,7 +42,7 @@ conditions: [<what must be true>]
 Score each dimension 1–5; the total orders the queue, and any single 5 takes at least the 16–20
 approval band. The score never sets the safety tier — except that a Reversibility 5 is `T4`: an
 irreversible action by the tier table, an undo that never ran by rule 2 (`_operation/SAFETY_TIERS.md`;
-`stale` counts as `untested`, per `_operation/EXPIRY.md`).
+`stale` counts as `untested`, per `_operation/EXPIRY.md`; so does `simulated` with its gap unstated, which no plan may depend on).
 The table anchors 1, 3, and 5. **2 and 4 are the interpolations** — use 4 when the case is
 closer to the 5 anchor than the 3, and 2 likewise. When a score sits on a boundary that changes
 the handling band, round **up** and say that you did.

@@ -75,7 +75,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
   keep, with a reason
 - Always: page a human only when impact (user-visible or imminent), agency (a
   human action changes the outcome) and no working automation all hold; a missing
-  or `untested`/`stale` runbook still pages, as `KEEP (conditional)` with a blocking gap. **Which
+  or `UNVERIFIED` runbook still pages, as `KEEP (conditional)` with a blocking gap. **Which
   criterion fails decides the verdict**; they are not interchangeable
 - Always: enforce the page budget, and when it is exceeded for two consecutive
   rotations, **attribute the cause before fixing anything**
