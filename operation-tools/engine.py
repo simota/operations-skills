@@ -191,11 +191,15 @@ def unchecked(schema, where: str = "$") -> list[str]:
     out = [f"{where}.{k}" for k in schema if k not in CHECKED | ANNOTATIONS]
     out += [f"{where}.{k} (this form)" for k, ok in _FORMS.items()
             if k in schema and not ok(schema[k])]
-    # Alternatives beside fields of the node's own are partial: strict() closes
-    # each branch, which then rejects the shared fields. Whole alternatives only.
-    if any(k in schema for k in ("anyOf", "oneOf")) and \
-            any(k in schema for k in ("properties", "required")):
-        out.append(f"{where} (alternatives beside the node's own fields)")
+    # strict() closes each `type: object` node on its own. That keeps meaning
+    # only where every property an instance may carry is declared at that node,
+    # and among admitted keywords only anyOf/oneOf declare properties elsewhere.
+    # So a node holding alternatives holds nothing else: whole alternatives only.
+    alternatives = {"anyOf", "oneOf"}
+    if alternatives & schema.keys():
+        beside = sorted((CHECKED - alternatives) & schema.keys())
+        if beside:
+            out.append(f"{where} (alternatives beside {', '.join(beside)})")
     for k in _SUBSCHEMA_MAPS:
         if isinstance(schema.get(k), dict):
             for name, sub in schema[k].items():

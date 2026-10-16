@@ -744,6 +744,10 @@ def tool_engine_checks_schema() -> str:
                "oneOf": [{"type": "object", "properties": {"a": {"type": "string"}}}]}
     if not engine.unchecked(partial):
         return "engine.unchecked accepted partial alternatives, which strict() closes apart"
+    typed = {"type": "object", "anyOf": [{"type": "object", "properties": {"a": {"type": "string"}},
+                                          "required": ["a"]}]}
+    if not engine.unchecked(typed):
+        return "engine.unchecked accepted alternatives beside a parent type: object"
     if engine.unchecked({"oneOf": [{"type": "object", "properties": {"a": {"type": "string"}}},
                                    {"type": "string"}]}):
         return "engine.unchecked refused whole alternatives"
