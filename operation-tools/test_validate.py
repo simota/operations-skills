@@ -735,8 +735,11 @@ def tool_engine_checks_schema() -> str:
     # JSON equality: true is not 1, for const and enum alike.
     if not engine.conforms(1, {"const": True}) or not engine.conforms(1, {"enum": [True]}):
         return "engine.conforms took 1 for true"
-    if not engine.conforms({"x": 5}, {"type": "object", "additionalProperties": {"type": "string"}}):
-        return "engine.conforms ignored a schema-valued additionalProperties"
+    if not engine.unchecked({"type": "object", "additionalProperties": {"type": "string"}}):
+        return ("engine.unchecked accepted a schema-valued additionalProperties, which "
+                "strict() would replace with false")
+    if not engine.unchecked({"allOf": [{"type": "object"}]}):
+        return "engine.unchecked accepted allOf, whose branches strict() closes"
     if not engine.unchecked({"type": "array", "items": False}):
         return "engine.unchecked accepted `items: false`, a form conforms cannot evaluate"
     cond = {"if": {"type": "object", "properties": {"k": {"const": "a"}}},

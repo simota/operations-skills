@@ -143,8 +143,6 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
                 errs += conforms(v, props[k], f"{where}.{k}")
             elif schema.get("additionalProperties") is False:
                 errs.append(f"{where}: unexpected property {k!r}")
-            elif isinstance(schema.get("additionalProperties"), dict):
-                errs += conforms(v, schema["additionalProperties"], f"{where}.{k}")
     if isinstance(value, list) and isinstance(schema.get("items"), dict):
         for i, v in enumerate(value):
             errs += conforms(v, schema["items"], f"{where}[{i}]")
@@ -154,15 +152,17 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
     return errs
 
 
-# What `conforms` evaluates, plus annotations that constrain nothing. A schema
-# using anything else would be sent to the engine and then waved through here,
-# so it is refused before any engine is asked.
+# What `conforms` evaluates *and* `strict` leaves meaning the same, plus
+# annotations that constrain nothing. A schema using anything else would be
+# sent to the engine and then waved through, or reach it with a different
+# meaning (`allOf` branches and schema-valued `additionalProperties` are closed
+# by `strict`), so it is refused before any engine is asked.
 CHECKED = {"type", "enum", "const", "properties", "required", "additionalProperties",
-           "items", "contains", "anyOf", "oneOf", "allOf"}
+           "items", "contains", "anyOf", "oneOf"}
 ANNOTATIONS = {"$schema", "$id", "title", "description", "default", "examples",
                "$comment", "deprecated", "readOnly", "writeOnly"}
 _SUBSCHEMA_MAPS = ("properties",)
-_SUBSCHEMA_LISTS = ("anyOf", "oneOf", "allOf")
+_SUBSCHEMA_LISTS = ("anyOf", "oneOf")
 _SUBSCHEMAS = ("items", "contains")
 
 
@@ -174,12 +174,13 @@ _FORMS = {
     "enum": lambda v: isinstance(v, list),
     "required": lambda v: isinstance(v, list) and all(isinstance(x, str) for x in v),
     "properties": lambda v: isinstance(v, dict) and all(isinstance(x, dict) for x in v.values()),
-    "additionalProperties": lambda v: isinstance(v, (bool, dict)),
+    # Only a boolean: strict() closes every object (codex requires it), so a
+    # schema-valued form could never reach an engine with its meaning intact.
+    "additionalProperties": lambda v: isinstance(v, bool),
     "items": lambda v: isinstance(v, dict),
     "contains": lambda v: isinstance(v, dict),
     "anyOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
     "oneOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
-    "allOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
 }
 
 
@@ -190,8 +191,6 @@ def unchecked(schema, where: str = "$") -> list[str]:
     out = [f"{where}.{k}" for k in schema if k not in CHECKED | ANNOTATIONS]
     out += [f"{where}.{k} (this form)" for k, ok in _FORMS.items()
             if k in schema and not ok(schema[k])]
-    if isinstance(schema.get("additionalProperties"), dict):
-        out += unchecked(schema["additionalProperties"], f"{where}.additionalProperties")
     for k in _SUBSCHEMA_MAPS:
         if isinstance(schema.get(k), dict):
             for name, sub in schema[k].items():
