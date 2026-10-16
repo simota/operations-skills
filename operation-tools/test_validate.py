@@ -539,7 +539,8 @@ def _(r):
 @quiet("V19-reader-dirs", "V19")
 def _(r):
     """A path into a directory the set does not own is the reader's project."""
-    app(r / TRAPS, "\nDiff `config/service.yaml`, `docs/runbook.md` and `scripts/rollback.py`.\n")
+    app(r / TRAPS, "\nDiff `config/service.yaml`, `docs/runbook.md`, `scripts/rollback.py` "
+                   "and `docs/post-mortem.md`.\n")
 
 
 @quiet("V8-code-span-heading", "V8")

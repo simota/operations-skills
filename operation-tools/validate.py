@@ -499,11 +499,12 @@ def _is_own_reference(p: str) -> bool:
         return True                       # relative to the file: check it resolves
     if "/" in p:
         # A path into one of the set's own roots is the set's; any other directory
-        # (`config/service.yaml`, `docs/runbook.md`) is the reader's project, unless
-        # the file at its end is one of the set's names.
+        # (`config/service.yaml`, `docs/post-mortem.md`) is the reader's project,
+        # unless the file at its end is exactly one of the set's names — no typo
+        # matching there, since a reader's file may well resemble a page.
         if p.split("/", 1)[0] in _own_roots():
             return True
-        p = p.rsplit("/", 1)[1]
+        return p.rsplit("/", 1)[1].lower() in {n.lower() for n in _own_names()}
     # A name is the set's when the set has it, or is a typo of one of its pages:
     # `SIZNG.md`, `contract.md`. Only pages are near-matched — a reader's
     # `rules.yaml` is not a typo of `routes.yaml` — at 0.85, which still catches a
