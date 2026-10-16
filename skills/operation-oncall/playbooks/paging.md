@@ -3,7 +3,9 @@
 
 ## Paging Decision Table
 
-Apply to every alert. The first row that matches decides.
+Apply to every alert. The first row that matches decides whether it pages. Runbook state is
+decided after, and for every `KEEP`: a missing or `UNVERIFIED` runbook (`_operation/EXPIRY.md`)
+makes it `KEEP (conditional)` — so no row order can let an unproven runbook pass as documented.
 
 | Condition | Verdict | Channel |
 |-----------|---------|---------|
@@ -11,9 +13,8 @@ Apply to every alert. The first row that matches decides.
 | Action exists and working automation already performs it | `DEMOTE` | Auto-remediation; a failed run is judged by the rows below, and pages only if one of them pages |
 | Fires with another alert >80% of the time | `MERGE` | Into the parent symptom alert |
 | No user impact, no imminent impact | `DEMOTE` | Ticket, business hours |
-| Impact spans multiple services or is customer-announced | `KEEP` | Page primary + declare incident; an undocumented action is still a blocking gap |
-| User impact, runbook written and not `UNVERIFIED` (`_operation/EXPIRY.md`), no working automation | `KEEP` | Page primary |
-| User impact, action NOT documented, or its runbook `UNVERIFIED` (`untested`, `stale`, …) | `KEEP` (conditional) | Page primary — and the missing or unproven runbook is a blocking gap |
+| Impact spans multiple services or is customer-announced | `KEEP` | Page primary + declare incident |
+| User impact, no working automation | `KEEP` | Page primary |
 
 `KEEP (conditional)` is a debt marker: the alert pages today but is listed as a blocking
 gap in the output, handed to `operation-runbook`.
