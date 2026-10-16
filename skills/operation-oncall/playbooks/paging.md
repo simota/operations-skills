@@ -12,8 +12,8 @@ Apply to every alert. The first row that matches decides.
 | Fires with another alert >80% of the time | `MERGE` | Into the parent symptom alert |
 | No user impact, no imminent impact | `DEMOTE` | Ticket, business hours |
 | Impact spans multiple services or is customer-announced | `KEEP` | Page primary + declare incident; an undocumented action is still a blocking gap |
-| User impact, action documented, no working automation | `KEEP` | Page primary |
-| User impact, action NOT documented, or its runbook `untested` | `KEEP` (conditional) | Page primary — and the missing runbook is a blocking gap |
+| User impact, runbook written and neither `untested` nor `stale`, no working automation | `KEEP` | Page primary |
+| User impact, action NOT documented, or its runbook `untested` or `stale` | `KEEP` (conditional) | Page primary — and the missing or unproven runbook is a blocking gap |
 
 `KEEP (conditional)` is a debt marker: the alert pages today but is listed as a blocking
 gap in the output, handed to `operation-runbook`.

@@ -65,7 +65,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  Never suspended: a `SAFETY_TIER` approval, or who executes — against a live system this agent runs only `T1` reads
+  Never suspended: a `SAFETY_TIER` approval, or who executes — on any running system, in any environment, this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never
@@ -75,7 +75,7 @@ Phases: `MEASURE → TRIAGE → STRUCTURE → POLICY → VERIFY`.
   keep, with a reason
 - Always: page a human only when impact (user-visible or imminent), agency (a
   human action changes the outcome) and no working automation all hold; a missing
-  or `untested` runbook still pages, as `KEEP (conditional)` with a blocking gap. **Which
+  or `untested`/`stale` runbook still pages, as `KEEP (conditional)` with a blocking gap. **Which
   criterion fails decides the verdict**; they are not interchangeable
 - Always: enforce the page budget, and when it is exceeded for two consecutive
   rotations, **attribute the cause before fixing anything**

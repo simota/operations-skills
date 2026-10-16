@@ -524,6 +524,24 @@ def _(r):
     app(r / TRAPS, "\nRead `SIZNG.md` first.\n")
 
 
+@case("V19-case", "'contract.md', which does not resolve")
+def _(r):
+    """A case-only typo resolves on macOS and breaks on Linux."""
+    app(r / TRAPS, "\nRead `contract.md` first.\n")
+
+
+@quiet("V19-near-reader-names", "V19")
+def _(r):
+    """A reader's file near an own name is not a typo of it."""
+    app(r / TRAPS, "\nCheck the Prometheus `rules.yaml` and the team's `deploy-strategy.md`.\n")
+
+
+@quiet("V8-code-span-heading", "V8")
+def _(r):
+    """Link syntax inside a code span is literal text in GitHub's anchor."""
+    app(r / TRAPS, "\n## Use `[x](y)` syntax\n\n[a](#use-xy-syntax)\n")
+
+
 @case("V19-missing-dotdot", "'../_operation/CONTRAKT.md'; paths are normalised")
 def _(r): app(r / TRAPS, "\nRead `../_operation/CONTRAKT.md` first.\n")
 
@@ -682,6 +700,9 @@ def tool_engine_checks_schema() -> str:
     # enum/const hold instance values, not schemas: strict() must leave them alone.
     if engine.strict({"enum": [{"type": "object"}]}) != {"enum": [{"type": "object"}]}:
         return "engine.strict rewrote an enum value as if it were a schema"
+    cond = {"if": {"type": "object", "properties": {"k": {"const": "a"}}}}
+    if engine.strict(cond) != cond:
+        return "engine.strict closed an `if` branch, which inverts what it matches"
     inner = engine.strict({"type": "array", "contains": {"type": "object"}})["contains"]
     if inner.get("additionalProperties") is not False:
         return "engine.strict left an object under `contains` open"

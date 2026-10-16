@@ -24,8 +24,9 @@ incidents. Demote back on any change-caused incident.
 ## Risk Dimensions
 
 Score 1–5 each. Any single 5 takes at least the 16–20 approval band regardless of the total.
-The score never sets the safety tier — except that a Reversibility 5 (irreversible, `untested`,
-`stale`, or simulated with the undo stubbed) is `T4` by `_operation/SAFETY_TIERS.md` rule 2.
+The score never sets the safety tier — except that a Reversibility 5 is `T4`: an irreversible
+action by the tier table, an undo that never ran by rule 2 (`_operation/SAFETY_TIERS.md`; `stale`
+counts as `untested`, per `_operation/EXPIRY.md`).
 
 ### Blast Radius
 | Score | Condition |
@@ -39,7 +40,7 @@ The score never sets the safety tier — except that a Reversibility 5 (irrevers
 |-------|-----------|
 | 1 | Instant and verified — flag flip with a tested off-path |
 | 3 | Reversible in minutes, procedure `proved` and unexpired, or `simulated` end to end in a lower environment, gap stated (`_operation/EXPIRY.md`) |
-| 5 | Irreversible, or a rollback `untested`, `stale`, or `simulated` with its undo step stubbed — the undo itself never ran |
+| 5 | Irreversible, or a rollback `untested`, `stale`, `unprovable`, or `simulated` with its undo stubbed or its gap unstated — the undo itself never ran, or nobody says what was skipped |
 
 **Unknown reversibility scores 5.** Nobody being able to state the rollback is the strongest
 available signal that there is not one.

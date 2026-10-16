@@ -57,6 +57,9 @@ def strict(schema: dict) -> dict:
     Including the ones under `anyOf` / `oneOf` / `allOf` and `$defs`. Only
     keywords that hold schemas are walked: `enum` and `const` hold instance
     values, and closing an object inside them would change what is allowed.
+    Conditions are not walked either — closing an `if`, a `not` or a
+    `dependentSchemas` branch inverts what it matches. Objects split across
+    `allOf` branches would each reject the other's keys; write them whole.
     """
     if not isinstance(schema, dict):
         return schema
@@ -64,11 +67,10 @@ def strict(schema: dict) -> dict:
     for key in ("anyOf", "oneOf", "allOf", "prefixItems"):
         if isinstance(schema.get(key), list):
             out[key] = [strict(s) for s in schema[key]]
-    for key in ("$defs", "definitions", "properties", "patternProperties",
-                "dependentSchemas"):
+    for key in ("$defs", "definitions", "properties", "patternProperties"):
         if isinstance(schema.get(key), dict):
             out[key] = {k: strict(v) for k, v in schema[key].items()}
-    for key in ("items", "additionalItems", "contains", "not", "if", "then", "else",
+    for key in ("items", "additionalItems", "contains", "then", "else",
                 "propertyNames", "unevaluatedItems"):
         if isinstance(schema.get(key), dict):
             out[key] = strict(schema[key])

@@ -66,7 +66,7 @@ Phases: `CLASSIFY → ASSESS → PLAN → GATE → ROLL → VERIFY → RECORD`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  Never suspended: a `SAFETY_TIER` approval, or who executes — against a live system this agent runs only `T1` reads
+  Never suspended: a `SAFETY_TIER` approval, or who executes — on any running system, in any environment, this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never

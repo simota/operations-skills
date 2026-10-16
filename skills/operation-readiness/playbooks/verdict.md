@@ -57,9 +57,9 @@ a `stale` or `untested` one is named there, never left implied.
 | Rollback | Verified, exercised ≤90 days | Verified, exercised ≤180 days | Documented | Documented |
 | Capacity headroom | ≥3× current peak, load tested | ≥2× current peak, load tested | ≥1.5× | None |
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |
-| Postmortem | All SEV1/SEV2; SEV3 on repeat | All SEV1/SEV2; SEV3 on repeat | All SEV1/SEV2; SEV3 on repeat | All SEV1/SEV2; SEV3 on repeat (≥3× in 90 days) |
+| Postmortem | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days |
 | Escalation depth | Full chain | Full chain (the secondary level where the rotation has one), executive level business hours | Two levels | One level |
-| Change approval | Service owner; second reviewer at `operation-change` risk score ≥16/25 | Same as ST0 | Same as ST0 | None beyond the change class, the risk band and the safety tier (`operation-change`, `_operation/SAFETY_TIERS.md`) |
+| Change approval | Service owner; second reviewer from the `operation-change` 16–20 band up (total ≥16 or any single 5) | Same as ST0 | Same as ST0 | None beyond the change class, the risk band and the safety tier (`operation-change`, `_operation/SAFETY_TIERS.md`) |
 | Dependency tier floor | All deps ST0 | All deps ST0–ST1 | All deps ST0–ST2 | None |
 
 This table is canonical; `reference/service-tiering.md` covers how the tier is derived, not

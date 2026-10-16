@@ -161,8 +161,9 @@ def is_external(target: str) -> bool:
 
 def slug(heading: str) -> str:
     """GitHub's heading anchor: lower case, punctuation dropped, spaces to hyphens."""
-    h = CODE_SPAN_RE.sub(lambda m: m.group(0).strip("`"), heading.strip())
-    h = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", h).lower()   # a link keeps only its text
+    # One pass, so link syntax inside a code span stays literal text, as GitHub keeps it.
+    h = re.sub(r"(`+)(.+?)\1|!?\[([^\]]*)\]\([^)]*\)",
+               lambda m: m.group(2) if m.group(1) else m.group(3), heading.strip()).lower()
     h = re.sub(r"[^\w\- ]", "", h)
     return h.replace(" ", "-")
 
@@ -489,10 +490,23 @@ def _is_own_reference(p: str) -> bool:
         return False
     if "/" in p or ".." in p:
         return True                       # a path into somewhere: check it resolves
-    # A bare name is the set's when the set has it — or nearly has it: `SIZNG.md`
-    # is a typo of an own page, while `values.yaml` is the reader's project.
-    own = _own_names()
-    return p in own or bool(difflib.get_close_matches(p, own, n=1, cutoff=0.85))
+    # A bare name is the set's when the set has it, or is a typo of one of its
+    # pages: `SIZNG.md`, `contract.md`. Only pages are near-matched — a reader's
+    # `rules.yaml` is not a typo of `routes.yaml` — and a plural or singular of a
+    # page (`deploy-strategy.md`) is a different word, not a misspelling.
+    if p in _own_names():
+        return True
+    pages = {n.lower() for n in _own_names() if n.endswith(".md")}
+    if p.lower() in pages:
+        return True                       # case only: resolves on macOS, not on Linux
+    near = difflib.get_close_matches(p.lower(), pages, n=1, cutoff=0.9)
+    return bool(near) and _stem(near[0]) != _stem(p)
+
+
+def _stem(name: str) -> str:
+    """`deploy-strategies.md` and `deploy-strategy.md` share a stem."""
+    s = name.lower().rsplit(".", 1)[0]
+    return s[:-3] + "y" if s.endswith("ies") else s.rstrip("s")
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:

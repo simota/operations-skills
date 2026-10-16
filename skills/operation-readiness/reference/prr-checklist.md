@@ -32,7 +32,7 @@ a person, and the reviewer reads its record (`_operation/SAFETY_TIERS.md`, Who e
 | SLIs defined and instrumented | Query them and see real values | ST0, ST1 |
 | SLO with error budget policy | Read the document; confirm the policy names consequences | ST0 |
 | Paging alerts exist for each critical SLI | List alerts; map to SLIs; find the gaps | ST0, ST1, ST2 |
-| **Every alert has fired at least once in a test** | Trigger deliberately; confirm the page arrived on a device | All tiers with paging |
+| **Every alert has fired at least once in a test** | Read the record of a deliberate trigger that reached a device | All tiers with paging |
 | Dashboards exist and load | Open them; confirm panels return data | ST0, ST1 |
 | Logs are structured, retained, and searchable for the incident window | Search for a known event | ST0, ST1 |
 | Trace or correlation IDs propagate across service boundaries | Follow one request end to end | ST0, ST1 |
@@ -45,7 +45,7 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 | Item | Verification | Blocking for |
 |------|--------------|--------------|
 | On-call rotation exists with capacity for this service | Confirm with `operation-oncall`; check pool size | ST0, ST1, ST2 |
-| Escalation path defined and exercised | Run a no-acknowledge test | ST0, ST1 |
+| Escalation path defined and exercised | Read the record of a no-acknowledge test | ST0, ST1 |
 | A runbook for every paging alert; at ST0 each `proved` within expiry, or `unprovable` with a named compensating control | Read each header's `state` and `last_executed`; a person executes one end to end | ST0, ST1 |
 | Runbooks for the top failure modes | Read them; record each one's state | ST2 |
 | Every paging alert links to a specific runbook | Follow each link | ST0, ST1 |
@@ -62,14 +62,14 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 | Backup frequency actually satisfies the RPO | Compare schedule to RPO — hourly backups cannot meet a 5-minute RPO | ST0, ST1 |
 | Measured restore time actually satisfies the RTO | Compare the rehearsed restore duration to RTO, at current data volume | ST0, ST1 |
 | Backups exist | List them; check the schedule | ST0, ST1, ST2 |
-| **Backups have been restored successfully** | Perform a restore; verify data integrity | ST0, ST1 |
+| **Backups have been restored successfully** | Read the record of a restore and its integrity check | ST0, ST1 |
 | DR / failover tested within the tier's cadence | Confirm the test date and result | ST0, ST1 |
 | **Failback** exercised, not just failover | Confirm the failback test date | ST0, ST1 |
 | Replication lag is measurable and alerted on | Query it; find the alert | ST0, ST1 |
 | Write topology is single-primary, or divergence reconciliation is documented | Read the design | ST0, ST1 |
 | Fencing procedure exists for the old primary | Read it; confirm it was exercised | ST0 |
 | Data repair procedure for the known corruption modes | Read it; confirm it is owned | ST0 |
-| Graceful degradation when each dependency fails | Fail one dependency; observe | ST0, ST1 |
+| Graceful degradation when each dependency fails | Read the record of one dependency failed and the result observed | ST0, ST1 |
 
 An untested backup is not a backup. Restore is the only verification that counts.
 
@@ -83,7 +83,7 @@ restore successfully.
 
 | Item | Verification | Blocking for |
 |------|--------------|--------------|
-| Deploy pipeline with automated verification | Run a deploy | ST0, ST1, ST2 |
+| Deploy pipeline with automated verification | Read a recent deploy's verification output | ST0, ST1, ST2 |
 | Progressive rollout available (canary or flags) | Confirm the mechanism exists and works | ST0, ST1 |
 | Migration strategy follows expand-contract | Review the last migration | ST0, ST1 |
 | Change record produced automatically | Check the log | ST0, ST1 |
@@ -95,7 +95,7 @@ restore successfully.
 | Load tested to the tier's headroom multiple | Test results with the saturation point named | ST0, ST1 |
 | The **next ceiling** is identified with a value | Read the analysis | ST0, ST1 |
 | Autoscaling limits set, and the ceiling is known | Read the config | ST0, ST1 |
-| Rate limiting or load shedding exists | Trigger it | ST0, ST1 |
+| Rate limiting or load shedding exists | Read the record of it engaging | ST0, ST1 |
 | Cost per unit known, with its trend | Read the analysis | ST0, ST1 |
 
 ### Dependencies and Ownership

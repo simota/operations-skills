@@ -154,5 +154,5 @@ Quarterly, across the postmortem corpus:
 - Track cumulative cost per cluster (total impact minutes, responder hours) — this is the
   argument that funds the durable fix.
 - Track action-item completion rate. Falling completion predicts repeat incidents.
-- Repeat incidents on the same component within 90 days: escalate to the service owner as a
-  fitness question, not as another incident. It becomes systemic only at ≥3 postmortems (above).
+- Repeat incidents on the same component within 90 days: escalate to the service owner as an
+  ownership question, not as another incident. At ≥3 postmortems it is systemic (above): a fitness question.
