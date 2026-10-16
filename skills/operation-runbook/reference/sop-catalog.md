@@ -85,7 +85,8 @@ The single most valuable catalog metric.
 | Linked runbooks never executed | 0 — each one is an `UNVERIFIED` residual, its alert `KEEP (conditional)` |
 
 Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented,
-or documented by a runbook that is `UNVERIFIED`: never executed, or its proof expired.
+or documented by a runbook that is `UNVERIFIED`: never executed, its proof expired, or its gap or
+control unstated (`_operation/EXPIRY.md`).
 
 ## Audit Verdicts
 
