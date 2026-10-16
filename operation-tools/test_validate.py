@@ -548,6 +548,12 @@ def _(r):
     app(r / TRAPS, "\nRead `EXPRIY.md` first.\n")
 
 
+@case("V19-case-tool", "'Engine.py', which does not resolve")
+def _(r):
+    """A case-only typo of an own tool is the set's file too."""
+    app(r / TRAPS, "\nRun `Engine.py` first.\n")
+
+
 @case("V19-upper-ext", "'CONTRACT.MD', which does not resolve")
 def _(r): app(r / TRAPS, "\nRead `CONTRACT.MD` first.\n")
 
@@ -710,9 +716,10 @@ def tool_engine_checks_schema() -> str:
     # enum/const hold instance values, not schemas: strict() must leave them alone.
     if engine.strict({"enum": [{"type": "object"}]}) != {"enum": [{"type": "object"}]}:
         return "engine.strict rewrote an enum value as if it were a schema"
-    cond = {"if": {"type": "object", "properties": {"k": {"const": "a"}}}}
+    cond = {"if": {"type": "object", "properties": {"k": {"const": "a"}}},
+            "then": {"type": "object", "properties": {"r": {"type": "string"}}}}
     if engine.strict(cond) != cond:
-        return "engine.strict closed an `if` branch, which inverts what it matches"
+        return "engine.strict closed an `if`/`then` branch, which changes what it matches"
     inner = engine.strict({"type": "array", "contains": {"type": "object"}})["contains"]
     if inner.get("additionalProperties") is not False:
         return "engine.strict left an object under `contains` open"

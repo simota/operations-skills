@@ -495,11 +495,9 @@ def _is_own_reference(p: str) -> bool:
     # `rules.yaml` is not a typo of `routes.yaml` — at 0.85, which still catches a
     # swapped pair in a short name (`EXPRIY.md`); and a plural or singular of a
     # page (`deploy-strategy.md`) is a different word, not a misspelling.
-    if p in _own_names():
-        return True
+    if p.lower() in {n.lower() for n in _own_names()}:
+        return True                       # exact, or case only: resolves on macOS, not on Linux
     pages = {n.lower() for n in _own_names() if n.endswith(".md")}
-    if p.lower() in pages:
-        return True                       # case only: resolves on macOS, not on Linux
     near = difflib.get_close_matches(p.lower(), pages, n=1, cutoff=0.85)
     return bool(near) and _stem(near[0]) != _stem(p)
 
