@@ -12,11 +12,11 @@ Claims not from either source — ingestion lag, retention windows, what a given
 evidence ladder, and `reference/impact-assessment.md` gives the capture 60 seconds. This
 page is what to run in them.
 
-Nothing here is read-only by default. `--check` still runs any task marked
-`check_mode: false` — grep the play and every role and file it imports; `-m setup`
-executes `facts.d` scripts on the host; `--diff` prints secrets unless `no_log`. Each
-is a person's `T2` until that read clears it, and the agent runs only the cleared reads.
-Log reads that may hold personal data are `T3` (`_operation/SAFETY_TIERS.md` rule 4).
+Of the Ansible forms below, `--list-hosts` only reads the inventory. `--check` still runs
+`check_mode: false` tasks (grep the play, its roles and imports), and both `--check` and
+`-m setup` run `facts.d` scripts on the host (`--check` unless `gather_facts: false`). Until
+cleared each of those two is a person's `T2`; the agent runs only cleared reads. `--diff` prints secrets unless `no_log`, and logs that may
+hold personal data are sensitive reads: `T3` (`_operation/SAFETY_TIERS.md` rule 4).
 
 ---
 

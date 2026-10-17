@@ -49,8 +49,8 @@ the content does not have.
 |-----------|-------|--------|
 | Executed in production within its expiry, voiding surface unchanged | `proved` | None |
 | Executed only in a lower environment, or the destructive step stubbed | `simulated` | Rely on it only with the gap stated; schedule a real execution |
-| Expiry interval passed, or the voiding surface changed | `stale` | `UNVERIFIED` — no plan may depend on it; mark the header and re-run |
-| Never executed | `untested` | `UNVERIFIED` — an alert may link to it only with the `untested` state visible at the link, and the alert stays `KEEP (conditional)` until it is executed |
+| Expiry interval passed, or the voiding surface changed | `stale` | `UNVERIFIED` — no plan may depend on it; mark the header and re-run; an alert that otherwise pages stays `KEEP (conditional)` |
+| Never executed | `untested` | `UNVERIFIED` — an alert may link to it only with the `untested` state visible at the link, and an alert that otherwise pages stays `KEEP (conditional)` until it is executed |
 | Cannot be exercised without unacceptable cost or risk | `unprovable` | Name the compensating control and its owner |
 
 Runbooks for rare events (disaster recovery, region failover) will never accumulate real
@@ -85,7 +85,8 @@ The single most valuable catalog metric.
 | Linked runbooks never executed | 0 — each one is an `UNVERIFIED` residual, its alert `KEEP (conditional)` |
 
 Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented,
-or documented by a runbook nobody has executed.
+or documented by a runbook that is `UNVERIFIED`: never executed, its proof expired, or its gap or
+control unstated (`_operation/EXPIRY.md`).
 
 ## Audit Verdicts
 
@@ -95,7 +96,7 @@ or documented by a runbook nobody has executed.
 | `stale` | Content plausible, expiry passed or voiding surface changed | Schedule a rehearsal |
 | `DRIFTED` | Content contradicts the current system (commands, paths, flags changed) | Fix now; a drifted runbook is worse than none |
 | `simulated` | Executed only in a lower environment, or with the destructive step stubbed | Rely on it only with the gap stated; schedule a production rehearsal |
-| `untested` | Never executed end to end | Execute it; until then any alert linking to it shows `untested` and stays `KEEP (conditional)` |
+| `untested` | Never executed end to end | Have a person execute it; until then any alert linking to it shows `untested`, and one that otherwise pages stays `KEEP (conditional)` |
 | `unprovable` | Cannot be exercised without unacceptable cost or risk | Confirm the compensating control and its owner; prove the smallest part that can be |
 | `ORPHANED` | Owner has left, or no owner | Reassign or retire |
 | `RETIRE` | The procedure or the system it targets no longer exists | Delete, and check nothing links to it |

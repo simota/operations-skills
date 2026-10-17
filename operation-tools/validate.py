@@ -9,9 +9,11 @@ belongs in a review, not in this file.
 """
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import sys
+import urllib.parse
 import unicodedata
 from pathlib import Path
 
@@ -55,7 +57,7 @@ LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 # only on the slash misses the bare sibling reference (`SIZING.md`), which is
 # the form that breaks: it resolves against the skill directory, not against
 # the directory the file writing it lives in.
-TICK_PATH_RE = re.compile(r"`([^`\s]*(?:/[^`\s]*|\.(?:md|yaml|py)))`")
+TICK_PATH_RE = re.compile(r"`([^`\s]*(?:/[^`\s]*|\.(?i:md|yaml|py)))`")
 MARKER_RE = re.compile(r"#" + r"TODO\(agent\):")
 
 
@@ -127,7 +129,8 @@ def sections(text: str) -> dict[str, str]:
 
 CODE_SPAN_RE = re.compile(r"(`+)(?:(?!\1).)+?\1")
 SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
-REF_DEF_RE = re.compile(r"^\s{0,3}\[[^\]]+\]:\s*(\S+)")
+# `[^1]: ...` is a footnote, not a link definition.
+REF_DEF_RE = re.compile(r"^\s{0,3}\[(?!\^)[^\]]+\]:\s*(\S+)")
 
 
 def _link_target(raw: str) -> str:
@@ -158,7 +161,9 @@ def is_external(target: str) -> bool:
 
 def slug(heading: str) -> str:
     """GitHub's heading anchor: lower case, punctuation dropped, spaces to hyphens."""
-    h = CODE_SPAN_RE.sub(lambda m: m.group(0).strip("`"), heading.strip()).lower()
+    # One pass, so link syntax inside a code span stays literal text, as GitHub keeps it.
+    h = re.sub(r"(`+)(.+?)\1|!?\[([^\]]*)\]\([^)]*\)",
+               lambda m: m.group(2) if m.group(1) else m.group(3), heading.strip()).lower()
     h = re.sub(r"[^\w\- ]", "", h)
     return h.replace(" ", "-")
 
@@ -288,7 +293,7 @@ def v8_links():
                 key = dest.resolve()
                 if key not in cache:
                     cache[key] = anchors(read(dest))
-                if frag.lower() not in cache[key]:
+                if urllib.parse.unquote(frag).lower() not in cache[key]:
                     fail("V8", f"{f.relative_to(ROOT)} links to {target}, and "
                                f"{path or f.name} has no heading #{frag}")
 
@@ -474,6 +479,13 @@ def _own_names() -> set[str]:
     return _OWN_NAMES
 
 
+def _own_roots() -> set[str]:
+    """The first path segments that can only mean this set."""
+    roots = {SHARED, "registry", "playbooks", "reference", H.get("skills_dir") or "skills"}
+    roots |= {d.name for d in ROOT.iterdir() if d.is_dir() and d.name.startswith(PREFIX)}
+    return roots | set(SKILLS)
+
+
 def _is_own_reference(p: str) -> bool:
     if any(p.startswith(x) or p == x for x in H.get("external_paths", [])):
         return False
@@ -481,7 +493,34 @@ def _is_own_reference(p: str) -> bool:
         return False                      # a pattern, not a path
     if p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/")):
         return True
-    return p.endswith((".md", ".yaml", ".py")) and Path(p).name in _own_names()
+    if not p.lower().endswith((".md", ".yaml", ".py")):
+        return False
+    if ".." in p or p.startswith("./"):
+        return True                       # relative to the file: check it resolves
+    if "/" in p:
+        # A path into one of the set's own roots is the set's; any other directory
+        # (`config/service.yaml`, `docs/post-mortem.md`) is the reader's project,
+        # unless the file at its end is exactly one of the set's names — no typo
+        # matching there, since a reader's file may well resemble a page.
+        if p.split("/", 1)[0] in _own_roots():
+            return True
+        return p.rsplit("/", 1)[1].lower() in {n.lower() for n in _own_names()}
+    # A name is the set's when the set has it, or is a typo of one of its pages:
+    # `SIZNG.md`, `contract.md`. Only pages are near-matched — a reader's
+    # `rules.yaml` is not a typo of `routes.yaml` — at 0.85, which still catches a
+    # swapped pair in a short name (`EXPRIY.md`); and a plural or singular of a
+    # page (`deploy-strategy.md`) is a different word, not a misspelling.
+    if p.lower() in {n.lower() for n in _own_names()}:
+        return True                       # exact, or case only: resolves on macOS, not on Linux
+    pages = {n.lower() for n in _own_names() if n.endswith(".md")}
+    near = difflib.get_close_matches(p.lower(), pages, n=1, cutoff=0.85)
+    return bool(near) and _stem(near[0]) != _stem(p)
+
+
+def _stem(name: str) -> str:
+    """`deploy-strategies.md` and `deploy-strategy.md` share a stem."""
+    s = name.lower().rsplit(".", 1)[0]
+    return s[:-3] + "y" if s.endswith("ies") else s.rstrip("s")
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:
@@ -1053,8 +1092,11 @@ RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
 
 def hook_installed() -> bool:
     """Where git looks for hooks: a worktree's `.git` is a file, and
-    core.hooksPath moves them elsewhere."""
+    core.hooksPath moves them elsewhere. Run from the hook itself, this is a
+    snapshot of the index outside any repository — and the hook is plainly on."""
     import subprocess
+    if os.environ.get("OPERATION_PRECOMMIT") == "1":
+        return True
     try:
         r = subprocess.run(["git", "rev-parse", "--git-path", "hooks"], cwd=ROOT,
                            capture_output=True, text=True, timeout=10)

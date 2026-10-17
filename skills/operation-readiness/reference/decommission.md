@@ -46,7 +46,7 @@ quarterly reporting. The consumer nobody knew about is almost always a monthly j
 10. **Delete data** — `T4`, after the retention period, with explicit approval.
 
 **Observability is retired last, not first.** Steps 1–7 and 9 are reversible; step 8 is not —
-its deletions and revocations are `T4` — which is why it waits for the verification window. A reversal is only
+its deletions are `T4` — which is why it waits for the verification window. A reversal is only
 safe if the service comes back with its detection intact — retiring alerts while the service
 can still be turned back on produces a running service nobody is watching.
 

@@ -17,7 +17,8 @@ Run before approving any change. Any unchecked box moves reversibility to score 
 - [ ] Cache key formats and serialisation are unchanged, or the cache can be flushed safely
 - [ ] No dependent service has already been upgraded to require the new behaviour
 - [ ] Feature flags introduced by this change have a defined revert state
-- [ ] The rollback is `proved` and neither its interval nor its named surface has expired (`_operation/EXPIRY.md`)
+- [ ] The rollback is `proved` and neither its interval nor its named surface has expired, or it is `simulated`
+      end to end in a lower environment with the gap stated — never with its undo step stubbed (`_operation/EXPIRY.md`)
 - [ ] Rollback duration is known and acceptable given the impact rate
 - [ ] Rolling back does not lose data written during the forward window
 

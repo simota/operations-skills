@@ -57,17 +57,21 @@ def strict(schema: dict) -> dict:
     Including the ones under `anyOf` / `oneOf` / `allOf` and `$defs`. Only
     keywords that hold schemas are walked: `enum` and `const` hold instance
     values, and closing an object inside them would change what is allowed.
+    Conditions are not walked either — closing an `if`, a `not` or a
+    `dependentSchemas` branch inverts what it matches, and a `then` / `else`
+    holds only part of the object, so closing it rejects the root's own keys.
+    Objects split across `allOf` branches would do the same; write them whole.
     """
     if not isinstance(schema, dict):
         return schema
     out = dict(schema)
-    for key in ("anyOf", "oneOf", "allOf"):
+    for key in ("anyOf", "oneOf", "allOf", "prefixItems"):
         if isinstance(schema.get(key), list):
             out[key] = [strict(s) for s in schema[key]]
-    for key in ("$defs", "definitions", "properties"):
+    for key in ("$defs", "definitions", "properties", "patternProperties"):
         if isinstance(schema.get(key), dict):
             out[key] = {k: strict(v) for k, v in schema[key].items()}
-    for key in ("items", "additionalItems", "not"):
+    for key in ("items", "additionalItems", "contains", "propertyNames", "unevaluatedItems"):
         if isinstance(schema.get(key), dict):
             out[key] = strict(schema[key])
     if out.get("type") == "object":
@@ -78,6 +82,19 @@ def strict(schema: dict) -> dict:
 
 _TYPES = {"object": dict, "array": list, "string": str, "boolean": bool,
           "null": type(None), "number": (int, float), "integer": int}
+
+
+def json_equal(a, b) -> bool:
+    """Equality as JSON sees it: `true` is not `1`, though `1` is `1.0`."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a == b
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(json_equal(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(json_equal(a[k], b[k]) for k in a)
+    return type(a) is type(b) and a == b
 
 
 def conforms(value, schema: dict, where: str = "$") -> list[str]:
@@ -112,8 +129,10 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
                 ok = True
         if not ok:
             return [f"{where}: expected {t}, got {type(value).__name__}"]
-    if "enum" in schema and value not in schema["enum"]:
+    if "enum" in schema and not any(json_equal(value, e) for e in schema["enum"]):
         errs.append(f"{where}: {value!r} is not one of {schema['enum']}")
+    if "const" in schema and not json_equal(value, schema["const"]):
+        errs.append(f"{where}: {value!r} is not {schema['const']!r}")
     if isinstance(value, dict):
         props = schema.get("properties") or {}
         for k in schema.get("required") or []:
@@ -127,7 +146,72 @@ def conforms(value, schema: dict, where: str = "$") -> list[str]:
     if isinstance(value, list) and isinstance(schema.get("items"), dict):
         for i, v in enumerate(value):
             errs += conforms(v, schema["items"], f"{where}[{i}]")
+    if isinstance(value, list) and isinstance(schema.get("contains"), dict):
+        if all(conforms(v, schema["contains"], where) for v in value):
+            errs.append(f"{where}: no item matches `contains`")
     return errs
+
+
+# What `conforms` evaluates *and* `strict` leaves meaning the same, plus
+# annotations that constrain nothing. A schema using anything else would be
+# sent to the engine and then waved through, or reach it with a different
+# meaning (`allOf` branches and schema-valued `additionalProperties` are closed
+# by `strict`), so it is refused before any engine is asked.
+CHECKED = {"type", "enum", "const", "properties", "required", "additionalProperties",
+           "items", "contains", "anyOf", "oneOf"}
+ANNOTATIONS = {"$schema", "$id", "title", "description", "default", "examples",
+               "$comment", "deprecated", "readOnly", "writeOnly"}
+_SUBSCHEMA_MAPS = ("properties",)
+_SUBSCHEMA_LISTS = ("anyOf", "oneOf")
+_SUBSCHEMAS = ("items", "contains")
+
+
+# The value forms `conforms` evaluates for each keyword. A legal form outside
+# these (`items: false`, `type: 7`) would be waved through just the same.
+_FORMS = {
+    "type": lambda v: isinstance(v, str) or (isinstance(v, list)
+                                             and all(isinstance(x, str) for x in v)),
+    "enum": lambda v: isinstance(v, list),
+    "required": lambda v: isinstance(v, list) and all(isinstance(x, str) for x in v),
+    "properties": lambda v: isinstance(v, dict) and all(isinstance(x, dict) for x in v.values()),
+    # Only `false`: strict() closes every object (codex requires it), so `true`
+    # or a schema would reach the engine meaning the opposite.
+    "additionalProperties": lambda v: v is False,
+    "items": lambda v: isinstance(v, dict),
+    "contains": lambda v: isinstance(v, dict),
+    "anyOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
+    "oneOf": lambda v: isinstance(v, list) and all(isinstance(x, dict) for x in v),
+}
+
+
+def unchecked(schema, where: str = "$") -> list[str]:
+    """Keywords, or keyword forms, in `schema` that `conforms` would silently ignore."""
+    if not isinstance(schema, dict):
+        return [f"{where} (not a schema object)"]
+    out = [f"{where}.{k}" for k in schema if k not in CHECKED | ANNOTATIONS]
+    out += [f"{where}.{k} (this form)" for k, ok in _FORMS.items()
+            if k in schema and not ok(schema[k])]
+    # strict() closes each `type: object` node on its own. That keeps meaning
+    # only where every property an instance may carry is declared at that node,
+    # and among admitted keywords only anyOf/oneOf declare properties elsewhere.
+    # So a node holding alternatives holds nothing else: whole alternatives only.
+    alternatives = {"anyOf", "oneOf"}
+    if alternatives & schema.keys():
+        beside = sorted((CHECKED - alternatives) & schema.keys())
+        if beside:
+            out.append(f"{where} (alternatives beside {', '.join(beside)})")
+    for k in _SUBSCHEMA_MAPS:
+        if isinstance(schema.get(k), dict):
+            for name, sub in schema[k].items():
+                out += unchecked(sub, f"{where}.{k}.{name}")
+    for k in _SUBSCHEMA_LISTS:
+        if isinstance(schema.get(k), list):
+            for i, sub in enumerate(schema[k]):
+                out += unchecked(sub, f"{where}.{k}[{i}]")
+    for k in _SUBSCHEMAS:
+        if isinstance(schema.get(k), dict):
+            out += unchecked(schema[k], f"{where}.{k}")
+    return out
 
 
 def run(engine: str, prompt: str, schema: dict) -> dict:
@@ -137,6 +221,10 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
     with the wrong keys is not an answer, and passing it on turned into a
     KeyError three frames later in whoever read the verdict.
     """
+    gaps = unchecked(schema)
+    if gaps:
+        raise EngineError("the schema uses keywords this checker cannot verify, so an "
+                          f"answer breaking them would pass: {', '.join(gaps[:5])}")
     got = _ask(engine, prompt, schema)
     errs = conforms(got, strict(schema))
     if errs:
@@ -146,6 +234,11 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
 
 
 def _ask(engine: str, prompt: str, schema: dict):
+    # Every engine takes the prompt as an argument, and a prompt opening with `-`
+    # — a markdown list, say — is read as an unknown option (`claude -p "--x"`
+    # exits "unknown option"). A leading newline is invisible to the model.
+    if prompt.startswith("-"):
+        prompt = "\n" + prompt
     known = ENGINES.get("runs_on") or []
     if engine not in known:
         raise EngineError(f"{engine} is not one of {known}")
@@ -273,6 +366,10 @@ def main() -> int:
         print("need --prompt-file and --schema", file=sys.stderr)
         return 2
     try:
+        known = ENGINES.get("runs_on") or []
+        if a.running not in known:
+            raise EngineError(f"the running engine {a.running!r} is not one of {known}; "
+                              "a misspelt one would let it check its own work")
         engine = a.engine or other_than(a.running)
         if a.running and engine == a.running:
             raise EngineError(f"{engine} is the engine running this; "

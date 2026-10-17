@@ -11,7 +11,7 @@ Verified: 2026-08-21 — no automated check.
 | Level | Target | Trigger | Timeout to next |
 |------|--------|---------|-----------------|
 | 0 | Automated remediation | Alert fires, pattern is known | 2 min (or on failure) |
-| 1 | Primary on-call | Automation absent or failed | 5 min unacknowledged |
+| 1 | Primary on-call | An alert that pages, with automation absent or failed | 5 min unacknowledged |
 | 2 | Secondary on-call | Primary unacknowledged, or primary requests help | 3 min unacknowledged |
 | 3 | Service owner / team lead | Level 2 unacknowledged, or scope exceeds on-call authority | 5 min |
 | 4 | Engineering manager + IC pool | Level 3 unacknowledged, or SEV1 declared | 10 min |
@@ -101,8 +101,9 @@ Service tiers are defined by `operation-readiness`.
 
 ## Common Defects
 
-- **Sequential-only escalation with long timeouts** — 15 minutes per level means 30 minutes
-  before a service owner is even paged on a SEV1, and 45 before the IC pool is.
+- **Sequential-only escalation with long timeouts** — 15 minutes per level after Level 0 means
+  30 minutes before a service owner is even paged; on a SEV1 the IC pool is paged on
+  declaration (Level 4's trigger), so only the owner's wait is the defect here.
 - **Escalation target is a rotation with the same people** — Level 2 pointing at a schedule
   where primary is also secondary.
 - **Group inbox as an escalation target** — diffuse ownership means no acknowledgement.

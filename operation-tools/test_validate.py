@@ -9,6 +9,7 @@ Run: make test
 """
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -517,6 +518,70 @@ def _(r):
     app(r / TRAPS, "\nEvery page under `reference/*.md`. Diff the Helm `values.yaml` first.\n")
 
 
+@case("V19-typo", "'SIZNG.md', which does not resolve")
+def _(r):
+    """A bare name one letter off an own page is a broken reference, not the reader's file."""
+    app(r / TRAPS, "\nRead `SIZNG.md` first.\n")
+
+
+@case("V19-case", "'contract.md', which does not resolve")
+def _(r):
+    """A case-only typo resolves on macOS and breaks on Linux."""
+    app(r / TRAPS, "\nRead `contract.md` first.\n")
+
+
+@quiet("V19-near-reader-names", "V19")
+def _(r):
+    """A reader's file near an own name is not a typo of it."""
+    app(r / TRAPS, "\nCheck the Prometheus `rules.yaml` and the team's `deploy-strategy.md`.\n")
+
+
+@quiet("V19-reader-dirs", "V19")
+def _(r):
+    """A path into a directory the set does not own is the reader's project."""
+    app(r / TRAPS, "\nDiff `config/service.yaml`, `docs/runbook.md`, `scripts/rollback.py` "
+                   "and `docs/post-mortem.md`.\n")
+
+
+@quiet("V8-code-span-heading", "V8")
+def _(r):
+    """Link syntax inside a code span is literal text in GitHub's anchor."""
+    app(r / TRAPS, "\n## Use `[x](y)` syntax\n\n[a](#use-xy-syntax)\n")
+
+
+@case("V19-swap", "'EXPRIY.md', which does not resolve")
+def _(r):
+    """A swapped pair in a short page name is a typo, not a reader's file."""
+    app(r / TRAPS, "\nRead `EXPRIY.md` first.\n")
+
+
+@case("V19-case-tool", "'Engine.py', which does not resolve")
+def _(r):
+    """A case-only typo of an own tool is the set's file too."""
+    app(r / TRAPS, "\nRun `Engine.py` first.\n")
+
+
+@case("V19-upper-ext", "'CONTRACT.MD', which does not resolve")
+def _(r): app(r / TRAPS, "\nRead `CONTRACT.MD` first.\n")
+
+
+@case("V19-missing-dotdot", "'../_operation/CONTRAKT.md'; paths are normalised")
+def _(r): app(r / TRAPS, "\nRead `../_operation/CONTRAKT.md` first.\n")
+
+
+@quiet("V8-footnote", "V8", "V19")
+def _(r):
+    """A footnote definition is not a link."""
+    app(r / TRAPS, "\nThe pager is the floor.[^1]\n\n[^1]: Measured over the last quarter.\n")
+
+
+@quiet("V8-link-heading", "V8")
+def _(r):
+    """GitHub drops a link's target from the anchor and decodes a percent-encoded one."""
+    app(r / TRAPS, "\n## See [the contract](../_operation/CONTRACT.md) first\n\n## 手順\n\n"
+                   "[a](#see-the-contract-first) [b](#%E6%89%8B%E9%A0%86)\n")
+
+
 @case("V20-column", "defines 'O3'")
 def _(r):
     """The word is still in a row, but the row no longer opens with it."""
@@ -628,7 +693,15 @@ def tool_engine_requires_running() -> str:
         r = subprocess.run([sys.executable, str(ROOT / "operation-tools/engine.py"), "codex",
                             "--prompt-file", str(p), "--schema", str(s)],
                            capture_output=True, text=True)
-        return "" if r.returncode == 2 else f"engine.py without --running exited {r.returncode}"
+        if r.returncode != 2 or "--running is required" not in r.stderr:
+            return f"engine.py without --running exited {r.returncode}: {r.stderr.strip()[:200]}"
+        # A misspelt running engine must not let the named checker be the maker.
+        r = subprocess.run([sys.executable, str(ROOT / "operation-tools/engine.py"), "claude",
+                            "--running", "cluade", "--prompt-file", str(p), "--schema", str(s)],
+                           capture_output=True, text=True)
+        if r.returncode == 0 or "is not one of" not in r.stderr:
+            return f"engine.py accepted --running cluade (exit {r.returncode})"
+        return ""
 
 
 def tool_engine_checks_schema() -> str:
@@ -650,6 +723,68 @@ def tool_engine_checks_schema() -> str:
     # enum/const hold instance values, not schemas: strict() must leave them alone.
     if engine.strict({"enum": [{"type": "object"}]}) != {"enum": [{"type": "object"}]}:
         return "engine.strict rewrote an enum value as if it were a schema"
+    if not engine.conforms([], {"type": "array", "contains": {"type": "object"}}):
+        return "engine.conforms accepted an empty array against `contains`"
+    try:
+        engine.run("codex", "x", {"type": "object", "properties": {"a": {"type": "string",
+                                  "minLength": 2}}})
+        return "engine.run accepted a schema with a keyword conforms cannot verify"
+    except engine.EngineError as e:
+        if "cannot verify" not in str(e):
+            return f"engine.run refused the schema for the wrong reason: {e}"
+    # JSON equality: true is not 1, for const and enum alike.
+    if not engine.conforms(1, {"const": True}) or not engine.conforms(1, {"enum": [True]}):
+        return "engine.conforms took 1 for true"
+    if not engine.unchecked({"type": "object", "additionalProperties": {"type": "string"}}):
+        return ("engine.unchecked accepted a schema-valued additionalProperties, which "
+                "strict() would replace with false")
+    if not engine.unchecked({"type": "object", "additionalProperties": True}):
+        return "engine.unchecked accepted additionalProperties: true, which strict() makes false"
+    partial = {"type": "object", "properties": {"kind": {"type": "string"}}, "required": ["kind"],
+               "oneOf": [{"type": "object", "properties": {"a": {"type": "string"}}}]}
+    if not engine.unchecked(partial):
+        return "engine.unchecked accepted partial alternatives, which strict() closes apart"
+    typed = {"type": "object", "anyOf": [{"type": "object", "properties": {"a": {"type": "string"}},
+                                          "required": ["a"]}]}
+    if not engine.unchecked(typed):
+        return "engine.unchecked accepted alternatives beside a parent type: object"
+    if engine.unchecked({"oneOf": [{"type": "object", "properties": {"a": {"type": "string"}}},
+                                   {"type": "string"}]}):
+        return "engine.unchecked refused whole alternatives"
+    if not engine.unchecked({"allOf": [{"type": "object"}]}):
+        return "engine.unchecked accepted allOf, whose branches strict() closes"
+    if not engine.unchecked({"type": "array", "items": False}):
+        return "engine.unchecked accepted `items: false`, a form conforms cannot evaluate"
+    cond = {"if": {"type": "object", "properties": {"k": {"const": "a"}}},
+            "then": {"type": "object", "properties": {"r": {"type": "string"}}}}
+    if engine.strict(cond) != cond:
+        return "engine.strict closed an `if`/`then` branch, which changes what it matches"
+    inner = engine.strict({"type": "array", "contains": {"type": "object"}})["contains"]
+    if inner.get("additionalProperties") is not False:
+        return "engine.strict left an object under `contains` open"
+    return ""
+
+
+def tool_engine_dash_prompt() -> str:
+    """A prompt opening with `-` reaches the engine as the prompt, not as an option."""
+    import engine
+    tmp = tempfile.TemporaryDirectory()
+    with tmp:
+        d = Path(tmp.name)
+        fake = d / "claude"
+        fake.write_text("#!/bin/sh\nprintf '%s\\n' \"$2\" > \"$(dirname \"$0\")/argv\"\n"
+                        "echo '{\"structured_output\": {\"ok\": true}}'\n")
+        fake.chmod(0o755)
+        old = os.environ.get("PATH", "")
+        os.environ["PATH"] = f"{d}:{old}"
+        try:
+            engine.run("claude", "- check the rollback", {"type": "object",
+                       "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]})
+        finally:
+            os.environ["PATH"] = old
+        sent = (d / "argv").read_text()
+        if sent.startswith("-"):
+            return f"engine passed a dash-leading prompt as {sent[:30]!r}, read as an option"
     return ""
 
 
@@ -661,7 +796,9 @@ def tool_refute_unchecked_fails() -> str:
         r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
                             "--running", "claude", str(c)], capture_output=True, text=True,
                            env={"PATH": tmp.name, "HOME": tmp.name})
-        return "" if r.returncode == 1 else f"refute.py with no engine exited {r.returncode}"
+        if r.returncode != 1 or "[UNCHECKED]" not in r.stdout or "Traceback" in r.stderr:
+            return f"refute.py with no engine exited {r.returncode}: {(r.stdout + r.stderr)[-200:]}"
+        return ""
 
 
 def tool_figures_parsing() -> str:
@@ -676,6 +813,7 @@ def tool_figures_parsing() -> str:
 
 
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
+               tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing]
 
 
@@ -703,6 +841,11 @@ def main() -> int:
             print(f"  {rule} did not fire with {needle!r}\n{out}")
     for name, (mutate, rules) in QUIET.items():
         out = _run_case(mutate)
+        # Silence from a crash is not silence: the validator has to have finished.
+        if "Traceback" in out or not re.search(r"^(green|\d+ failure\(s\))$", out, re.M):
+            bad.append(name)
+            print(f"  {name}: the validator did not finish\n{out}")
+            continue
         loud = [l.strip() for l in out.splitlines()
                 if any(re.match(rf"\s*{r}: ", l) for r in rules)]
         if loud:

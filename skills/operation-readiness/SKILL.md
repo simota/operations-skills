@@ -65,7 +65,7 @@ Phases: `TIER → INVENTORY → ASSESS → VERIFY → VERDICT → HANDOVER`.
   over addition · the human decides what, the agent decides how. Against all of
   them: **a harness that is correct and avoided has failed** — in an incident its
   cost is measured in minutes of user impact, so say so rather than perform it.
-  Never suspended: a `SAFETY_TIER` approval, or who executes — this agent runs only `T1` reads
+  Never suspended: a `SAFETY_TIER` approval, or who executes — on any running system, in any environment, this agent runs only `T1` reads
 <!-- /deliver:values -->
 
 ## Always / Never
@@ -115,7 +115,8 @@ review that accepts what it was told has certified the telling, not the service.
   the date it was executed, and both clocks that end it: an interval with its
   reason, and the named surface whose change voids it immediately. **Only
   execution upgrades a state**; a dry run reaches `simulated`, never `proved`.
-  `stale`, `untested`, and the other two without their gap or control are `UNVERIFIED` (`_operation/EXPIRY.md`)
+  `stale`, `untested`, `simulated` without its gap and `unprovable` without its control are
+  `UNVERIFIED` (`_operation/EXPIRY.md`)
 <!-- /deliver:expiry -->
 
 ## Done when

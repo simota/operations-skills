@@ -10,7 +10,7 @@ A handoff is a deliverable. Its quality metric: **did the incoming shift have to
 anything?** If yes, the handoff failed.
 
 A shift handoff passes the pager between people. It is not an `OPERATION_HANDOFF`
-(`_operation/HANDOFF.md`), which passes work between skills, and neither is a `handover`, which
+(`_operation/HANDOFF.md`), which passes work between skills, nor is it a `handover`, which
 passes a service to a team.
 
 ## Handoff Template

@@ -39,7 +39,7 @@ of past incidents.
 Complete inventory with each runbook's proof state and expiry (`_operation/EXPIRY.md`).
 **Every runbook the service tier requires (`playbooks/verdict.md` § Tier Requirements) must be
 `proved` before it is handed over**, or `unprovable` with a named compensating control — a bar
-above launch at ST1, because the receiving team has no author to ask. A `stale` or `untested`
+above launch at ST1–ST3, because the receiving team has no author to ask. A `stale` or `untested`
 runbook handed over is a document the receiving team will trust and that nobody has shown to work.
 
 ### 6. Known Issues and Debt

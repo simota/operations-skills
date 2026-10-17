@@ -19,6 +19,6 @@
 - **Concurrent incidents share responders, not severity.** Two SEV2s running simultaneously
   with one responder pool is operationally a SEV1. Assess aggregate impact, not per-incident.
 - **"Deploy correlation" is not causation, but it is the best first hypothesis.** Check the
-  change log first — and state it as a hypothesis until reproduced.
+  change log first — and state it as a hypothesis until reproduced, or its mechanism observed where reproducing is unsafe.
 - **Timezone-mixed timelines invert causality.** A timeline mixing JST and UTC will place the
   fix before the failure. Normalise to UTC at capture time, not at write-up time.
