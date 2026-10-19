@@ -20,7 +20,7 @@ Correcting downward is free; that is the point of declaring early.
 
 | Dimension | SEV1 | SEV2 | SEV3 | SEV4 |
 |-----------|------|------|------|------|
-| **Users affected** | All users, or all of a region/tier | Large subset (≥10%) or all of one major feature | Small subset (<10%), with or without a workaround | Individual users, cosmetic |
+| **Users affected** | All users, or all of a region/tier | Large subset (≥10%) or all of one major feature | Small subset (<10%), more than cosmetic, workaround or not | Small subset (<10%) or individual users, cosmetic only |
 | **Functionality** | Core workflow unusable | Core workflow degraded, or secondary unusable | Secondary degraded | Cosmetic or non-functional |
 | **Data** | Unbounded or unrecoverable loss/corruption, or exposure to an unauthorised party | Bounded and recoverable loss/corruption; integrity at risk | Staleness beyond the freshness SLO | Reporting-only discrepancy |
 | **Revenue** | Transactions failing broadly, or unbounded value at risk | Transactions degraded or delayed, or a bounded subset failing | Non-transactional impact | None |

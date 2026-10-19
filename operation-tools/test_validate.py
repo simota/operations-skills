@@ -935,6 +935,20 @@ def tool_make_hooks_keeps_foreign() -> str:
     return ""
 
 
+def tool_figures_needs_no_yaml() -> str:
+    """`make figures` is standard library only: it must run where PyYAML is not."""
+    tools = ROOT / "operation-tools"
+    code = ("import sys, runpy; sys.modules['yaml'] = None; "
+            f"sys.path.insert(0, {str(tools)!r}); "
+            f"runpy.run_path({str(tools / 'figures_check.py')!r}, run_name='__main__')")
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                           env={**os.environ, "PATH": tmp})
+    if r.returncode != 0 or "figures green" not in r.stdout:
+        return f"figures_check needs PyYAML now: {(r.stderr or r.stdout).strip()[-200:]}"
+    return ""
+
+
 def tool_figures_unusable_help() -> str:
     """A CLI that starts but cannot render help is SKIPPED, not a page full of
     wrong claims: the hook runs this, and would otherwise block every commit."""
@@ -954,7 +968,8 @@ TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
                tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
                tool_validate_stem, tool_validate_skips_ignored, tool_validate_hook_banner,
-               tool_figures_unusable_help, tool_make_hooks_keeps_foreign]
+               tool_figures_needs_no_yaml, tool_figures_unusable_help,
+               tool_make_hooks_keeps_foreign]
 
 
 def _not_corpus(d: str, names: list[str]) -> list[str]:

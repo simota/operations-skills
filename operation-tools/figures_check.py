@@ -23,7 +23,7 @@ import subprocess
 import sys
 import tempfile
 
-from validate import fence_step         # one reading of a fence, shared with V8/V19
+from fences import fence_step           # one reading of a fence, shared with validate
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 QUOTED = sorted((ROOT / "skills/operation-incident/reference").glob("*.md"))
