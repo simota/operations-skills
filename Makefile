@@ -78,7 +78,7 @@ hooks:
 				p="$$(cd "$$(dirname "$$t")" && cd "$$(dirname "$$lt")/../.." && pwd -P)"; \
 				if git worktree list --porcelain | sed -n 's/^worktree //p' | grep -Fxq "$$p"; \
 				then ours=1; fi; fi ;; esac; fi && \
-		if [ -n "$$ours" ] && [ -e "$$t" ]; then chmod +x "$$t" && \
+		if [ -n "$$ours" ] && [ -e "$$t" ]; then chmod +x "$$t" || exit 1; \
 			echo "pre-commit installed in $$d (from $$(readlink "$$t"))"; exit 0; fi && \
 		if [ -z "$$ours" ] && { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \
 			echo "pre-commit not installed: $$t is already there and is not this repo's hook;"; \
