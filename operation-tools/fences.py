@@ -7,7 +7,9 @@ from __future__ import annotations      # `str | None` on Python 3.9
 
 import re
 
-FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})(.*)$")
+# Up to three spaces, and only spaces: a tab is four columns, which makes the
+# line indented code rather than a fence.
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 
 
 def fence_step(line: str, fence: str | None) -> tuple[str | None, bool]:

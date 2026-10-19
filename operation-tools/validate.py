@@ -112,8 +112,9 @@ SKILLS = [p.name for p in SKILL_DIRS]
 # Link text may hold one level of brackets — `[the [old] page](x.md)`, or an
 # image inside a link, whose own target IMAGE_RE then reads. Bracketed text
 # followed by `(` is a link of its own, and CommonMark lets the inner one win:
-# in `[a [b](x.md) c](y.md)` the link is x.md.
-LINK_RE = re.compile(r"\[(?:[^\[\]]|!\[[^\[\]]*\]|\[[^\[\]]*\](?!\())+\]\(([^)]+)\)")
+# in `[a [b](x.md) c](y.md)` the link is x.md. The alternatives are disjoint —
+# `!` alone, or `![...]` — so a long unclosed line cannot backtrack exponentially.
+LINK_RE = re.compile(r"\[(?:[^\[\]!]|!(?!\[)|!\[[^\[\]]*\]|\[[^\[\]]*\](?!\())+\]\(([^)]+)\)")
 IMAGE_RE = re.compile(r"!\[[^\[\]]*\]\(([^)]+)\)")
 # A backticked token is a path if it contains a slash or names a file. Matching
 # only on the slash misses the bare sibling reference (`SIZING.md`), which is
@@ -1163,12 +1164,17 @@ def hook_installed() -> bool:
         return False
     # On only when it is this repo's hook, and git can run it: any file at that
     # path is not the same thing, and a foreign hook is left alone by `make hooks`.
-    # Compared by content: a linked worktree shares the hook with another checkout.
+    # This repo's, as `make hooks` reads it: a link into any checkout's
+    # githooks/pre-commit (a linked worktree shares the hook with another
+    # checkout, which may carry a different version), or a copy of this one.
     import filecmp
     hook = ROOT / r.stdout.strip() / "pre-commit"
     ours = ROOT / "operation-tools/githooks/pre-commit"
-    return (hook.exists() and os.access(hook, os.X_OK)
-            and filecmp.cmp(hook, ours, shallow=False))
+    if not hook.exists() or not os.access(hook, os.X_OK):
+        return False
+    if hook.is_symlink() and os.readlink(hook).endswith("/operation-tools/githooks/pre-commit"):
+        return True
+    return filecmp.cmp(hook, ours, shallow=False)
 
 
 def main() -> int:

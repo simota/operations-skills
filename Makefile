@@ -59,18 +59,25 @@ render:
 # A pre-commit hook that is not this repo's belongs to someone else — another
 # tool's, or the reader's own — and is left alone, as link and unlink leave
 # foreign skills alone: replacing it would silently drop whatever it checked.
-# "This repo's" is judged by content, not by path: a linked worktree shares the
-# hooks directory with a checkout at another path, and core.hooksPath may point
-# at operation-tools/githooks itself, which must never be linked onto itself.
+# This repo's is a link into any checkout's githooks/pre-commit — a linked
+# worktree shares the hooks directory with a checkout at another path, and may
+# carry a different hook — or a copy of this one. A live link is left where it
+# points, so a worktree never moves the shared hook onto itself; a dangling one
+# (its checkout moved or removed) is repaired. core.hooksPath may point at
+# operation-tools/githooks itself, which must never be linked onto itself.
 hooks:
 	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
 		src="$(REPO)/operation-tools/githooks/pre-commit" && t="$$d/pre-commit" && \
+		chmod +x "$$src" && \
 		if [ "$$t" -ef "$$src" ]; then echo "pre-commit installed in $$d"; exit 0; fi && \
-		if { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \
+		ours= && if [ -L "$$t" ]; then case "$$(readlink "$$t")" in \
+			*/operation-tools/githooks/pre-commit) ours=1 ;; esac; fi && \
+		if [ -n "$$ours" ] && [ -e "$$t" ]; then \
+			echo "pre-commit installed in $$d (from $$(readlink "$$t"))"; exit 0; fi && \
+		if [ -z "$$ours" ] && { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \
 			echo "pre-commit not installed: $$t is already there and is not this repo's hook;"; \
 			echo "  remove it, or call $$src from it"; exit 1; fi && \
 		ln -sf "$$src" "$$t" && \
-		chmod +x operation-tools/githooks/pre-commit && \
 		echo "pre-commit installed in $$d"
 
 # A link is ours only when it resolves into this repository's skills/. Anything

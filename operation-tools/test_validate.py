@@ -466,6 +466,13 @@ def _(r):
     app(r / TRAPS, "\n```\n```bash\n```\n\nSee [it](after-the-block.md).\n")
 
 
+@case("V8-tab-fence", "links to missing after-the-tab.md")
+def _(r):
+    """A tab before ``` is four columns: indented code, not a fence, so the
+    text after it is still read."""
+    app(r / TRAPS, "\n\t```\n\nSee [it](after-the-tab.md).\n")
+
+
 @quiet("V8-long-fence", "V8")
 def _(r):
     """A ```` fence quoting a ``` example ends only at ````; the inner pair is content."""
@@ -932,13 +939,29 @@ def tool_validate_hook_banner() -> str:
         hook.symlink_to(copy / "operation-tools/githooks/pre-commit")
         if "hooks on" not in banner():
             return "validate reports `hooks off` with its own hook installed"
-        # A linked worktree: the shared hook is this repo's, from another checkout.
-        other = Path(tmp.name) / "other-checkout-pre-commit"
-        shutil.copy2(copy / "operation-tools/githooks/pre-commit", other)
+        # A linked worktree: the shared hook is this repo's, from another
+        # checkout, whose version may differ.
+        other = Path(tmp.name) / "main-checkout/operation-tools/githooks/pre-commit"
+        other.parent.mkdir(parents=True)
+        other.write_text("#!/bin/sh\n# another version of this repo's hook\n")
+        other.chmod(0o755)
         hook.unlink()
         hook.symlink_to(other)
         if "hooks on" not in banner():
             return "validate reports `hooks off` for its own hook installed from a worktree"
+    return ""
+
+
+def tool_validate_link_re_linear() -> str:
+    """A line the link pattern cannot close must not cost exponential time: CI
+    would hang on one malformed sentence rather than fail on it."""
+    import time
+    line = "See [" + "![a]" * 24
+    start = time.monotonic()
+    validate.links(line)
+    took = time.monotonic() - start
+    if took > 1.0:
+        return f"links() took {took:.1f}s on an unclosed line of 24 images"
     return ""
 
 
@@ -979,20 +1002,30 @@ def tool_make_hooks_keeps_foreign() -> str:
             r = make()
             if r.returncode != 0 or not hook.is_symlink():
                 return f"`make hooks` did not install or re-install its own hook: {r.stdout!r}"
-        # A linked worktree: the shared hook is this repo's, from another checkout.
-        other = d / "other-checkout-pre-commit"
-        shutil.copy2(d / "operation-tools/githooks/pre-commit", other)
+        # A linked worktree: the shared hook is this repo's, from another checkout,
+        # whose version may differ. It is left pointing there, not moved here.
+        other = d / "main-checkout/operation-tools/githooks/pre-commit"
+        other.parent.mkdir(parents=True)
+        other.write_text("#!/bin/sh\n# another version of this repo's hook\n")
+        other.chmod(0o755)
         hook.unlink()
         hook.symlink_to(other)
-        if make().returncode != 0:
-            return "`make hooks` refused this repo's own hook installed from a worktree"
+        if make().returncode != 0 or os.readlink(hook) != str(other):
+            return "`make hooks` refused or moved this repo's hook installed from another checkout"
+        # That checkout removed: the dangling link is repaired, not refused.
+        shutil.rmtree(d / "main-checkout")
+        if make().returncode != 0 or not hook.exists():
+            return "`make hooks` left this repo's hook dangling after its checkout was removed"
         # core.hooksPath at the hook's own directory: nothing to link, and the
         # tracked hook must not become a link to itself.
         subprocess.run(["git", "config", "core.hooksPath", "operation-tools/githooks"],
                        cwd=d, check=True, env=GIT_ENV)
         src = d / "operation-tools/githooks/pre-commit"
+        src.chmod(0o644)
         if make().returncode != 0 or src.is_symlink() or not src.is_file():
             return "`make hooks` refused or damaged the hook when core.hooksPath points at it"
+        if not os.access(src, os.X_OK):
+            return "`make hooks` left the hook unexecutable when core.hooksPath points at it"
     return ""
 
 
@@ -1028,7 +1061,7 @@ def tool_figures_unusable_help() -> str:
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
                tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
-               tool_validate_stem, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
+               tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
                tool_validate_hook_banner,
                tool_figures_needs_no_yaml, tool_figures_unusable_help,
                tool_make_hooks_keeps_foreign]
