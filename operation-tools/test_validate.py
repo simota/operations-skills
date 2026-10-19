@@ -941,14 +941,29 @@ def tool_validate_hook_banner() -> str:
             return "validate reports `hooks off` with its own hook installed"
         # A linked worktree: the shared hook is this repo's, from another
         # checkout, whose version may differ.
-        other = Path(tmp.name) / "main-checkout/operation-tools/githooks/pre-commit"
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run(git + ["add", "-A"], cwd=copy, check=True, env=GIT_ENV)
+        subprocess.run(git + ["commit", "-qm", "init", "--no-verify"], cwd=copy, check=True,
+                       env=GIT_ENV)
+        wt = Path(tmp.name) / "wt"
+        subprocess.run(git + ["worktree", "add", "-q", str(wt)], cwd=copy, check=True,
+                       env=GIT_ENV)
+        theirs = wt / "operation-tools/githooks/pre-commit"
+        with theirs.open("a") as fh:
+            fh.write("# another version of this repo's hook\n")
+        hook.unlink()
+        hook.symlink_to(theirs.resolve())
+        if "hooks on" not in banner():
+            return "validate reports `hooks off` for its own hook installed from a worktree"
+        # Another project laid out the same way is not this repo.
+        other = Path(tmp.name) / "otherproj/operation-tools/githooks/pre-commit"
         other.parent.mkdir(parents=True)
-        other.write_text("#!/bin/sh\n# another version of this repo's hook\n")
+        other.write_text("#!/bin/sh\nexit 0\n")
         other.chmod(0o755)
         hook.unlink()
         hook.symlink_to(other)
-        if "hooks on" not in banner():
-            return "validate reports `hooks off` for its own hook installed from a worktree"
+        if "hooks on" in banner():
+            return "validate reports `hooks on` for another project's hook"
     return ""
 
 
@@ -981,7 +996,7 @@ def tool_make_hooks_keeps_foreign() -> str:
     """`make hooks` installs into an empty slot or over its own link, never over
     a hook someone else put there."""
     with tempfile.TemporaryDirectory() as tmp:
-        d = Path(tmp)
+        d = Path(tmp) / "repo"
         (d / "operation-tools/githooks").mkdir(parents=True)
         shutil.copy(ROOT / "Makefile", d)
         shutil.copy(ROOT / "operation-tools/githooks/pre-commit", d / "operation-tools/githooks")
@@ -1002,20 +1017,40 @@ def tool_make_hooks_keeps_foreign() -> str:
             r = make()
             if r.returncode != 0 or not hook.is_symlink():
                 return f"`make hooks` did not install or re-install its own hook: {r.stdout!r}"
-        # A linked worktree: the shared hook is this repo's, from another checkout,
-        # whose version may differ. It is left pointing there, not moved here.
-        other = d / "main-checkout/operation-tools/githooks/pre-commit"
+        # A linked worktree shares the hooks directory and may carry another
+        # version of the hook: run there, `make hooks` leaves the link alone.
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run(git + ["add", "-A"], cwd=d, check=True, env=GIT_ENV)
+        subprocess.run(git + ["commit", "-qm", "init", "--no-verify"], cwd=d, check=True,
+                       env=GIT_ENV)
+        wt = Path(tmp) / "wt"
+        subprocess.run(git + ["worktree", "add", "-q", str(wt)], cwd=d, check=True, env=GIT_ENV)
+        with (wt / "operation-tools/githooks/pre-commit").open("a") as fh:
+            fh.write("# another version of this repo's hook\n")
+        before = os.readlink(hook)
+        r = subprocess.run(["make", "-s", "hooks"], cwd=wt, capture_output=True, text=True,
+                           env=GIT_ENV)
+        if r.returncode != 0 or os.readlink(hook) != before:
+            return f"`make hooks` in a worktree refused or moved the shared hook: {r.stdout!r}"
+        # Installed from the worktree, which is then removed: the dangling link
+        # is repaired, not refused.
+        hook.unlink()
+        subprocess.run(["make", "-s", "hooks"], cwd=wt, check=True, capture_output=True,
+                       env=GIT_ENV)
+        subprocess.run(git + ["worktree", "remove", "--force", str(wt)], cwd=d, check=True,
+                       env=GIT_ENV)
+        if make().returncode != 0 or not hook.exists():
+            return "`make hooks` left this repo's hook dangling after its worktree was removed"
+        # Another project laid out the same way is not this repo.
+        other = Path(tmp) / "otherproj/operation-tools/githooks/pre-commit"
         other.parent.mkdir(parents=True)
-        other.write_text("#!/bin/sh\n# another version of this repo's hook\n")
+        other.write_text("#!/bin/sh\nexit 0\n")
         other.chmod(0o755)
         hook.unlink()
         hook.symlink_to(other)
-        if make().returncode != 0 or os.readlink(hook) != str(other):
-            return "`make hooks` refused or moved this repo's hook installed from another checkout"
-        # That checkout removed: the dangling link is repaired, not refused.
-        shutil.rmtree(d / "main-checkout")
-        if make().returncode != 0 or not hook.exists():
-            return "`make hooks` left this repo's hook dangling after its checkout was removed"
+        if make().returncode == 0 or os.readlink(hook) != str(other):
+            return "`make hooks` took another project's hook for this repo's"
+        hook.unlink()
         # core.hooksPath at the hook's own directory: nothing to link, and the
         # tracked hook must not become a link to itself.
         subprocess.run(["git", "config", "core.hooksPath", "operation-tools/githooks"],

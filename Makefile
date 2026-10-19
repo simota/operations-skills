@@ -59,19 +59,23 @@ render:
 # A pre-commit hook that is not this repo's belongs to someone else — another
 # tool's, or the reader's own — and is left alone, as link and unlink leave
 # foreign skills alone: replacing it would silently drop whatever it checked.
-# This repo's is a link into any checkout's githooks/pre-commit — a linked
-# worktree shares the hooks directory with a checkout at another path, and may
-# carry a different hook — or a copy of this one. A live link is left where it
-# points, so a worktree never moves the shared hook onto itself; a dangling one
-# (its checkout moved or removed) is repaired. core.hooksPath may point at
-# operation-tools/githooks itself, which must never be linked onto itself.
+# This repo's is a link into one of its own worktrees' githooks/pre-commit — a
+# linked worktree shares the hooks directory with a checkout at another path,
+# and may carry a different hook — or a copy of this one. A live link is left
+# where it points, so a worktree never moves the shared hook onto itself; a
+# dangling one (its checkout moved or removed) runs nothing and is repaired. A
+# link into another project with the same layout is foreign. core.hooksPath may
+# point at operation-tools/githooks itself, which must never be linked onto itself.
 hooks:
 	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
 		src="$(REPO)/operation-tools/githooks/pre-commit" && t="$$d/pre-commit" && \
 		chmod +x "$$src" && \
 		if [ "$$t" -ef "$$src" ]; then echo "pre-commit installed in $$d"; exit 0; fi && \
-		ours= && if [ -L "$$t" ]; then case "$$(readlink "$$t")" in \
-			*/operation-tools/githooks/pre-commit) ours=1 ;; esac; fi && \
+		ours= && if [ -L "$$t" ]; then lt="$$(readlink "$$t")"; \
+			if [ ! -e "$$t" ]; then ours=1; \
+			else case "$$lt" in */operation-tools/githooks/pre-commit) \
+				git worktree list --porcelain | sed -n 's/^worktree //p' | \
+					grep -Fxq "$${lt%/operation-tools/githooks/pre-commit}" && ours=1 ;; esac; fi; fi && \
 		if [ -n "$$ours" ] && [ -e "$$t" ]; then \
 			echo "pre-commit installed in $$d (from $$(readlink "$$t"))"; exit 0; fi && \
 		if [ -z "$$ours" ] && { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \

@@ -1164,16 +1164,26 @@ def hook_installed() -> bool:
         return False
     # On only when it is this repo's hook, and git can run it: any file at that
     # path is not the same thing, and a foreign hook is left alone by `make hooks`.
-    # This repo's, as `make hooks` reads it: a link into any checkout's
-    # githooks/pre-commit (a linked worktree shares the hook with another
-    # checkout, which may carry a different version), or a copy of this one.
+    # This repo's, as `make hooks` reads it: a link into one of this
+    # repository's worktrees' githooks/pre-commit (a linked worktree shares the
+    # hook with another checkout, which may carry a different version), or a
+    # copy of this one. Another project with the same layout is not this repo.
     import filecmp
     hook = ROOT / r.stdout.strip() / "pre-commit"
     ours = ROOT / "operation-tools/githooks/pre-commit"
     if not hook.exists() or not os.access(hook, os.X_OK):
         return False
-    if hook.is_symlink() and os.readlink(hook).endswith("/operation-tools/githooks/pre-commit"):
-        return True
+    suffix = "/operation-tools/githooks/pre-commit"
+    if hook.is_symlink() and os.readlink(hook).endswith(suffix):
+        try:
+            wt = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=ROOT,
+                                capture_output=True, text=True, timeout=10).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            wt = ""
+        roots = {Path(l[len("worktree "):]).resolve()
+                 for l in wt.splitlines() if l.startswith("worktree ")}
+        if Path(os.readlink(hook)[:-len(suffix)]).resolve() in roots:
+            return True
     return filecmp.cmp(hook, ours, shallow=False)
 
 
