@@ -126,10 +126,12 @@ Order matters:
 6. **Preserve the audit trail** — every use of the credential in the exposure window is
    evidence, and log retention is usually shorter than the investigation.
 
-Steps 1–4 are `T3`. Step 5 is `T4` (it is the irreversible one). If the compromise is active
-and being exploited, the step order inverts — revoke first and accept the outage — but that is
-a `T4` decision by the IC plus a second responder (`_operation/SAFETY_TIERS.md` § Escalation
-During Incidents), stated explicitly, not a default.
+Step 1 is a `T1` read; 2–4 are `T3`. Step 5 is `T3` once step 2 verified the replacement in
+use, `T4` otherwise (`_operation/SAFETY_TIERS.md` § Reversibility Decides the Tier, Not the
+Action Category). If the compromise is active and being exploited, the step order inverts —
+revoke first and accept the outage — but that is a `T4` decision by the IC plus a second
+responder (`_operation/SAFETY_TIERS.md` § Escalation During Incidents), stated explicitly, not
+a default.
 
 Deep security analysis of the compromise itself is out of scope (`_operation/ROUTING.md`); this
 covers only keeping the service running while the credential is replaced.

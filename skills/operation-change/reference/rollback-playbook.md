@@ -81,8 +81,8 @@ Deploy success means the artifact is running. It does not mean it works.
 
 Verify in order:
 
-1. **User-path probe** — a real transaction through the real path. The only `O1` about the
-   user's experience; metrics and logs are `O1` about the system (`_operation/CONTRACT.md`).
+1. **User-path probe** — a real transaction through the real path. Metrics and logs are also
+   `O1` (`_operation/CONTRACT.md`): require the probe **and** step 2, neither alone.
 2. **SLI check** — the user-facing indicator at baseline, not merely "not alerting".
 3. **Error budget** — burn rate unchanged.
 4. **Downstream health** — dependents unaffected.

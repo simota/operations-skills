@@ -27,7 +27,7 @@ abort_if:
 `state: untested` or `stale` is `UNVERIFIED`, and a loud, deliberate warning. Do not change it
 to make a document look finished: only execution upgrades the state, and a dry run or a
 non-production run reaches `simulated`, never `proved`. Whichever clock fires first — the
-`expires` date or a change to `voided_by` — turns `proved` into `stale`.
+`expires` date or a change to `voided_by` — turns `proved` or `simulated` into `stale`.
 
 ## Automation Ladder
 
@@ -41,7 +41,7 @@ non-production run reaches `simulated`, never `proved`. Whichever clock fires fi
 | 5 | Fully automated remediation | ≥20 successful supervised runs, tier ≤ T2, verified rollback |
 
 **Skipping rungs is the failure mode.** Automation built directly from rung 0 encodes tribal
-knowledge that was never checked against reality. `T3` cannot exceed rung 4; `T4` cannot exceed
+knowledge that was never checked against reality. `T3` cannot exceed rung 3; `T4` cannot exceed
 rung 2 — a `T4` action is scripted at most, and always human-invoked. Tiers follow
 reversibility, not the action's name (`_operation/SAFETY_TIERS.md`): a backfill with an
 exercised down-path is `T2`–`T3` and may go further up the ladder.

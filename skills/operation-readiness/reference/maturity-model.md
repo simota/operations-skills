@@ -71,15 +71,15 @@ limited by its minimum, not described by its average.
 
 | Pattern | Reading | Highest-leverage next action |
 |---------|---------|------------------------------|
+| Prevention 5, Detection 2 | Implausible — re-score; you cannot prevent what you do not detect | Re-verify Detection with evidence |
 | Detection 1–2, everything else higher | Blind; strengths cannot be applied because nothing is noticed | Symptom-based alerting on critical user paths |
 | Response high, Prevention low | Excellent firefighting, no learning | Postmortem action items tracked to completion |
 | Recovery low, Detection high | Fast to know, slow to fix | Exercise rollback; write the top failure-mode runbooks |
 | Knowledge 1–2 | Single point of human failure; every other score is fragile | Runbooks and a second operator |
 | All at 3 | Healthy plateau | Pick the dimension with the highest incident cost |
-| Prevention 5, Detection 2 | Implausible — re-score; you cannot prevent what you do not detect | Re-verify Detection with evidence |
 
-**Give one action, not five.** Five parallel improvement plans is how maturity assessments
-produce no improvement.
+**The first matching row decides. Give one action, not five.** Five parallel improvement
+plans is how maturity assessments produce no improvement.
 
 ## Knowledge Is Load-Bearing
 
