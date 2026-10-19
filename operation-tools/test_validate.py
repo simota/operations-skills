@@ -1051,6 +1051,11 @@ def tool_make_hooks_keeps_foreign() -> str:
         hook.unlink()
         subprocess.run(["make", "-s", "hooks"], cwd=wt, check=True, capture_output=True,
                        env=GIT_ENV)
+        # Run from the main checkout, the link into the worktree is still this repo's.
+        r = subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True, text=True,
+                           env=GIT_ENV)
+        if r.returncode != 0:
+            return f"`make hooks` refused a link into this repo's worktree: {r.stdout!r}"
         subprocess.run(git + ["worktree", "remove", "--force", str(wt)], cwd=d, check=True,
                        env=GIT_ENV)
         if make().returncode != 0 or not hook.exists():
