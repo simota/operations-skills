@@ -35,19 +35,26 @@ _IGNORED: set[str] | None = None
 
 
 def _ignored() -> set[str]:
-    """Paths git ignores here, directories ending in `/`. Outside a repository —
-    the pre-commit snapshot, a test copy — nothing is ignored: those trees hold
-    only what was meant to be checked."""
+    """Paths git ignores here, directories ending in `/`. Only when this tree is
+    a repository's own top level: the pre-commit snapshot or a test copy holds
+    only what was meant to be checked, and may sit inside some other repository
+    (a TMPDIR under a dotfiles repo that ignores `*`) whose rules must not empty
+    the corpus — that would pass every commit unchecked."""
     global _IGNORED
     if _IGNORED is None:
         import subprocess
+        _IGNORED = set()
         try:
-            r = subprocess.run(["git", "ls-files", "-z", "--others", "--ignored",
-                                "--exclude-standard", "--directory"], cwd=ROOT,
-                               capture_output=True, text=True, timeout=30)
-            _IGNORED = set(filter(None, r.stdout.split("\0"))) if r.returncode == 0 else set()
+            top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ROOT,
+                                 capture_output=True, text=True, timeout=30)
+            if top.returncode == 0 and Path(top.stdout.strip()).resolve() == ROOT.resolve():
+                r = subprocess.run(["git", "ls-files", "-z", "--others", "--ignored",
+                                    "--exclude-standard", "--directory"], cwd=ROOT,
+                                   capture_output=True, text=True, timeout=30)
+                if r.returncode == 0:
+                    _IGNORED = set(filter(None, r.stdout.split("\0")))
         except (OSError, subprocess.TimeoutExpired):
-            _IGNORED = set()
+            pass
     return _IGNORED
 
 
@@ -103,8 +110,10 @@ SKILLS_ROOT = ROOT / H["skills_dir"] if H.get("skills_dir") else ROOT
 SKILL_DIRS = sorted(p for p in SKILLS_ROOT.glob(f"{PREFIX}*") if (p / "SKILL.md").exists())
 SKILLS = [p.name for p in SKILL_DIRS]
 # Link text may hold one level of brackets — `[the [old] page](x.md)`, or an
-# image inside a link, whose own target IMAGE_RE then reads.
-LINK_RE = re.compile(r"\[(?:[^\[\]]|\[[^\[\]]*\])+\]\(([^)]+)\)")
+# image inside a link, whose own target IMAGE_RE then reads. Bracketed text
+# followed by `(` is a link of its own, and CommonMark lets the inner one win:
+# in `[a [b](x.md) c](y.md)` the link is x.md.
+LINK_RE = re.compile(r"\[(?:[^\[\]]|!\[[^\[\]]*\]|\[[^\[\]]*\](?!\())+\]\(([^)]+)\)")
 IMAGE_RE = re.compile(r"!\[[^\[\]]*\]\(([^)]+)\)")
 # A backticked token is a path if it contains a slash or names a file. Matching
 # only on the slash misses the bare sibling reference (`SIZING.md`), which is
@@ -1154,9 +1163,12 @@ def hook_installed() -> bool:
         return False
     # On only when it is this repo's hook, and git can run it: any file at that
     # path is not the same thing, and a foreign hook is left alone by `make hooks`.
+    # Compared by content: a linked worktree shares the hook with another checkout.
+    import filecmp
     hook = ROOT / r.stdout.strip() / "pre-commit"
-    ours = (ROOT / "operation-tools/githooks/pre-commit").resolve()
-    return hook.exists() and hook.resolve() == ours and os.access(hook, os.X_OK)
+    ours = ROOT / "operation-tools/githooks/pre-commit"
+    return (hook.exists() and os.access(hook, os.X_OK)
+            and filecmp.cmp(hook, ours, shallow=False))
 
 
 def main() -> int:

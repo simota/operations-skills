@@ -44,8 +44,7 @@ next update at HH:MM" is a valid and necessary update — silence is read as aba
 **Upgrade immediately when:**
 - Impact expands to another dimension at a higher level.
 - Mitigation attempt fails and no alternative is ready.
-- Duration exceeds the severity's expectation (SEV2 past 2 hours → reassess as SEV1; SEV3
-  past 2 hours → reassess as SEV2).
+- Duration exceeds the severity's expectation (SEV2 past 2 hours → reassess as SEV1).
 - Data integrity moves from "unaffected" to "unknown". Unknown is not "fine".
 
 A second incident sharing the responder pool is not an upgrade: escalate for responders
@@ -89,7 +88,8 @@ template so the next responder reads it at the moment of hesitation.
 - **Severity inflation to get attention.** If SEV1 is the only way to get responders, the
   escalation policy is broken — fix that, not the label.
 - **Severity deflation to avoid a postmortem.** Detectable: a cluster of 2h+ SEV3s. Any SEV3
-  past 2 hours is reassessed automatically (§ Upgrade and Downgrade).
+  past its 2h budget is reassessed automatically (`reference/mitigation-playbook.md` §
+  Time-Boxing).
 - **Waiting for confirmation before declaring.** Declaration is how you get the people who
   can confirm.
 - **Severity set by seniority.** The person with the most context sets it; the IC owns the

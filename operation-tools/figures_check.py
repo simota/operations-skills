@@ -23,7 +23,7 @@ import subprocess
 import sys
 import tempfile
 
-from fences import fence_step           # one reading of a fence, shared with validate
+from fences import FENCE_RE, fence_step  # one reading of a fence, shared with validate
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 QUOTED = sorted((ROOT / "skills/operation-incident/reference").glob("*.md"))
@@ -126,14 +126,23 @@ def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
     return out
 
 
+# A fence is read line by line as commands only when it holds a shell: a YAML or
+# Markdown example ("description: aws account ids ...") is prose to this check.
+SHELL_FENCES = {"", "sh", "bash", "shell", "console", "zsh"}
+
+
 def cited_commands() -> set[tuple[str, ...]]:
     out: set[tuple[str, ...]] = set()
     for p in ALL_PAGES:
-        fence = None
+        fence, shell = None, False
         for line in text_of(p).splitlines():
             fence, edge = fence_step(line, fence)
-            if not edge:
-                out.update(commands_of(line, fenced=fence is not None))
+            if edge:
+                if fence is not None:       # opened: its info string says what it holds
+                    info = FENCE_RE.match(line).group(2).strip().split()
+                    shell = (info[0].lower() if info else "") in SHELL_FENCES
+                continue
+            out.update(commands_of(line, fenced=fence is not None and shell))
     return out
 
 
