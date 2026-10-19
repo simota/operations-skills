@@ -56,9 +56,16 @@ render:
 
 # Wherever git looks for hooks: a worktree's .git is a file, and core.hooksPath
 # moves them. Linked, not copied, so a change to the hook reaches every clone.
+# A pre-commit hook that is not this link belongs to someone else — another
+# tool's, or the reader's own — and is left alone, as link and unlink leave
+# foreign skills alone: replacing it would silently drop whatever it checked.
 hooks:
 	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
-		ln -sf "$(REPO)/operation-tools/githooks/pre-commit" "$$d/pre-commit" && \
+		src="$(REPO)/operation-tools/githooks/pre-commit" && t="$$d/pre-commit" && \
+		if { [ -e "$$t" ] || [ -L "$$t" ]; } && [ "$$(readlink "$$t")" != "$$src" ]; then \
+			echo "pre-commit not installed: $$t is already there and is not this repo's hook;"; \
+			echo "  remove it, or call $$src from it"; exit 1; fi && \
+		ln -sf "$$src" "$$t" && \
 		chmod +x operation-tools/githooks/pre-commit && \
 		echo "pre-commit installed in $$d"
 

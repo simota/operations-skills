@@ -90,21 +90,35 @@ def frontmatter(text: str) -> dict:
             ("" if v is None else str(v)) for k, v in data.items()}
 
 
-FENCE_RE = re.compile(r"^\s{0,3}(```|~~~)")
+FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})(.*)$")
+
+
+def fence_step(line: str, fence: str | None) -> tuple[str | None, bool]:
+    """The open fence after `line`, and whether `line` itself opened or closed one.
+
+    As CommonMark reads it: a fence closes only on a run of the same character,
+    at least as long, with nothing after it. A ```` fence quoting a ``` example,
+    or a ```bash line inside a ``` block, is content, not the end of the block.
+    """
+    m = FENCE_RE.match(line)
+    if not m:
+        return fence, False
+    run, rest = m.group(1), m.group(2)
+    if fence is None:
+        if run[0] == "`" and "`" in rest:      # inline code, not a fence
+            return None, False
+        return run, True
+    if run[0] == fence[0] and len(run) >= len(fence) and not rest.strip():
+        return None, True
+    return fence, False
 
 
 def unfenced(text: str) -> list[tuple[int, str]]:
     """(line number, line) for every line outside a fenced code block."""
     out, fence = [], None
     for i, line in enumerate(text.splitlines(), 1):
-        m = FENCE_RE.match(line)
-        if m:
-            if fence is None:
-                fence = m.group(1)
-            elif m.group(1) == fence:
-                fence = None
-            continue
-        if fence is None:
+        fence, edge = fence_step(line, fence)
+        if fence is None and not edge:
             out.append((i, line))
     return out
 
@@ -113,10 +127,8 @@ def sections(text: str) -> dict[str, str]:
     """`## ` headings outside code fences. A heading quoted in an example is not one."""
     out, cur, buf, fence = {}, None, [], None
     for line in text.splitlines():
-        m = FENCE_RE.match(line)
-        if m:
-            fence = m.group(1) if fence is None else (None if m.group(1) == fence else fence)
-        if fence is None and not m and line.startswith("## "):
+        fence, edge = fence_step(line, fence)
+        if fence is None and not edge and line.startswith("## "):
             if cur:
                 out[cur] = "\n".join(buf)
             cur, buf = line[3:].strip(), []
@@ -518,9 +530,14 @@ def _is_own_reference(p: str) -> bool:
 
 
 def _stem(name: str) -> str:
-    """`deploy-strategies.md` and `deploy-strategy.md` share a stem."""
+    """`deploy-strategies.md` and `deploy-strategy.md` share a stem, and so do
+    `processes.md` and `process.md` — but not `proces.md`, a typo of the latter."""
     s = name.lower().rsplit(".", 1)[0]
-    return s[:-3] + "y" if s.endswith("ies") else s.rstrip("s")
+    if s.endswith("ies"):
+        return s[:-3] + "y"
+    if s.endswith("sses"):
+        return s[:-2]
+    return s if s.endswith("ss") else s.removesuffix("s")
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:

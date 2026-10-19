@@ -23,6 +23,8 @@ import subprocess
 import sys
 import tempfile
 
+from validate import fence_step         # one reading of a fence, shared with V8/V19
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 QUOTED = sorted((ROOT / "skills/operation-incident/reference").glob("*.md"))
 # Command existence is checked across every reference page; the quoted-wording
@@ -99,27 +101,34 @@ def subcommand_words(tool: str, rest: list[str]) -> list[str]:
     return words
 
 
-CMD = re.compile(r"(?:^|[`$(] ?)(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 -]+)")
+# `=` and the characters a flag's value carries are part of the capture: stopping
+# at `--profile=prod` would leave `aws --profile=prod ec2 ...` citing nothing, and
+# a command nobody checks reads exactly like one that passed.
+CMD = re.compile(r"(?:^|[`$(] ?)(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 =._/:-]+)")
+
+
+def command_of(line: str) -> tuple[str, ...] | None:
+    """The command a line cites, to the depth that names it, or None."""
+    m = CMD.search(line)
+    if not m:
+        return None
+    tool, rest = m.group(1), m.group(2).split()
+    words = subcommand_words(tool, rest)
+    depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
+    return (tool, *words[:depth]) if depth and len(words) >= depth else None
 
 
 def cited_commands() -> set[tuple[str, ...]]:
     out: set[tuple[str, ...]] = set()
     for p in ALL_PAGES:
-        inside = False
+        fence = None
         for line in text_of(p).splitlines():
-            if line.startswith("```"):
-                inside = not inside
+            fence, edge = fence_step(line, fence)
+            if edge or (fence is None and "`" not in line):
                 continue
-            if not inside and "`" not in line:
-                continue
-            m = CMD.search(line)
-            if not m:
-                continue
-            tool, rest = m.group(1), m.group(2).split()
-            words = subcommand_words(tool, rest)
-            depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
-            if depth and len(words) >= depth:
-                out.add((tool, *words[:depth]))
+            cmd = command_of(line)
+            if cmd:
+                out.add(cmd)
     return out
 
 

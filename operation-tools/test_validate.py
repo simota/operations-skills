@@ -453,6 +453,19 @@ def _(r):
                    "and [it again](<../_operation/CONTRACT.md>).\n")
 
 
+@case("V8-fence-info", "links to missing after-the-block.md")
+def _(r):
+    """A ```bash line inside a ``` block is content. Read as a close, the real
+    close reopens a fence and every link after the block goes unchecked."""
+    app(r / TRAPS, "\n```\n```bash\n```\n\nSee [it](after-the-block.md).\n")
+
+
+@quiet("V8-long-fence", "V8")
+def _(r):
+    """A ```` fence quoting a ``` example ends only at ````; the inner pair is content."""
+    app(r / TRAPS, "\n````markdown\n```\n[x](nowhere.md)\n```\n````\n")
+
+
 @quiet("V8-code", "V8")
 def _(r):
     """A link quoted as an example, in a fence or a code span, points nowhere."""
@@ -806,15 +819,57 @@ def tool_figures_parsing() -> str:
     got = fc.subcommand_words("aws", "--profile prod ec2 describe-instances".split())
     if got[:2] != ["ec2", "describe-instances"]:
         return f"figures_check read `aws --profile prod ec2` as {got[:2]}"
+    for line in ("`aws --profile=prod ec2 describe-instances`",
+                 "`gcloud --project=p-1 compute instances list`"):
+        if not fc.command_of(line) or len(fc.command_of(line)) < 3:
+            return f"figures_check cites nothing for {line}"
     if fc.norm("a command-specific format") != fc.norm(
             fc.re.sub(r"(\w)-[ \t]*\n\s*(\w)", r"\1\2", "a command-\nspecific format")):
         return "figures_check compares a real hyphen differently from a typeset break"
     return ""
 
 
+def tool_validate_stem() -> str:
+    """A plural is not a typo; a dropped letter of a page ending in "ss" is."""
+    st = validate._stem
+    for a, b in (("deploy-strategies.md", "deploy-strategy.md"),
+                 ("processes.md", "process.md"), ("alerts.md", "alert.md")):
+        if st(a) != st(b):
+            return f"_stem reads {a} and {b} as different pages"
+    if st("proces.md") == st("process.md"):
+        return "_stem excuses `proces.md` as a plural of `process.md`"
+    return ""
+
+
+def tool_make_hooks_keeps_foreign() -> str:
+    """`make hooks` installs into an empty slot or over its own link, never over
+    a hook someone else put there."""
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        (d / "operation-tools/githooks").mkdir(parents=True)
+        shutil.copy(ROOT / "Makefile", d)
+        shutil.copy(ROOT / "operation-tools/githooks/pre-commit", d / "operation-tools/githooks")
+        subprocess.run(["git", "init", "-q"], cwd=d, check=True)
+        hook = d / ".git/hooks/pre-commit"
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text("#!/bin/sh\necho mine\n")
+        r = subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True, text=True)
+        if r.returncode == 0 or hook.read_text() != "#!/bin/sh\necho mine\n":
+            return "`make hooks` replaced a pre-commit hook it did not install"
+        if "not this repo's hook" not in r.stdout:
+            return f"`make hooks` refused without saying why: {r.stdout!r}"
+        hook.unlink()
+        for _ in range(2):          # a fresh install, then a re-run over its own link
+            r = subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True, text=True)
+            if r.returncode != 0 or not hook.is_symlink():
+                return f"`make hooks` did not install or re-install its own hook: {r.stdout!r}"
+    return ""
+
+
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
                tool_engine_dash_prompt,
-               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing]
+               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
+               tool_validate_stem, tool_make_hooks_keeps_foreign]
 
 
 def _run_case(mutate) -> str:
