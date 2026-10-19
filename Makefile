@@ -63,8 +63,9 @@ render:
 # linked worktree shares the hooks directory with a checkout at another path,
 # and may carry a different hook — or a copy of this one. A live link is left
 # where it points, so a worktree never moves the shared hook onto itself; a
-# dangling one (its checkout moved or removed) runs nothing and is repaired. A
-# link into another project with the same layout is foreign. core.hooksPath may
+# dangling one with this layout (its checkout moved or removed) runs nothing and
+# is repaired. A link into another project with the same layout, or a dangling
+# link of any other shape (a hook manager's target gone for now), is foreign. core.hooksPath may
 # point at operation-tools/githooks itself, which must never be linked onto itself.
 hooks:
 	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
@@ -72,12 +73,12 @@ hooks:
 		chmod +x "$$src" && \
 		if [ "$$t" -ef "$$src" ]; then echo "pre-commit installed in $$d"; exit 0; fi && \
 		ours= && if [ -L "$$t" ]; then lt="$$(readlink "$$t")"; \
-			if [ ! -e "$$t" ]; then ours=1; \
-			else case "$$lt" in */operation-tools/githooks/pre-commit) \
+			case "$$lt" in */operation-tools/githooks/pre-commit) \
+				if [ ! -e "$$t" ]; then ours=1; else \
 				p="$$(cd "$$(dirname "$$t")" && cd "$$(dirname "$$lt")/../.." && pwd -P)"; \
 				if git worktree list --porcelain | sed -n 's/^worktree //p' | grep -Fxq "$$p"; \
-				then ours=1; fi ;; esac; fi; fi && \
-		if [ -n "$$ours" ] && [ -e "$$t" ]; then \
+				then ours=1; fi; fi ;; esac; fi && \
+		if [ -n "$$ours" ] && [ -e "$$t" ]; then chmod +x "$$t" && \
 			echo "pre-commit installed in $$d (from $$(readlink "$$t"))"; exit 0; fi && \
 		if [ -z "$$ours" ] && { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \
 			echo "pre-commit not installed: $$t is already there and is not this repo's hook;"; \

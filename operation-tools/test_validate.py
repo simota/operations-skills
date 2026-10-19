@@ -1051,11 +1051,15 @@ def tool_make_hooks_keeps_foreign() -> str:
         hook.unlink()
         subprocess.run(["make", "-s", "hooks"], cwd=wt, check=True, capture_output=True,
                        env=GIT_ENV)
-        # Run from the main checkout, the link into the worktree is still this repo's.
+        # Run from the main checkout, the link into the worktree is still this
+        # repo's, and is kept executable: git skips a hook that is not.
+        (wt / "operation-tools/githooks/pre-commit").chmod(0o644)
         r = subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True, text=True,
                            env=GIT_ENV)
         if r.returncode != 0:
             return f"`make hooks` refused a link into this repo's worktree: {r.stdout!r}"
+        if not os.access(wt / "operation-tools/githooks/pre-commit", os.X_OK):
+            return "`make hooks` kept a link into a worktree whose hook git cannot execute"
         subprocess.run(git + ["worktree", "remove", "--force", str(wt)], cwd=d, check=True,
                        env=GIT_ENV)
         if make().returncode != 0 or not hook.exists():
@@ -1072,6 +1076,11 @@ def tool_make_hooks_keeps_foreign() -> str:
             return "`make hooks` took another project's hook for this repo's"
         if "not this repo's hook" not in r.stdout:
             return f"`make hooks` refused another project's hook without saying why: {r.stdout!r}"
+        # A dangling link of another shape — a hook manager's target gone for now.
+        hook.unlink()
+        hook.symlink_to(Path(tmp) / "hook-manager/run")
+        if make().returncode == 0 or os.readlink(hook) != str(Path(tmp) / "hook-manager/run"):
+            return "`make hooks` replaced a dangling link that was not this repo's"
         hook.unlink()
         # core.hooksPath at the hook's own directory: nothing to link, and the
         # tracked hook must not become a link to itself.
