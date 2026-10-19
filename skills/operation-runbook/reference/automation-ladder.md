@@ -23,7 +23,7 @@ Verified: 2026-08-21 — no automated check.
 |------|--------------|-----|
 | T1 | 5 | Read-only or single-process; safe to automate fully |
 | T2 | 5 | Reversible within minutes; automatable with a circuit breaker |
-| T3 | 4 | Customer-visible or multi-service; a human approves each execution |
+| T3 | 3 | Customer-visible or multi-service; a person triggers each execution, after named approval (`_operation/SAFETY_TIERS.md`) |
 | T4 | 2 | Irreversible; scripted at most, always human-invoked |
 
 **Skipping rungs is the dominant failure mode.** Automation built from rung 0 encodes knowledge

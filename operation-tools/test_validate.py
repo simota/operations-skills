@@ -23,9 +23,15 @@ sys.dont_write_bytecode = True                     # no __pycache__ in the tools
 import validate                                    # noqa: E402  — for RULES only
 
 
-def run(root: Path) -> str:
+# git as a fresh machine sees it: a reader's global core.hooksPath or excludesFile
+# must neither change a result nor let a test write into their real hooks.
+GIT_ENV = {**{k: v for k, v in os.environ.items() if k != "OPERATION_PRECOMMIT"},
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+
+
+def run(root: Path, env: dict | None = None) -> str:
     r = subprocess.run([sys.executable, str(root / "operation-tools" / "validate.py")],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, env=env)
     return r.stdout + r.stderr
 
 
@@ -453,6 +459,45 @@ def _(r):
                    "and [it again](<../_operation/CONTRACT.md>).\n")
 
 
+@case("V8-fence-info", "links to missing after-the-block.md")
+def _(r):
+    """A ```bash line inside a ``` block is content. Read as a close, the real
+    close reopens a fence and every link after the block goes unchecked."""
+    app(r / TRAPS, "\n```\n```bash\n```\n\nSee [it](after-the-block.md).\n")
+
+
+@case("V8-tab-fence", "links to missing after-the-tab.md")
+def _(r):
+    """A tab before ``` is four columns: indented code, not a fence, so the
+    text after it is still read."""
+    app(r / TRAPS, "\n\t```\n\nSee [it](after-the-tab.md).\n")
+
+
+@quiet("V8-long-fence", "V8")
+def _(r):
+    """A ```` fence quoting a ``` example ends only at ````; the inner pair is content."""
+    app(r / TRAPS, "\n````markdown\n```\n[x](nowhere.md)\n```\n````\n")
+
+
+@case("V8-nested-text", "links to missing GONE.md")
+def _(r): app(r / TRAPS, "\nSee [the [old] page](GONE.md) and [![badge](ok.png)](GONE2.md).\n")
+
+
+@case("V8-inner-link", "links to missing gone-inner.md")
+def _(r): app(r / TRAPS, "\nSee [the docs [here](gone-inner.md) and more](../_operation/CONTRACT.md).\n")
+
+
+@case("V8-image-in-link", "links to missing ok.png")
+def _(r): app(r / TRAPS, "\nSee [![badge](ok.png)](../_operation/CONTRACT.md).\n")
+
+
+@case("V10-shape", "this rule is checking nothing")
+def _(r):
+    f = r / "operation-registry/fixtures.yaml"
+    f.write_text("fixtures:\n" + "".join("  " + l + "\n" for l in
+                 f.read_text(encoding="utf-8").splitlines()), encoding="utf-8")
+
+
 @quiet("V8-code", "V8")
 def _(r):
     """A link quoted as an example, in a fence or a code span, points nowhere."""
@@ -665,7 +710,7 @@ def _(r): sub(r / RISK, "## Risk Scoring", "- KEEP | DROP\n\n## Risk Scoring")
 def _copy() -> tuple:
     tmp = tempfile.TemporaryDirectory()
     copy = Path(tmp.name) / "repo"
-    shutil.copytree(ROOT, copy, symlinks=True, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+    shutil.copytree(ROOT, copy, symlinks=True, ignore=_not_corpus)
     return tmp, copy
 
 
@@ -806,22 +851,298 @@ def tool_figures_parsing() -> str:
     got = fc.subcommand_words("aws", "--profile prod ec2 describe-instances".split())
     if got[:2] != ["ec2", "describe-instances"]:
         return f"figures_check read `aws --profile prod ec2` as {got[:2]}"
+    for line, fenced, want in (
+            ("`aws --profile=prod ec2 describe-instances`", False, [("aws", "ec2", "describe-instances")]),
+            ("`gcloud --project=p-1 compute instances list`", False,
+             [("gcloud", "compute", "instances", "list")]),
+            ("First `aws sts get-caller-identity`, then `aws ecs list-tasks`.", False,
+             [("aws", "sts", "get-caller-identity"), ("aws", "ecs", "list-tasks")]),
+            ("  AWS_PROFILE=p aws ec2 describe-instances | aws ecs list-tasks", True,
+             [("aws", "ec2", "describe-instances"), ("aws", "ecs", "list-tasks")]),
+            ("Open the aws console and check it.", False, []),
+            ("  description: aws account ids are 12 digits", False, [])):
+        got = fc.commands_of(line, fenced)
+        if got != want:
+            return f"figures_check read {line!r} as {got}, not {want}"
+    with tempfile.TemporaryDirectory() as tmp:
+        page = Path(tmp) / "p.md"
+        page.write_text("```yaml\ndescription: aws account ids are 12 digits\n```\n\n"
+                        "```sh\naws ec2 describe-instances\n```\n")
+        saved, fc.ALL_PAGES = fc.ALL_PAGES, [page]
+        try:
+            got = fc.cited_commands()
+        finally:
+            fc.ALL_PAGES = saved
+        if got != {("aws", "ec2", "describe-instances")}:
+            return f"figures_check read a YAML fence as commands: {sorted(got)}"
     if fc.norm("a command-specific format") != fc.norm(
             fc.re.sub(r"(\w)-[ \t]*\n\s*(\w)", r"\1\2", "a command-\nspecific format")):
         return "figures_check compares a real hyphen differently from a typeset break"
     return ""
 
 
+def tool_validate_skips_ignored() -> str:
+    """What git ignores, and a nested repository, are not the corpus: CI and the
+    hook never see them, so a local run must not either. A tracked page still is."""
+    tmp, copy = _copy()
+    with tmp:
+        subprocess.run(["git", "init", "-q"], cwd=copy, check=True, env=GIT_ENV)
+        art = copy / ".operations"
+        art.mkdir()
+        (art / "pm.md").write_text("# PM\nSee [t](timeline.md).\n")
+        nested = copy / "wt"
+        nested.mkdir()
+        (nested / ".git").write_text("gitdir: /elsewhere\n")
+        (nested / "big.md").write_text("[x](gone.md)\n" + "x\n" * 9000)
+        out = run(copy, GIT_ENV)
+        if "green" not in out:
+            return f"validate counted an ignored or nested tree: {out.strip()}"
+        (copy / "README.md").write_text(
+            (copy / "README.md").read_text(encoding="utf-8") + "\n[t](timeline.md)\n",
+            encoding="utf-8")
+        if "links to missing timeline.md" not in run(copy, GIT_ENV):
+            return "validate stopped checking tracked pages in a repository"
+    return ""
+
+
+def tool_validate_inside_foreign_repo() -> str:
+    """A tree that is not its own repository — the pre-commit snapshot under a
+    TMPDIR inside a dotfiles repo that ignores `*` — is checked in full."""
+    with tempfile.TemporaryDirectory() as tmp:
+        outer = Path(tmp)
+        subprocess.run(["git", "init", "-q"], cwd=outer, check=True, env=GIT_ENV)
+        (outer / ".gitignore").write_text("*\n!*/\n!.gitignore\n")
+        copy = outer / "snap"
+        shutil.copytree(ROOT, copy, symlinks=True, ignore=_not_corpus)
+        readme = copy / "README.md"
+        readme.write_text(readme.read_text(encoding="utf-8") + "\n[t](timeline.md)\n",
+                          encoding="utf-8")
+        if "links to missing timeline.md" not in run(copy, GIT_ENV):
+            return "validate took another repository's ignore rules and checked nothing"
+    return ""
+
+
+def tool_validate_hook_banner() -> str:
+    """`hooks on` means this repo's hook runs, not that some file sits at the path."""
+    tmp, copy = _copy()
+    with tmp:
+        subprocess.run(["git", "init", "-q"], cwd=copy, check=True, env=GIT_ENV)
+        hook = copy / ".git/hooks/pre-commit"
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text("#!/bin/sh\nexit 0\n")
+        hook.chmod(0o755)
+        def banner() -> str:
+            return run(copy, GIT_ENV)
+        if "hooks on" in banner():
+            return "validate reports `hooks on` for a foreign pre-commit hook"
+        hook.unlink()
+        hook.symlink_to(copy / "operation-tools/githooks/pre-commit")
+        if "hooks on" not in banner():
+            return "validate reports `hooks off` with its own hook installed"
+        # A linked worktree: the shared hook is this repo's, from another
+        # checkout, whose version may differ.
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run(git + ["add", "-A"], cwd=copy, check=True, env=GIT_ENV)
+        subprocess.run(git + ["commit", "-qm", "init", "--no-verify"], cwd=copy, check=True,
+                       env=GIT_ENV)
+        wt = Path(tmp.name) / "wt"
+        subprocess.run(git + ["worktree", "add", "-q", str(wt)], cwd=copy, check=True,
+                       env=GIT_ENV)
+        theirs = wt / "operation-tools/githooks/pre-commit"
+        with theirs.open("a") as fh:
+            fh.write("# another version of this repo's hook\n")
+        hook.unlink()
+        hook.symlink_to(theirs.resolve())
+        if "hooks on" not in banner():
+            return "validate reports `hooks off` for its own hook installed from a worktree"
+        # Read from the worktree, through a hand-made relative link to the main checkout.
+        hook.unlink()
+        hook.symlink_to("../../operation-tools/githooks/pre-commit")
+        if "hooks on" not in run(wt, GIT_ENV):
+            return "validate in a worktree reports `hooks off` for a relative link to this repo's hook"
+        # Another project laid out the same way is not this repo.
+        other = Path(tmp.name) / "otherproj/operation-tools/githooks/pre-commit"
+        other.parent.mkdir(parents=True)
+        other.write_text("#!/bin/sh\nexit 0\n")
+        other.chmod(0o755)
+        hook.unlink()
+        hook.symlink_to(other)
+        if "hooks on" in banner():
+            return "validate reports `hooks on` for another project's hook"
+    return ""
+
+
+def tool_validate_link_re_linear() -> str:
+    """A line the link pattern cannot close must not cost exponential time: CI
+    would hang on one malformed sentence rather than fail on it."""
+    import time
+    line = "See [" + "![a]" * 24
+    start = time.monotonic()
+    validate.links(line)
+    took = time.monotonic() - start
+    if took > 1.0:
+        return f"links() took {took:.1f}s on an unclosed line of 24 images"
+    return ""
+
+
+def tool_validate_stem() -> str:
+    """A plural is not a typo; a dropped letter of a page ending in "ss" is."""
+    st = validate._stem
+    for a, b in (("deploy-strategies.md", "deploy-strategy.md"),
+                 ("processes.md", "process.md"), ("alerts.md", "alert.md")):
+        if st(a) != st(b):
+            return f"_stem reads {a} and {b} as different pages"
+    if st("proces.md") == st("process.md"):
+        return "_stem excuses `proces.md` as a plural of `process.md`"
+    return ""
+
+
+def tool_make_hooks_keeps_foreign() -> str:
+    """`make hooks` installs into an empty slot or over its own link, never over
+    a hook someone else put there."""
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp) / "repo"
+        (d / "operation-tools/githooks").mkdir(parents=True)
+        shutil.copy(ROOT / "Makefile", d)
+        shutil.copy(ROOT / "operation-tools/githooks/pre-commit", d / "operation-tools/githooks")
+        def make() -> subprocess.CompletedProcess:
+            return subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True,
+                                  text=True, env=GIT_ENV)
+        subprocess.run(["git", "init", "-q"], cwd=d, check=True, env=GIT_ENV)
+        hook = d / ".git/hooks/pre-commit"
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text("#!/bin/sh\necho mine\n")
+        r = make()
+        if r.returncode == 0 or hook.read_text() != "#!/bin/sh\necho mine\n":
+            return "`make hooks` replaced a pre-commit hook it did not install"
+        if "not this repo's hook" not in r.stdout:
+            return f"`make hooks` refused without saying why: {r.stdout!r}"
+        hook.unlink()
+        for _ in range(2):          # a fresh install, then a re-run over its own link
+            r = make()
+            if r.returncode != 0 or not hook.is_symlink():
+                return f"`make hooks` did not install or re-install its own hook: {r.stdout!r}"
+        # A linked worktree shares the hooks directory and may carry another
+        # version of the hook: run there, `make hooks` leaves the link alone.
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run(git + ["add", "-A"], cwd=d, check=True, env=GIT_ENV)
+        subprocess.run(git + ["commit", "-qm", "init", "--no-verify"], cwd=d, check=True,
+                       env=GIT_ENV)
+        wt = Path(tmp) / "wt"
+        subprocess.run(git + ["worktree", "add", "-q", str(wt)], cwd=d, check=True, env=GIT_ENV)
+        with (wt / "operation-tools/githooks/pre-commit").open("a") as fh:
+            fh.write("# another version of this repo's hook\n")
+        before = os.readlink(hook)
+        r = subprocess.run(["make", "-s", "hooks"], cwd=wt, capture_output=True, text=True,
+                           env=GIT_ENV)
+        if r.returncode != 0 or os.readlink(hook) != before:
+            return f"`make hooks` in a worktree refused or moved the shared hook: {r.stdout!r}"
+        # The same, through a hand-made relative link.
+        hook.unlink()
+        hook.symlink_to("../../operation-tools/githooks/pre-commit")
+        r = subprocess.run(["make", "-s", "hooks"], cwd=wt, capture_output=True, text=True,
+                           env=GIT_ENV)
+        if r.returncode != 0 or os.readlink(hook) != "../../operation-tools/githooks/pre-commit":
+            return f"`make hooks` in a worktree refused a relative link to this repo's hook: {r.stdout!r}"
+        hook.unlink()
+        hook.symlink_to(before)
+        # Installed from the worktree, which is then removed: the dangling link
+        # is repaired, not refused.
+        hook.unlink()
+        subprocess.run(["make", "-s", "hooks"], cwd=wt, check=True, capture_output=True,
+                       env=GIT_ENV)
+        # Run from the main checkout, the link into the worktree is still this
+        # repo's, and is kept executable: git skips a hook that is not.
+        (wt / "operation-tools/githooks/pre-commit").chmod(0o644)
+        r = subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True, text=True,
+                           env=GIT_ENV)
+        if r.returncode != 0:
+            return f"`make hooks` refused a link into this repo's worktree: {r.stdout!r}"
+        if not os.access(wt / "operation-tools/githooks/pre-commit", os.X_OK):
+            return "`make hooks` kept a link into a worktree whose hook git cannot execute"
+        subprocess.run(git + ["worktree", "remove", "--force", str(wt)], cwd=d, check=True,
+                       env=GIT_ENV)
+        if make().returncode != 0 or not hook.exists():
+            return "`make hooks` left this repo's hook dangling after its worktree was removed"
+        # Another project laid out the same way is not this repo.
+        other = Path(tmp) / "otherproj/operation-tools/githooks/pre-commit"
+        other.parent.mkdir(parents=True)
+        other.write_text("#!/bin/sh\nexit 0\n")
+        other.chmod(0o755)
+        hook.unlink()
+        hook.symlink_to(other)
+        r = make()
+        if r.returncode == 0 or os.readlink(hook) != str(other):
+            return "`make hooks` took another project's hook for this repo's"
+        if "not this repo's hook" not in r.stdout:
+            return f"`make hooks` refused another project's hook without saying why: {r.stdout!r}"
+        # A dangling link of another shape — a hook manager's target gone for now.
+        hook.unlink()
+        hook.symlink_to(Path(tmp) / "hook-manager/run")
+        if make().returncode == 0 or os.readlink(hook) != str(Path(tmp) / "hook-manager/run"):
+            return "`make hooks` replaced a dangling link that was not this repo's"
+        hook.unlink()
+        # core.hooksPath at the hook's own directory: nothing to link, and the
+        # tracked hook must not become a link to itself.
+        subprocess.run(["git", "config", "core.hooksPath", "operation-tools/githooks"],
+                       cwd=d, check=True, env=GIT_ENV)
+        src = d / "operation-tools/githooks/pre-commit"
+        src.chmod(0o644)
+        if make().returncode != 0 or src.is_symlink() or not src.is_file():
+            return "`make hooks` refused or damaged the hook when core.hooksPath points at it"
+        if not os.access(src, os.X_OK):
+            return "`make hooks` left the hook unexecutable when core.hooksPath points at it"
+    return ""
+
+
+def tool_figures_needs_no_yaml() -> str:
+    """`make figures` is standard library only: it must run where PyYAML is not."""
+    tools = ROOT / "operation-tools"
+    code = ("import sys, runpy; sys.modules['yaml'] = None; "
+            f"sys.path.insert(0, {str(tools)!r}); "
+            f"runpy.run_path({str(tools / 'figures_check.py')!r}, run_name='__main__')")
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                           env={**os.environ, "PATH": tmp})
+    if r.returncode != 0 or "figures green" not in r.stdout:
+        return f"figures_check needs PyYAML now: {(r.stderr or r.stdout).strip()[-200:]}"
+    return ""
+
+
+def tool_figures_unusable_help() -> str:
+    """A CLI that starts but cannot render help is SKIPPED, not a page full of
+    wrong claims: the hook runs this, and would otherwise block every commit."""
+    with tempfile.TemporaryDirectory() as tmp:
+        aws = Path(tmp) / "aws"
+        aws.write_text('#!/bin/sh\ncase "$1" in --version) echo aws-cli/2;; '
+                       '*) echo "Could not find groff or mandoc" >&2; exit 252;; esac\n')
+        aws.chmod(0o755)
+        r = subprocess.run([sys.executable, str(ROOT / "operation-tools/figures_check.py")],
+                           capture_output=True, text=True, env={**os.environ, "PATH": tmp})
+        if r.returncode != 0 or "SKIPPED: aws is installed but did not run" not in r.stdout:
+            return f"figures_check read an aws that cannot render help as wrong pages: {r.stdout!r}"
+    return ""
+
+
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
                tool_engine_dash_prompt,
-               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing]
+               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
+               tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
+               tool_validate_hook_banner,
+               tool_figures_needs_no_yaml, tool_figures_unusable_help,
+               tool_make_hooks_keeps_foreign]
+
+
+def _not_corpus(d: str, names: list[str]) -> list[str]:
+    """What the copy leaves out: what validate itself excludes, so a local
+    `.operations/` or worktree cannot fail a case CI would pass."""
+    return [n for n in names if n == "__pycache__" or validate.excluded(Path(d) / n)]
 
 
 def _run_case(mutate) -> str:
     with tempfile.TemporaryDirectory() as tmp:
         copy = Path(tmp) / "repo"
-        shutil.copytree(ROOT, copy, symlinks=True,
-                        ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        shutil.copytree(ROOT, copy, symlinks=True, ignore=_not_corpus)
         mutate(copy)
         return run(copy)
 

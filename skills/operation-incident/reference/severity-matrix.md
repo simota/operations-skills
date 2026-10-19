@@ -20,7 +20,7 @@ Correcting downward is free; that is the point of declaring early.
 
 | Dimension | SEV1 | SEV2 | SEV3 | SEV4 |
 |-----------|------|------|------|------|
-| **Users affected** | All users, or all of a region/tier | Large subset (>10%) or all of one major feature | Small subset (<10%), workaround exists | Individual users, cosmetic |
+| **Users affected** | All users, or all of a region/tier | Large subset (≥10%) or all of one major feature | Small subset (<10%), more than cosmetic, workaround or not | Small subset (<10%) or individual users, cosmetic only |
 | **Functionality** | Core workflow unusable | Core workflow degraded, or secondary unusable | Secondary degraded | Cosmetic or non-functional |
 | **Data** | Unbounded or unrecoverable loss/corruption, or exposure to an unauthorised party | Bounded and recoverable loss/corruption; integrity at risk | Staleness beyond the freshness SLO | Reporting-only discrepancy |
 | **Revenue** | Transactions failing broadly, or unbounded value at risk | Transactions degraded or delayed, or a bounded subset failing | Non-transactional impact | None |
@@ -88,7 +88,8 @@ template so the next responder reads it at the moment of hesitation.
 - **Severity inflation to get attention.** If SEV1 is the only way to get responders, the
   escalation policy is broken — fix that, not the label.
 - **Severity deflation to avoid a postmortem.** Detectable: a cluster of 2h+ SEV3s. Any SEV3
-  exceeding its expected duration is reassessed automatically.
+  past its 2h budget is reassessed automatically (`reference/mitigation-playbook.md` §
+  Time-Boxing).
 - **Waiting for confirmation before declaring.** Declaration is how you get the people who
   can confirm.
 - **Severity set by seniority.** The person with the most context sets it; the IC owns the

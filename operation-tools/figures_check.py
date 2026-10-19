@@ -23,6 +23,8 @@ import subprocess
 import sys
 import tempfile
 
+from fences import FENCE_RE, fence_step  # one reading of a fence, shared with validate
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 QUOTED = sorted((ROOT / "skills/operation-incident/reference").glob("*.md"))
 # Command existence is checked across every reference page; the quoted-wording
@@ -99,27 +101,48 @@ def subcommand_words(tool: str, rest: list[str]) -> list[str]:
     return words
 
 
-CMD = re.compile(r"(?:^|[`$(] ?)(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 -]+)")
+# `=` and the characters a flag's value carries are part of the capture: stopping
+# at `--profile=prod` would leave `aws --profile=prod ec2 ...` citing nothing, and
+# a command nobody checks reads exactly like one that passed. Any word boundary
+# starts one — after a prompt, an env prefix, a pipe — and every match counts.
+CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 =._/:-]+)")
+SPAN = re.compile(r"`([^`]+)`")
+
+
+def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
+    """Every command a line cites, each to the depth that names it.
+
+    In a fence the whole line is code; in prose only its code spans are, so
+    "the aws console" in a sentence is not read as a command.
+    """
+    out = []
+    for code in [line] if fenced else SPAN.findall(line):
+        for m in CMD.finditer(code):
+            tool, rest = m.group(1), m.group(2).split()
+            words = subcommand_words(tool, rest)
+            depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
+            if depth and len(words) >= depth:
+                out.append((tool, *words[:depth]))
+    return out
+
+
+# A fence is read line by line as commands only when it holds a shell: a YAML or
+# Markdown example ("description: aws account ids ...") is prose to this check.
+SHELL_FENCES = {"", "sh", "bash", "shell", "console", "zsh"}
 
 
 def cited_commands() -> set[tuple[str, ...]]:
     out: set[tuple[str, ...]] = set()
     for p in ALL_PAGES:
-        inside = False
+        fence, shell = None, False
         for line in text_of(p).splitlines():
-            if line.startswith("```"):
-                inside = not inside
+            fence, edge = fence_step(line, fence)
+            if edge:
+                if fence is not None:       # opened: its info string says what it holds
+                    info = FENCE_RE.match(line).group(2).strip().split()
+                    shell = (info[0].lower() if info else "") in SHELL_FENCES
                 continue
-            if not inside and "`" not in line:
-                continue
-            m = CMD.search(line)
-            if not m:
-                continue
-            tool, rest = m.group(1), m.group(2).split()
-            words = subcommand_words(tool, rest)
-            depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
-            if depth and len(words) >= depth:
-                out.add((tool, *words[:depth]))
+            out.update(commands_of(line, fenced=fence is not None and shell))
     return out
 
 
@@ -266,7 +289,9 @@ def usable(tool: str) -> bool:
             skipped.append(tool)
             _USABLE[tool] = False
         else:
-            why = unusable(tool, [tool, "--version"])
+            # `help` too: every check reads it, and it fails on its own — the AWS
+            # CLI renders help through groff or mandoc, which a slim image lacks.
+            why = unusable(tool, [tool, "--version"]) or unusable(tool, [tool, "help"])
             if why:
                 skipped.append(why)
             _USABLE[tool] = why is None

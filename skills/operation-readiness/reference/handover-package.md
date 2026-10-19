@@ -73,7 +73,7 @@ Handover completes when **all** are demonstrated:
 
 - [ ] The receiving team has responded to a real or simulated incident without the building team
 - [ ] They have executed a deploy and a rollback independently
-- [ ] They have executed at least three runbooks, including one `T3`
+- [ ] They have executed at least three runbooks, including a `T3` one where the service has one
 - [ ] They have all required access, verified by use
 - [ ] They are the on-call rotation of record, receiving pages directly
 - [ ] They can answer: what does this do, what breaks it, how would you know, and what would you do

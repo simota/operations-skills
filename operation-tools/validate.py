@@ -19,12 +19,69 @@ from pathlib import Path
 
 import yaml
 
+from fences import fence_step       # stdlib-only, so figures_check can share it
+
 ROOT = Path(__file__).resolve().parent.parent
 FAILURES: list[str] = []
 
 
 def fail(rule: str, msg: str) -> None:
     FAILURES.append(f"{rule}: {msg}")
+
+
+# --- what the corpus is --------------------------------------------------------
+
+_IGNORED: set[str] | None = None
+
+
+def _ignored() -> set[str]:
+    """Paths git ignores here, directories ending in `/`. Only when this tree is
+    a repository's own top level: the pre-commit snapshot or a test copy holds
+    only what was meant to be checked, and may sit inside some other repository
+    (a TMPDIR under a dotfiles repo that ignores `*`) whose rules must not empty
+    the corpus — that would pass every commit unchecked."""
+    global _IGNORED
+    if _IGNORED is None:
+        import subprocess
+        _IGNORED = set()
+        try:
+            top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ROOT,
+                                 capture_output=True, text=True, timeout=30)
+            if top.returncode == 0 and Path(top.stdout.strip()).resolve() == ROOT.resolve():
+                r = subprocess.run(["git", "ls-files", "-z", "--others", "--ignored",
+                                    "--exclude-standard", "--directory"], cwd=ROOT,
+                                   capture_output=True, text=True, timeout=30)
+                if r.returncode == 0:
+                    _IGNORED = set(filter(None, r.stdout.split("\0")))
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    return _IGNORED
+
+
+def excluded(path: Path) -> bool:
+    """Not part of the corpus: git's own directory, anything .gitignore covers
+    (`.operations/` is where these skills write their artifacts), or a nested
+    repository such as a worktree. CI and the hook never see those, so counting
+    them locally turns a green tree red."""
+    if path.name == ".git":
+        return True
+    try:
+        rel = path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return False
+    if path.is_dir():
+        return rel + "/" in _ignored() or (path != ROOT and (path / ".git").exists())
+    return rel in _ignored()
+
+
+def corpus(base: Path, pattern: str = "*.md") -> list[Path]:
+    """Every file under `base` matching `pattern`, without the excluded trees."""
+    out = []
+    for d, dirs, files in os.walk(base):
+        dirs[:] = sorted(x for x in dirs if not excluded(Path(d) / x))
+        out += [Path(d) / f for f in files
+                if Path(f).match(pattern) and not excluded(Path(d) / f)]
+    return sorted(out)
 
 
 # --- corpus ------------------------------------------------------------------
@@ -52,7 +109,13 @@ PLATFORM_DIRS = set(H["platform_dirs"])
 SKILLS_ROOT = ROOT / H["skills_dir"] if H.get("skills_dir") else ROOT
 SKILL_DIRS = sorted(p for p in SKILLS_ROOT.glob(f"{PREFIX}*") if (p / "SKILL.md").exists())
 SKILLS = [p.name for p in SKILL_DIRS]
-LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+# Link text may hold one level of brackets — `[the [old] page](x.md)`, or an
+# image inside a link, whose own target IMAGE_RE then reads. Bracketed text
+# followed by `(` is a link of its own, and CommonMark lets the inner one win:
+# in `[a [b](x.md) c](y.md)` the link is x.md. The alternatives are disjoint —
+# `!` alone, or `![...]` — so a long unclosed line cannot backtrack exponentially.
+LINK_RE = re.compile(r"\[(?:[^\[\]!]|!(?!\[)|!\[[^\[\]]*\]|\[[^\[\]]*\](?!\())+\]\(([^)]+)\)")
+IMAGE_RE = re.compile(r"!\[[^\[\]]*\]\(([^)]+)\)")
 # A backticked token is a path if it contains a slash or names a file. Matching
 # only on the slash misses the bare sibling reference (`SIZING.md`), which is
 # the form that breaks: it resolves against the skill directory, not against
@@ -90,21 +153,12 @@ def frontmatter(text: str) -> dict:
             ("" if v is None else str(v)) for k, v in data.items()}
 
 
-FENCE_RE = re.compile(r"^\s{0,3}(```|~~~)")
-
-
 def unfenced(text: str) -> list[tuple[int, str]]:
     """(line number, line) for every line outside a fenced code block."""
     out, fence = [], None
     for i, line in enumerate(text.splitlines(), 1):
-        m = FENCE_RE.match(line)
-        if m:
-            if fence is None:
-                fence = m.group(1)
-            elif m.group(1) == fence:
-                fence = None
-            continue
-        if fence is None:
+        fence, edge = fence_step(line, fence)
+        if fence is None and not edge:
             out.append((i, line))
     return out
 
@@ -113,10 +167,8 @@ def sections(text: str) -> dict[str, str]:
     """`## ` headings outside code fences. A heading quoted in an example is not one."""
     out, cur, buf, fence = {}, None, [], None
     for line in text.splitlines():
-        m = FENCE_RE.match(line)
-        if m:
-            fence = m.group(1) if fence is None else (None if m.group(1) == fence else fence)
-        if fence is None and not m and line.startswith("## "):
+        fence, edge = fence_step(line, fence)
+        if fence is None and not edge and line.startswith("## "):
             if cur:
                 out[cur] = "\n".join(buf)
             cur, buf = line[3:].strip(), []
@@ -148,7 +200,9 @@ def links(text: str) -> list[str]:
         # A code span becomes a placeholder, not nothing: `[`x`](y)` is still a
         # link, and `` `[x](y)` `` no longer is one.
         line = CODE_SPAN_RE.sub("code", line)
-        out += [_link_target(m) for m in LINK_RE.findall(line)]
+        found = LINK_RE.findall(line)
+        found += [m for m in IMAGE_RE.findall(line) if m not in found]
+        out += [_link_target(m) for m in found]
         m = REF_DEF_RE.match(line)
         if m:
             out.append(_link_target(m.group(1)))
@@ -257,8 +311,7 @@ def v6_budgets():
             fail("V6", f"{SHARED}/{f.name} is {n} lines (max {LIM['shared_file_lines']})")
     if total > LIM["shared_lines_total"]:
         fail("V6", f"{SHARED} totals {total} lines (max {LIM['shared_lines_total']})")
-    repo = sum(len(read(f).splitlines()) for f in ROOT.rglob("*.md")
-               if ".git" not in f.parts)
+    repo = sum(len(read(f).splitlines()) for f in corpus(ROOT))
     if repo > LIM["repo_md_lines_total"]:
         fail("V6", f"repo markdown totals {repo} lines (max {LIM['repo_md_lines_total']})")
 
@@ -278,9 +331,7 @@ def v8_links():
     example rather than a pointer.
     """
     cache: dict[Path, set[str]] = {}
-    for f in sorted(ROOT.rglob("*.md")):
-        if ".git" in f.parts:
-            continue
+    for f in corpus(ROOT):
         for target in links(read(f)):
             if not target or is_external(target):
                 continue
@@ -317,7 +368,10 @@ def v9_signals():
 
 def v10_fixtures():
     pairs = [(_norm(s), name) for name, c in CAP.items() for s in c.get("signals", [])]
-    for entry in FIX if isinstance(FIX, list) else []:
+    if not isinstance(FIX, list) or not FIX:
+        fail("V10", "fixtures.yaml is not a non-empty list of asks; this rule is checking nothing")
+        return
+    for entry in FIX:
         ask, expect = _norm(entry["ask"]), entry["expect"]
         hits = [(len(sig), owner) for sig, owner in pairs if sig in ask]
         if not hits:
@@ -475,7 +529,10 @@ _OWN_NAMES: set[str] = set()
 def _own_names() -> set[str]:
     if not _OWN_NAMES:
         for top in (SKILLS_ROOT, ROOT / f"{SET}-registry", ROOT / f"{SET}-tools"):
-            _OWN_NAMES.update(p.name for p in top.rglob("*") if ".git" not in p.parts)
+            for d, dirs, files in os.walk(top):
+                dirs[:] = [x for x in dirs if not excluded(Path(d) / x)]
+                _OWN_NAMES.update(dirs)
+                _OWN_NAMES.update(f for f in files if not excluded(Path(d) / f))
     return _OWN_NAMES
 
 
@@ -518,9 +575,14 @@ def _is_own_reference(p: str) -> bool:
 
 
 def _stem(name: str) -> str:
-    """`deploy-strategies.md` and `deploy-strategy.md` share a stem."""
+    """`deploy-strategies.md` and `deploy-strategy.md` share a stem, and so do
+    `processes.md` and `process.md` — but not `proces.md`, a typo of the latter."""
     s = name.lower().rsplit(".", 1)[0]
-    return s[:-3] + "y" if s.endswith("ies") else s.rstrip("s")
+    if s.endswith("ies"):
+        return s[:-3] + "y"
+    if s.endswith("sses"):
+        return s[:-2]
+    return s if s.endswith("ss") else s.removesuffix("s")
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:
@@ -588,8 +650,8 @@ def v21_verify_names_a_grade():
 
 
 def v22_markers_classified():
-    for f in ROOT.rglob("*.md"):
-        if ".git" in f.parts or f.parts[-2:-1] == ("delivered",):
+    for f in corpus(ROOT):
+        if f.parts[-2:-1] == ("delivered",):
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
             # A marker quoted in code is a mention; one beside code is still a marker.
@@ -604,9 +666,7 @@ def v23_labels():
     for pat, label in H["label_by_path"].items():
         if label not in allowed:
             fail("V23", f"label_by_path[{pat!r}] is {label!r}, not one of {sorted(allowed)}")
-    for f in sorted(ROOT.rglob("*.md")):
-        if ".git" in f.parts:
-            continue
+    for f in corpus(ROOT):
         rel = str(f.relative_to(ROOT))
         want = None
         for pat, label in H["label_by_path"].items():
@@ -702,7 +762,7 @@ def v28_namespace_agrees():
     # and a sibling set's install line (`cp -R operation-* _common <skills dir>`)
     # is what that judgement looks like when it is wrong.
     for d in sorted(list(ROOT.iterdir()) + list(SKILLS_ROOT.iterdir() if SKILLS_ROOT != ROOT else [])):
-        if not d.is_dir() or d.name in PLATFORM_DIRS:
+        if not d.is_dir() or d.name in PLATFORM_DIRS or excluded(d):
             continue
         if not (d.name.startswith(PREFIX) or d.name == SHARED):
             fail("V28", f"{d.name}/ carries no set name; a directory this set owns "
@@ -1058,9 +1118,7 @@ def v38_enumerations_declared():
     Declared words are what V20 and V22 reach; the rest is what drifts.
     """
     declared = {w for words in VOCAB.values() for w in words}
-    for f in sorted(SKILLS_ROOT.rglob("*.md")):
-        if ".git" in f.parts:
-            continue
+    for f in corpus(SKILLS_ROOT):
         for i, line in enumerate(read(f).splitlines(), 1):
             m = ENUM_RE.search(line)
             if not m:
@@ -1104,7 +1162,31 @@ def hook_installed() -> bool:
         return False
     if r.returncode != 0 or not r.stdout.strip():
         return False
-    return (ROOT / r.stdout.strip() / "pre-commit").exists()
+    # On only when it is this repo's hook, and git can run it: any file at that
+    # path is not the same thing, and a foreign hook is left alone by `make hooks`.
+    # This repo's, as `make hooks` reads it: a link into one of this
+    # repository's worktrees' githooks/pre-commit (a linked worktree shares the
+    # hook with another checkout, which may carry a different version), or a
+    # copy of this one. Another project with the same layout is not this repo.
+    import filecmp
+    hook = ROOT / r.stdout.strip() / "pre-commit"
+    ours = ROOT / "operation-tools/githooks/pre-commit"
+    if not hook.exists() or not os.access(hook, os.X_OK):
+        return False
+    suffix = "/operation-tools/githooks/pre-commit"
+    if hook.is_symlink() and os.readlink(hook).endswith(suffix):
+        try:
+            wt = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=ROOT,
+                                capture_output=True, text=True, timeout=10).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            wt = ""
+        roots = {Path(l[len("worktree "):]).resolve()
+                 for l in wt.splitlines() if l.startswith("worktree ")}
+        # A relative link is read from the hook's own directory, as the OS does.
+        target = hook.parent / os.readlink(hook)
+        if (target.parent / ".." / "..").resolve() in roots:
+            return True
+    return filecmp.cmp(hook, ours, shallow=False)
 
 
 def main() -> int:

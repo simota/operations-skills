@@ -56,10 +56,34 @@ render:
 
 # Wherever git looks for hooks: a worktree's .git is a file, and core.hooksPath
 # moves them. Linked, not copied, so a change to the hook reaches every clone.
+# A pre-commit hook that is not this repo's belongs to someone else — another
+# tool's, or the reader's own — and is left alone, as link and unlink leave
+# foreign skills alone: replacing it would silently drop whatever it checked.
+# This repo's is a link into one of its own worktrees' githooks/pre-commit — a
+# linked worktree shares the hooks directory with a checkout at another path,
+# and may carry a different hook — or a copy of this one. A live link is left
+# where it points, so a worktree never moves the shared hook onto itself; a
+# dangling one with this layout (its checkout moved or removed) runs nothing and
+# is repaired. A link into another project with the same layout, or a dangling
+# link of any other shape (a hook manager's target gone for now), is foreign. core.hooksPath may
+# point at operation-tools/githooks itself, which must never be linked onto itself.
 hooks:
 	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
-		ln -sf "$(REPO)/operation-tools/githooks/pre-commit" "$$d/pre-commit" && \
-		chmod +x operation-tools/githooks/pre-commit && \
+		src="$(REPO)/operation-tools/githooks/pre-commit" && t="$$d/pre-commit" && \
+		chmod +x "$$src" && \
+		if [ "$$t" -ef "$$src" ]; then echo "pre-commit installed in $$d"; exit 0; fi && \
+		ours= && if [ -L "$$t" ]; then lt="$$(readlink "$$t")"; \
+			case "$$lt" in */operation-tools/githooks/pre-commit) \
+				if [ ! -e "$$t" ]; then ours=1; else \
+				p="$$(cd "$$(dirname "$$t")" && cd "$$(dirname "$$lt")/../.." && pwd -P)"; \
+				if git worktree list --porcelain | sed -n 's/^worktree //p' | grep -Fxq "$$p"; \
+				then ours=1; fi; fi ;; esac; fi && \
+		if [ -n "$$ours" ] && [ -e "$$t" ]; then chmod +x "$$t" || exit 1; \
+			echo "pre-commit installed in $$d (from $$(readlink "$$t"))"; exit 0; fi && \
+		if [ -z "$$ours" ] && { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \
+			echo "pre-commit not installed: $$t is already there and is not this repo's hook;"; \
+			echo "  remove it, or call $$src from it"; exit 1; fi && \
+		ln -sf "$$src" "$$t" && \
 		echo "pre-commit installed in $$d"
 
 # A link is ours only when it resolves into this repository's skills/. Anything
