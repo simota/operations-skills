@@ -27,6 +27,54 @@ def fail(rule: str, msg: str) -> None:
     FAILURES.append(f"{rule}: {msg}")
 
 
+# --- what the corpus is --------------------------------------------------------
+
+_IGNORED: set[str] | None = None
+
+
+def _ignored() -> set[str]:
+    """Paths git ignores here, directories ending in `/`. Outside a repository —
+    the pre-commit snapshot, a test copy — nothing is ignored: those trees hold
+    only what was meant to be checked."""
+    global _IGNORED
+    if _IGNORED is None:
+        import subprocess
+        try:
+            r = subprocess.run(["git", "ls-files", "-z", "--others", "--ignored",
+                                "--exclude-standard", "--directory"], cwd=ROOT,
+                               capture_output=True, text=True, timeout=30)
+            _IGNORED = set(filter(None, r.stdout.split("\0"))) if r.returncode == 0 else set()
+        except (OSError, subprocess.TimeoutExpired):
+            _IGNORED = set()
+    return _IGNORED
+
+
+def excluded(path: Path) -> bool:
+    """Not part of the corpus: git's own directory, anything .gitignore covers
+    (`.operations/` is where these skills write their artifacts), or a nested
+    repository such as a worktree. CI and the hook never see those, so counting
+    them locally turns a green tree red."""
+    if path.name == ".git":
+        return True
+    try:
+        rel = path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return False
+    if path.is_dir():
+        return rel + "/" in _ignored() or (path != ROOT and (path / ".git").exists())
+    return rel in _ignored()
+
+
+def corpus(base: Path, pattern: str = "*.md") -> list[Path]:
+    """Every file under `base` matching `pattern`, without the excluded trees."""
+    out = []
+    for d, dirs, files in os.walk(base):
+        dirs[:] = sorted(x for x in dirs if not excluded(Path(d) / x))
+        out += [Path(d) / f for f in files
+                if Path(f).match(pattern) and not excluded(Path(d) / f)]
+    return sorted(out)
+
+
 # --- corpus ------------------------------------------------------------------
 
 def load(name: str):
@@ -52,7 +100,10 @@ PLATFORM_DIRS = set(H["platform_dirs"])
 SKILLS_ROOT = ROOT / H["skills_dir"] if H.get("skills_dir") else ROOT
 SKILL_DIRS = sorted(p for p in SKILLS_ROOT.glob(f"{PREFIX}*") if (p / "SKILL.md").exists())
 SKILLS = [p.name for p in SKILL_DIRS]
-LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+# Link text may hold one level of brackets — `[the [old] page](x.md)`, or an
+# image inside a link, whose own target IMAGE_RE then reads.
+LINK_RE = re.compile(r"\[(?:[^\[\]]|\[[^\[\]]*\])+\]\(([^)]+)\)")
+IMAGE_RE = re.compile(r"!\[[^\[\]]*\]\(([^)]+)\)")
 # A backticked token is a path if it contains a slash or names a file. Matching
 # only on the slash misses the bare sibling reference (`SIZING.md`), which is
 # the form that breaks: it resolves against the skill directory, not against
@@ -160,7 +211,9 @@ def links(text: str) -> list[str]:
         # A code span becomes a placeholder, not nothing: `[`x`](y)` is still a
         # link, and `` `[x](y)` `` no longer is one.
         line = CODE_SPAN_RE.sub("code", line)
-        out += [_link_target(m) for m in LINK_RE.findall(line)]
+        found = LINK_RE.findall(line)
+        found += [m for m in IMAGE_RE.findall(line) if m not in found]
+        out += [_link_target(m) for m in found]
         m = REF_DEF_RE.match(line)
         if m:
             out.append(_link_target(m.group(1)))
@@ -269,8 +322,7 @@ def v6_budgets():
             fail("V6", f"{SHARED}/{f.name} is {n} lines (max {LIM['shared_file_lines']})")
     if total > LIM["shared_lines_total"]:
         fail("V6", f"{SHARED} totals {total} lines (max {LIM['shared_lines_total']})")
-    repo = sum(len(read(f).splitlines()) for f in ROOT.rglob("*.md")
-               if ".git" not in f.parts)
+    repo = sum(len(read(f).splitlines()) for f in corpus(ROOT))
     if repo > LIM["repo_md_lines_total"]:
         fail("V6", f"repo markdown totals {repo} lines (max {LIM['repo_md_lines_total']})")
 
@@ -290,9 +342,7 @@ def v8_links():
     example rather than a pointer.
     """
     cache: dict[Path, set[str]] = {}
-    for f in sorted(ROOT.rglob("*.md")):
-        if ".git" in f.parts:
-            continue
+    for f in corpus(ROOT):
         for target in links(read(f)):
             if not target or is_external(target):
                 continue
@@ -329,7 +379,10 @@ def v9_signals():
 
 def v10_fixtures():
     pairs = [(_norm(s), name) for name, c in CAP.items() for s in c.get("signals", [])]
-    for entry in FIX if isinstance(FIX, list) else []:
+    if not isinstance(FIX, list) or not FIX:
+        fail("V10", "fixtures.yaml is not a non-empty list of asks; this rule is checking nothing")
+        return
+    for entry in FIX:
         ask, expect = _norm(entry["ask"]), entry["expect"]
         hits = [(len(sig), owner) for sig, owner in pairs if sig in ask]
         if not hits:
@@ -487,7 +540,10 @@ _OWN_NAMES: set[str] = set()
 def _own_names() -> set[str]:
     if not _OWN_NAMES:
         for top in (SKILLS_ROOT, ROOT / f"{SET}-registry", ROOT / f"{SET}-tools"):
-            _OWN_NAMES.update(p.name for p in top.rglob("*") if ".git" not in p.parts)
+            for d, dirs, files in os.walk(top):
+                dirs[:] = [x for x in dirs if not excluded(Path(d) / x)]
+                _OWN_NAMES.update(dirs)
+                _OWN_NAMES.update(f for f in files if not excluded(Path(d) / f))
     return _OWN_NAMES
 
 
@@ -605,8 +661,8 @@ def v21_verify_names_a_grade():
 
 
 def v22_markers_classified():
-    for f in ROOT.rglob("*.md"):
-        if ".git" in f.parts or f.parts[-2:-1] == ("delivered",):
+    for f in corpus(ROOT):
+        if f.parts[-2:-1] == ("delivered",):
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
             # A marker quoted in code is a mention; one beside code is still a marker.
@@ -621,9 +677,7 @@ def v23_labels():
     for pat, label in H["label_by_path"].items():
         if label not in allowed:
             fail("V23", f"label_by_path[{pat!r}] is {label!r}, not one of {sorted(allowed)}")
-    for f in sorted(ROOT.rglob("*.md")):
-        if ".git" in f.parts:
-            continue
+    for f in corpus(ROOT):
         rel = str(f.relative_to(ROOT))
         want = None
         for pat, label in H["label_by_path"].items():
@@ -719,7 +773,7 @@ def v28_namespace_agrees():
     # and a sibling set's install line (`cp -R operation-* _common <skills dir>`)
     # is what that judgement looks like when it is wrong.
     for d in sorted(list(ROOT.iterdir()) + list(SKILLS_ROOT.iterdir() if SKILLS_ROOT != ROOT else [])):
-        if not d.is_dir() or d.name in PLATFORM_DIRS:
+        if not d.is_dir() or d.name in PLATFORM_DIRS or excluded(d):
             continue
         if not (d.name.startswith(PREFIX) or d.name == SHARED):
             fail("V28", f"{d.name}/ carries no set name; a directory this set owns "
@@ -1075,9 +1129,7 @@ def v38_enumerations_declared():
     Declared words are what V20 and V22 reach; the rest is what drifts.
     """
     declared = {w for words in VOCAB.values() for w in words}
-    for f in sorted(SKILLS_ROOT.rglob("*.md")):
-        if ".git" in f.parts:
-            continue
+    for f in corpus(SKILLS_ROOT):
         for i, line in enumerate(read(f).splitlines(), 1):
             m = ENUM_RE.search(line)
             if not m:
@@ -1121,7 +1173,11 @@ def hook_installed() -> bool:
         return False
     if r.returncode != 0 or not r.stdout.strip():
         return False
-    return (ROOT / r.stdout.strip() / "pre-commit").exists()
+    # On only when it is this repo's hook, and git can run it: any file at that
+    # path is not the same thing, and a foreign hook is left alone by `make hooks`.
+    hook = ROOT / r.stdout.strip() / "pre-commit"
+    ours = (ROOT / "operation-tools/githooks/pre-commit").resolve()
+    return hook.exists() and hook.resolve() == ours and os.access(hook, os.X_OK)
 
 
 def main() -> int:

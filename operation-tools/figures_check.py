@@ -103,19 +103,27 @@ def subcommand_words(tool: str, rest: list[str]) -> list[str]:
 
 # `=` and the characters a flag's value carries are part of the capture: stopping
 # at `--profile=prod` would leave `aws --profile=prod ec2 ...` citing nothing, and
-# a command nobody checks reads exactly like one that passed.
-CMD = re.compile(r"(?:^|[`$(] ?)(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 =._/:-]+)")
+# a command nobody checks reads exactly like one that passed. Any word boundary
+# starts one — after a prompt, an env prefix, a pipe — and every match counts.
+CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 =._/:-]+)")
+SPAN = re.compile(r"`([^`]+)`")
 
 
-def command_of(line: str) -> tuple[str, ...] | None:
-    """The command a line cites, to the depth that names it, or None."""
-    m = CMD.search(line)
-    if not m:
-        return None
-    tool, rest = m.group(1), m.group(2).split()
-    words = subcommand_words(tool, rest)
-    depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
-    return (tool, *words[:depth]) if depth and len(words) >= depth else None
+def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
+    """Every command a line cites, each to the depth that names it.
+
+    In a fence the whole line is code; in prose only its code spans are, so
+    "the aws console" in a sentence is not read as a command.
+    """
+    out = []
+    for code in [line] if fenced else SPAN.findall(line):
+        for m in CMD.finditer(code):
+            tool, rest = m.group(1), m.group(2).split()
+            words = subcommand_words(tool, rest)
+            depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
+            if depth and len(words) >= depth:
+                out.append((tool, *words[:depth]))
+    return out
 
 
 def cited_commands() -> set[tuple[str, ...]]:
@@ -124,11 +132,8 @@ def cited_commands() -> set[tuple[str, ...]]:
         fence = None
         for line in text_of(p).splitlines():
             fence, edge = fence_step(line, fence)
-            if edge or (fence is None and "`" not in line):
-                continue
-            cmd = command_of(line)
-            if cmd:
-                out.add(cmd)
+            if not edge:
+                out.update(commands_of(line, fenced=fence is not None))
     return out
 
 
@@ -275,7 +280,9 @@ def usable(tool: str) -> bool:
             skipped.append(tool)
             _USABLE[tool] = False
         else:
-            why = unusable(tool, [tool, "--version"])
+            # `help` too: every check reads it, and it fails on its own — the AWS
+            # CLI renders help through groff or mandoc, which a slim image lacks.
+            why = unusable(tool, [tool, "--version"]) or unusable(tool, [tool, "help"])
             if why:
                 skipped.append(why)
             _USABLE[tool] = why is None

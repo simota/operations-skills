@@ -466,6 +466,21 @@ def _(r):
     app(r / TRAPS, "\n````markdown\n```\n[x](nowhere.md)\n```\n````\n")
 
 
+@case("V8-nested-text", "links to missing GONE.md")
+def _(r): app(r / TRAPS, "\nSee [the [old] page](GONE.md) and [![badge](ok.png)](GONE2.md).\n")
+
+
+@case("V8-image-in-link", "links to missing ok.png")
+def _(r): app(r / TRAPS, "\nSee [![badge](ok.png)](../_operation/CONTRACT.md).\n")
+
+
+@case("V10-shape", "this rule is checking nothing")
+def _(r):
+    f = r / "operation-registry/fixtures.yaml"
+    f.write_text("fixtures:\n" + "".join("  " + l + "\n" for l in
+                 f.read_text(encoding="utf-8").splitlines()), encoding="utf-8")
+
+
 @quiet("V8-code", "V8")
 def _(r):
     """A link quoted as an example, in a fence or a code span, points nowhere."""
@@ -678,7 +693,7 @@ def _(r): sub(r / RISK, "## Risk Scoring", "- KEEP | DROP\n\n## Risk Scoring")
 def _copy() -> tuple:
     tmp = tempfile.TemporaryDirectory()
     copy = Path(tmp.name) / "repo"
-    shutil.copytree(ROOT, copy, symlinks=True, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+    shutil.copytree(ROOT, copy, symlinks=True, ignore=_not_corpus)
     return tmp, copy
 
 
@@ -819,13 +834,67 @@ def tool_figures_parsing() -> str:
     got = fc.subcommand_words("aws", "--profile prod ec2 describe-instances".split())
     if got[:2] != ["ec2", "describe-instances"]:
         return f"figures_check read `aws --profile prod ec2` as {got[:2]}"
-    for line in ("`aws --profile=prod ec2 describe-instances`",
-                 "`gcloud --project=p-1 compute instances list`"):
-        if not fc.command_of(line) or len(fc.command_of(line)) < 3:
-            return f"figures_check cites nothing for {line}"
+    for line, fenced, want in (
+            ("`aws --profile=prod ec2 describe-instances`", False, [("aws", "ec2", "describe-instances")]),
+            ("`gcloud --project=p-1 compute instances list`", False,
+             [("gcloud", "compute", "instances", "list")]),
+            ("First `aws sts get-caller-identity`, then `aws ecs list-tasks`.", False,
+             [("aws", "sts", "get-caller-identity"), ("aws", "ecs", "list-tasks")]),
+            ("  AWS_PROFILE=p aws ec2 describe-instances | aws ecs list-tasks", True,
+             [("aws", "ec2", "describe-instances"), ("aws", "ecs", "list-tasks")]),
+            ("Open the aws console and check it.", False, [])):
+        got = fc.commands_of(line, fenced)
+        if got != want:
+            return f"figures_check read {line!r} as {got}, not {want}"
     if fc.norm("a command-specific format") != fc.norm(
             fc.re.sub(r"(\w)-[ \t]*\n\s*(\w)", r"\1\2", "a command-\nspecific format")):
         return "figures_check compares a real hyphen differently from a typeset break"
+    return ""
+
+
+def tool_validate_skips_ignored() -> str:
+    """What git ignores, and a nested repository, are not the corpus: CI and the
+    hook never see them, so a local run must not either. A tracked page still is."""
+    tmp, copy = _copy()
+    with tmp:
+        subprocess.run(["git", "init", "-q"], cwd=copy, check=True)
+        art = copy / ".operations"
+        art.mkdir()
+        (art / "pm.md").write_text("# PM\nSee [t](timeline.md).\n")
+        nested = copy / "wt"
+        nested.mkdir()
+        (nested / ".git").write_text("gitdir: /elsewhere\n")
+        (nested / "big.md").write_text("[x](gone.md)\n" + "x\n" * 9000)
+        out = run(copy)
+        if "green" not in out:
+            return f"validate counted an ignored or nested tree: {out.strip()}"
+        (copy / "README.md").write_text(
+            (copy / "README.md").read_text(encoding="utf-8") + "\n[t](timeline.md)\n",
+            encoding="utf-8")
+        if "links to missing timeline.md" not in run(copy):
+            return "validate stopped checking tracked pages in a repository"
+    return ""
+
+
+def tool_validate_hook_banner() -> str:
+    """`hooks on` means this repo's hook runs, not that some file sits at the path."""
+    tmp, copy = _copy()
+    with tmp:
+        subprocess.run(["git", "init", "-q"], cwd=copy, check=True)
+        hook = copy / ".git/hooks/pre-commit"
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_text("#!/bin/sh\nexit 0\n")
+        hook.chmod(0o755)
+        env = {k: v for k, v in os.environ.items() if k != "OPERATION_PRECOMMIT"}
+        def banner() -> str:
+            return subprocess.run([sys.executable, str(copy / "operation-tools/validate.py")],
+                                  capture_output=True, text=True, env=env).stdout
+        if "hooks on" in banner():
+            return "validate reports `hooks on` for a foreign pre-commit hook"
+        hook.unlink()
+        hook.symlink_to(copy / "operation-tools/githooks/pre-commit")
+        if "hooks on" not in banner():
+            return "validate reports `hooks off` with its own hook installed"
     return ""
 
 
@@ -866,17 +935,38 @@ def tool_make_hooks_keeps_foreign() -> str:
     return ""
 
 
+def tool_figures_unusable_help() -> str:
+    """A CLI that starts but cannot render help is SKIPPED, not a page full of
+    wrong claims: the hook runs this, and would otherwise block every commit."""
+    with tempfile.TemporaryDirectory() as tmp:
+        aws = Path(tmp) / "aws"
+        aws.write_text('#!/bin/sh\ncase "$1" in --version) echo aws-cli/2;; '
+                       '*) echo "Could not find groff or mandoc" >&2; exit 252;; esac\n')
+        aws.chmod(0o755)
+        r = subprocess.run([sys.executable, str(ROOT / "operation-tools/figures_check.py")],
+                           capture_output=True, text=True, env={**os.environ, "PATH": tmp})
+        if r.returncode != 0 or "SKIPPED: aws is installed but did not run" not in r.stdout:
+            return f"figures_check read an aws that cannot render help as wrong pages: {r.stdout!r}"
+    return ""
+
+
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
                tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
-               tool_validate_stem, tool_make_hooks_keeps_foreign]
+               tool_validate_stem, tool_validate_skips_ignored, tool_validate_hook_banner,
+               tool_figures_unusable_help, tool_make_hooks_keeps_foreign]
+
+
+def _not_corpus(d: str, names: list[str]) -> list[str]:
+    """What the copy leaves out: what validate itself excludes, so a local
+    `.operations/` or worktree cannot fail a case CI would pass."""
+    return [n for n in names if n == "__pycache__" or validate.excluded(Path(d) / n)]
 
 
 def _run_case(mutate) -> str:
     with tempfile.TemporaryDirectory() as tmp:
         copy = Path(tmp) / "repo"
-        shutil.copytree(ROOT, copy, symlinks=True,
-                        ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        shutil.copytree(ROOT, copy, symlinks=True, ignore=_not_corpus)
         mutate(copy)
         return run(copy)
 
