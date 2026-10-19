@@ -59,7 +59,7 @@ a `stale` or `untested` one is named there, never left implied.
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |
 | Postmortem | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days |
 | Escalation depth | Full chain | Full chain (the secondary level where the rotation has one), executive level business hours | Two levels | One level |
-| Change approval | `Standard`: its class pre-approval; otherwise service owner; second reviewer from the `operation-change` 16–20 band up (total ≥16 or any single 5) | Same as ST0 | Same as ST0 | None beyond the change class, the risk band and the safety tier (`operation-change`, `_operation/SAFETY_TIERS.md`) |
+| Change approval | Service owner, or for a `Standard` change its class pre-approval; second reviewer from the `operation-change` 16–20 band up (total ≥16 or any single 5); the safety tier's approver always (`_operation/SAFETY_TIERS.md`) | Same as ST0 | Same as ST0 | None beyond the change class, the risk band and the safety tier (`operation-change`, `_operation/SAFETY_TIERS.md`) |
 | Dependency tier floor | All deps ST0 | All deps ST0–ST1 | All deps ST0–ST2 | None |
 
 This table is canonical; `reference/service-tiering.md` covers how the tier is derived, not
