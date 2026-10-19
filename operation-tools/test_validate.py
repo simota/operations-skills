@@ -955,6 +955,11 @@ def tool_validate_hook_banner() -> str:
         hook.symlink_to(theirs.resolve())
         if "hooks on" not in banner():
             return "validate reports `hooks off` for its own hook installed from a worktree"
+        # Read from the worktree, through a hand-made relative link to the main checkout.
+        hook.unlink()
+        hook.symlink_to("../../operation-tools/githooks/pre-commit")
+        if "hooks on" not in run(wt, GIT_ENV):
+            return "validate in a worktree reports `hooks off` for a relative link to this repo's hook"
         # Another project laid out the same way is not this repo.
         other = Path(tmp.name) / "otherproj/operation-tools/githooks/pre-commit"
         other.parent.mkdir(parents=True)
@@ -1032,6 +1037,15 @@ def tool_make_hooks_keeps_foreign() -> str:
                            env=GIT_ENV)
         if r.returncode != 0 or os.readlink(hook) != before:
             return f"`make hooks` in a worktree refused or moved the shared hook: {r.stdout!r}"
+        # The same, through a hand-made relative link.
+        hook.unlink()
+        hook.symlink_to("../../operation-tools/githooks/pre-commit")
+        r = subprocess.run(["make", "-s", "hooks"], cwd=wt, capture_output=True, text=True,
+                           env=GIT_ENV)
+        if r.returncode != 0 or os.readlink(hook) != "../../operation-tools/githooks/pre-commit":
+            return f"`make hooks` in a worktree refused a relative link to this repo's hook: {r.stdout!r}"
+        hook.unlink()
+        hook.symlink_to(before)
         # Installed from the worktree, which is then removed: the dangling link
         # is repaired, not refused.
         hook.unlink()
@@ -1048,8 +1062,11 @@ def tool_make_hooks_keeps_foreign() -> str:
         other.chmod(0o755)
         hook.unlink()
         hook.symlink_to(other)
-        if make().returncode == 0 or os.readlink(hook) != str(other):
+        r = make()
+        if r.returncode == 0 or os.readlink(hook) != str(other):
             return "`make hooks` took another project's hook for this repo's"
+        if "not this repo's hook" not in r.stdout:
+            return f"`make hooks` refused another project's hook without saying why: {r.stdout!r}"
         hook.unlink()
         # core.hooksPath at the hook's own directory: nothing to link, and the
         # tracked hook must not become a link to itself.

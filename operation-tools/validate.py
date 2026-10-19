@@ -1182,7 +1182,9 @@ def hook_installed() -> bool:
             wt = ""
         roots = {Path(l[len("worktree "):]).resolve()
                  for l in wt.splitlines() if l.startswith("worktree ")}
-        if Path(os.readlink(hook)[:-len(suffix)]).resolve() in roots:
+        # A relative link is read from the hook's own directory, as the OS does.
+        target = hook.parent / os.readlink(hook)
+        if (target.parent / ".." / "..").resolve() in roots:
             return True
     return filecmp.cmp(hook, ours, shallow=False)
 

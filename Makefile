@@ -74,8 +74,9 @@ hooks:
 		ours= && if [ -L "$$t" ]; then lt="$$(readlink "$$t")"; \
 			if [ ! -e "$$t" ]; then ours=1; \
 			else case "$$lt" in */operation-tools/githooks/pre-commit) \
-				git worktree list --porcelain | sed -n 's/^worktree //p' | \
-					grep -Fxq "$${lt%/operation-tools/githooks/pre-commit}" && ours=1 ;; esac; fi; fi && \
+				p="$$(cd "$$(dirname "$$t")" && cd "$$(dirname "$$lt")/../.." && pwd -P)"; \
+				if git worktree list --porcelain | sed -n 's/^worktree //p' | grep -Fxq "$$p"; \
+				then ours=1; fi ;; esac; fi; fi && \
 		if [ -n "$$ours" ] && [ -e "$$t" ]; then \
 			echo "pre-commit installed in $$d (from $$(readlink "$$t"))"; exit 0; fi && \
 		if [ -z "$$ours" ] && { [ -e "$$t" ] || [ -L "$$t" ]; } && ! cmp -s "$$t" "$$src"; then \
