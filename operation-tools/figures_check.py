@@ -121,9 +121,12 @@ def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
         for m in CMD.finditer(code):
             tool, rest = m.group(1), m.group(2).split()
             words = subcommand_words(tool, rest)
-            depth = {"aws": 2, "gcloud": 3, "ansible": 0, "ansible-playbook": 0}[tool]
-            if depth and len(words) >= depth:
-                out.append((tool, *words[:depth]))
+            # gcloud nests to different depths: `gcloud config list` and
+            # `gcloud logging read` name a command in two words, and requiring
+            # three left them cited but never checked.
+            least, most = {"aws": (2, 2), "gcloud": (2, 3)}.get(tool, (0, 0))
+            if most and len(words) >= least:
+                out.append((tool, *words[:most]))
     return out
 
 
@@ -287,7 +290,7 @@ def usable(tool: str) -> bool:
     wrong sends someone to correct a page that is fine."""
     if tool not in _USABLE:
         if not shutil.which(tool):
-            skipped.append(tool)
+            skipped.append(f"{tool} not on PATH")
             _USABLE[tool] = False
         else:
             # `help` too: every check reads it, and it fails on its own — the AWS
