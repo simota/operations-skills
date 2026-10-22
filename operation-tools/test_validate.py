@@ -1130,7 +1130,9 @@ def tool_no_bytecode_in_tools() -> str:
     an untracked `__pycache__/` that `git add -A` would commit."""
     tmp, copy = _copy()
     with tmp:
-        env = {k: v for k, v in GIT_ENV.items() if k != "PYTHONDONTWRITEBYTECODE"}
+        # Either variable would move or suppress the bytecode and pass this unchecked.
+        env = {k: v for k, v in GIT_ENV.items()
+               if k not in ("PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX")}
         for tool in ("validate.py", "figures_check.py"):
             subprocess.run([sys.executable, str(copy / "operation-tools" / tool)],
                            capture_output=True, text=True, env={**env, "PATH": tmp.name})
