@@ -92,8 +92,8 @@ Terminal scrollback is not evidence. Redirect to a file, name it for the
 incident, and say in the timeline where it went.
 
 ```sh
-aws ec2 describe-instances --instance-ids <id> > inc-<id>-instance.json
-gcloud compute instances describe <vm> --zone <z> --format=json > inc-<id>-vm.json
+aws ec2 describe-instances --profile <p> --region <r> --instance-ids <id> > inc-<id>-instance.json
+gcloud compute instances describe <vm> --project <p> --zone <z> --format=json > inc-<id>-vm.json
 ansible <pattern> -i <inv> -m setup --tree ./inc-<id>-facts/
 ```
 

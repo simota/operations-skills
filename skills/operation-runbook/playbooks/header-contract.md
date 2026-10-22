@@ -35,9 +35,9 @@ non-production run reaches `simulated`, never `proved`. Whichever clock fires fi
 |------|-------|----------------------------|
 | 0 | Tribal knowledge | Write it down at all |
 | 1 | Documented procedure | Executed successfully twice by someone who did not write it |
-| 2 | Scripted, human-invoked | Idempotent, dry-run mode exists, exits non-zero on failure |
-| 3 | Self-service / one-click | Preconditions checked by the tool; blast radius bounded in code |
-| 4 | Automated with human approval | Circuit breaker, escape hatch, full audit log |
+| 2 | Scripted, human-invoked | Idempotent, dry-run mode exists, exits non-zero on failure, logs every action |
+| 3 | Self-service / one-click | Preconditions checked by the tool; blast radius bounded in code; safe by construction |
+| 4 | Automated with human approval | Circuit breaker, escape hatch, full audit log, notification on every run |
 | 5 | Fully automated remediation | ≥20 successful supervised runs, tier ≤ T2, verified rollback |
 
 **Skipping rungs is the failure mode.** Automation built directly from rung 0 encodes tribal
