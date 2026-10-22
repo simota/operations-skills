@@ -10,9 +10,9 @@ Verified: 2026-08-21 — no automated check.
 
 | Class | Definition | Approval | Record |
 |-------|------------|----------|--------|
-| `Standard` | Pre-approved, runbooked, executed unchanged before, low risk score | None | Logged automatically |
-| `Normal` | New or modified change with lead time | Service owner | Change record before shipping |
-| `Emergency` | Required to restore or protect service now | IC during an incident | Change record **after**, reviewed within 5 business days |
+| `Standard` | Pre-approved, runbooked, executed unchanged before, low risk score | None beyond the safety tier's approver | Logged automatically |
+| `Normal` | New or modified change with lead time | Service owner, plus the safety tier's approver | Change record before shipping |
+| `Emergency` | Required to restore or protect service now | IC during an incident (+ second responder at `T4`) | Change record **after**, reviewed within 5 business days |
 
 **Standard changes need an explicit list.** A class that exists in principle but names no
 actual changes provides no benefit — everything routes to `Normal` and the process is slow

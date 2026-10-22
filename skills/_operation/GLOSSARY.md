@@ -36,8 +36,8 @@ from response quality — but label it, and never report it as MTTM.
 
 | Class | Definition | Approval |
 |-------|------------|----------|
-| `Standard` | Pre-approved, runbooked, previously executed unchanged | None — logged only |
-| `Normal` | New or modified change with lead time | Service owner |
+| `Standard` | Pre-approved, runbooked, previously executed unchanged | None beyond the safety tier's approver — logged |
+| `Normal` | New or modified change with lead time | Service owner, plus the safety tier's approver |
 | `Emergency` | Required to restore or protect service now | IC (+ second responder at `T4`), reviewed after the fact |
 
 ## Other

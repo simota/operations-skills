@@ -64,7 +64,7 @@ Include: first fault, first signal, detection, declaration, each decision, each 
 attempt (including failures), verification, all-clear.
 
 ## Detection
-How was it found? By whom? How long from fault to signal (MTTD)?
+How was it found? By whom? How long from user impact to signal (MTTD)?
 Was there a signal that fired and was not acted on? Was there a signal that should have existed?
 
 ## Response

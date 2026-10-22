@@ -78,6 +78,10 @@ fi
 
 for src in "$SRC_DIR"/operation-*; do
   [[ -d "$src" ]] || continue
+  # A skill is a directory holding a SKILL.md, as `make link` reads it; the
+  # prefix alone is not the test. Uninstall still looks at every prefixed name,
+  # and removes only what ours() recognises.
+  [[ "$MODE" == "uninstall" || -f "$src/SKILL.md" ]] || continue
   name="$(basename "$src")"
   dest="$DEST_DIR/$name"
 

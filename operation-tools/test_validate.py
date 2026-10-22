@@ -1124,13 +1124,49 @@ def tool_figures_unusable_help() -> str:
     return ""
 
 
+def tool_no_bytecode_in_tools() -> str:
+    """`make check` leaves the working tree as it found it: validate and
+    figures_check import fences.py, and its bytecode landed in the tools dir as
+    an untracked `__pycache__/` that `git add -A` would commit."""
+    tmp, copy = _copy()
+    with tmp:
+        # Either variable would move or suppress the bytecode and pass this unchecked.
+        env = {k: v for k, v in GIT_ENV.items()
+               if k not in ("PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX")}
+        for tool in ("validate.py", "figures_check.py"):
+            subprocess.run([sys.executable, str(copy / "operation-tools" / tool)],
+                           capture_output=True, text=True, env={**env, "PATH": tmp.name})
+        if (copy / "operation-tools/__pycache__").exists():
+            return "validate.py or figures_check.py wrote __pycache__ into the tools dir"
+    return ""
+
+
+def tool_install_links_only_skills() -> str:
+    """A skill is a directory holding a SKILL.md, as `make link` reads it: a
+    prefixed directory without one is not installed by install.sh either."""
+    tmp, copy = _copy()
+    with tmp:
+        (copy / f"{S}operation-notaskill").mkdir()
+        for mode in ([], ["--copy"]):
+            dest = Path(tmp.name) / f"dest{len(mode)}"
+            r = subprocess.run(["bash", str(copy / "install.sh"), "--dest", str(dest), *mode],
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                return f"install.sh {' '.join(mode)} failed: {r.stderr.strip()[-200:]}"
+            got = sorted(p.name for p in dest.iterdir())
+            if got != validate.SKILLS:
+                return f"install.sh {' '.join(mode) or '(link)'} installed {got}, not {validate.SKILLS}"
+    return ""
+
+
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
                tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
                tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
                tool_validate_hook_banner,
                tool_figures_needs_no_yaml, tool_figures_unusable_help,
-               tool_make_hooks_keeps_foreign]
+               tool_make_hooks_keeps_foreign,
+               tool_no_bytecode_in_tools, tool_install_links_only_skills]
 
 
 def _not_corpus(d: str, names: list[str]) -> list[str]:

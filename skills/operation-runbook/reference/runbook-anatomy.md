@@ -48,7 +48,7 @@ abort_if:
 ```
 **Expect:** `<exact expected output or observable state>`
 **If different:** <specific branch — another step number, another runbook, or escalate to whom>
-**Reversal:** `<command>` | Not applicable (read-only)
+**Reversal:** `<command>` | NONE (read-only)
 **Tier:** T1
 
 ### 2. ...
