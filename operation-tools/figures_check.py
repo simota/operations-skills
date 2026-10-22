@@ -117,6 +117,9 @@ def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
     "the aws console" in a sentence is not read as a command.
     """
     out = []
+    if fenced:
+        # A shell comment is prose: `# gcloud is optional` names no command.
+        line = re.sub(r"(?:^|(?<=\s))#.*", "", line)
     for code in [line] if fenced else SPAN.findall(line):
         for m in CMD.finditer(code):
             tool, rest = m.group(1), m.group(2).split()

@@ -55,7 +55,8 @@ into data loss** — this is one of the most common ways an incident gets worse.
 ## Time-Boxing
 
 Every diagnostic line of enquiry gets an explicit budget, announced by the IC — at SEV3, which
-has no IC (`reference/severity-matrix.md` § Response Expectations), by the single responder:
+has no IC (`reference/severity-matrix.md` § Response Expectations; a single responder, no formal
+roles, `reference/command-structure.md` § Scaling by Severity), by that responder:
 
 | Severity | Default hypothesis budget | On expiry |
 |----------|--------------------------|-----------|

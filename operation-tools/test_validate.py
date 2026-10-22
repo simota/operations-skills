@@ -922,6 +922,8 @@ def tool_figures_parsing() -> str:
              [("gcloud", "auth", "list")]),
             ("gcloud logging read 'resource.type=\"gce_instance\"' --project <p>", True,
              [("gcloud", "logging", "read")]),
+            ("gcloud config list   # gcloud is optional; aws is too", True,
+             [("gcloud", "config", "list")]),
             ("First `aws sts get-caller-identity`, then `aws ecs list-tasks`.", False,
              [("aws", "sts", "get-caller-identity"), ("aws", "ecs", "list-tasks")]),
             ("  AWS_PROFILE=p aws ec2 describe-instances | aws ecs list-tasks", True,
