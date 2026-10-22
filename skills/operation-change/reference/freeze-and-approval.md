@@ -67,10 +67,10 @@ mechanism with extra latency.
 
 | Risk score | Approval |
 |------------|----------|
-| 5–9 **and** meets the `Standard` definition (pre-approved, runbooked, executed unchanged before) | None; automatic log. Otherwise as 10–15 |
-| 10–15 | Service owner, asynchronous |
-| 16–20 | Service owner + a second reviewer with domain knowledge |
-| 21–25 | Explicit review with a rollout plan; split recommendation first |
+| 5–9, no dimension at 5, **and** meets the `Standard` definition (pre-approved, runbooked, executed unchanged before) | None; automatic log. Otherwise as 10–15 |
+| 10–15, no dimension at 5 | Service owner, asynchronous |
+| 16–20, or any single dimension at 5 | Service owner + a second reviewer with domain knowledge |
+| 21–25 | As 16–20, as an explicit review with a rollout plan; split recommendation first |
 | Emergency | IC during the incident; post-review within 5 business days |
 
 The score sets the change approval; the safety tier's approver (`_operation/SAFETY_TIERS.md`) is

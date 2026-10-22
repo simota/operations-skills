@@ -22,7 +22,7 @@ owner: "<named individual>"
 backup_owner: "<a second named individual>"
 state: proved
 last_executed: "2026-08-14, <named individual>, production (incident)"
-expires: "2026-11-14 — the deploy tooling changes roughly quarterly"
+expires: "2026-11-12 — 90 days, the ST0 rollback cadence; the deploy tooling changes about as often"
 voided_by: "any change to the deploy CLI or the payments-api migration tooling"
 abort_if:
   - "A database migration ran with the deploy and is not backwards-compatible"
