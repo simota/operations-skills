@@ -23,7 +23,8 @@ import subprocess
 import sys
 import tempfile
 
-from fences import FENCE_RE, fence_step  # one reading of a fence, shared with validate
+sys.dont_write_bytecode = True           # no __pycache__ in the tools dir after a check
+from fences import FENCE_RE, fence_step  # noqa: E402  — one reading of a fence, shared with validate
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 QUOTED = sorted((ROOT / "skills/operation-incident/reference").glob("*.md"))

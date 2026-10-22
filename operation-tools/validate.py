@@ -19,7 +19,8 @@ from pathlib import Path
 
 import yaml
 
-from fences import fence_step       # stdlib-only, so figures_check can share it
+sys.dont_write_bytecode = True      # no __pycache__ in the tools dir after a check
+from fences import fence_step       # noqa: E402  — stdlib-only, so figures_check can share it
 
 ROOT = Path(__file__).resolve().parent.parent
 FAILURES: list[str] = []
