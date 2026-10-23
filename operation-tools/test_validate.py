@@ -1061,6 +1061,24 @@ def tool_refute_unchecked_fails() -> str:
         return ""
 
 
+def tool_refute_needs_ids() -> str:
+    """A verdict is read back by its claim's id, so a missing or repeated one is refused."""
+    tmp = tempfile.TemporaryDirectory()
+    with tmp:
+        c = Path(tmp.name) / "claims.json"
+        for body in ('[{"id": "c1", "claim": "x"}, {"claim": "y"}]',
+                     '[{"id": "c1", "claim": "x"}, {"id": "c1", "claim": "y"}]',
+                     '[{"id": 1, "claim": "x"}, {"id": "1", "claim": "y"}]',
+                     '[{"id": true, "claim": "x"}]'):
+            c.write_text(body)
+            r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
+                                "--running", "claude", str(c)], capture_output=True, text=True,
+                               env={"PATH": tmp.name, "HOME": tmp.name})
+            if r.returncode != 2 or "needs its own `id`" not in r.stderr:
+                return f"refute.py accepted {body} (exit {r.returncode}): {(r.stdout + r.stderr)[-200:]}"
+        return ""
+
+
 def tool_figures_parsing() -> str:
     import figures_check as fc
     got = fc.subcommand_words("aws", "--profile prod ec2 describe-instances".split())
@@ -1428,7 +1446,8 @@ def tool_install_links_only_skills() -> str:
 
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_render_whole_heading, tool_engine_requires_running,
                tool_engine_dash_prompt,
-               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
+               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_refute_needs_ids,
+               tool_figures_parsing,
                tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
                tool_validate_hook_banner,
                tool_figures_needs_no_yaml, tool_figures_unusable_help,

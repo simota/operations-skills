@@ -134,6 +134,19 @@ def main() -> int:
         print(f"{a.claims}: expected a non-empty JSON list of {{id, claim, [evidence], "
               f"[where]}} objects; entries without a `claim` string: {bad}", file=sys.stderr)
         return 2
+    # The id is the only thing tying a verdict back to its claim. Two claims
+    # without one both printed as `None`, and a CONTESTED and a STANDS could no
+    # longer be told apart — by a reader, or by a caller matching --json by id.
+    ids = [c.get("id") for c in claims]
+    unnamed = [i for i, v in enumerate(ids)
+               if isinstance(v, bool) or not isinstance(v, (str, int)) or not str(v).strip()]
+    # Compared as printed: `1` and `"1"` are two ids in JSON and one on the page.
+    shown = [str(v) for i, v in enumerate(ids) if i not in unnamed]
+    repeated = sorted({v for v in shown if shown.count(v) > 1})
+    if unnamed or repeated:
+        print(f"{a.claims}: every claim needs its own `id`, a string or integer; "
+              f"entries without one: {unnamed}; ids used twice: {repeated}", file=sys.stderr)
+        return 2
     try:
         pool = refuters(a.running)
     except engine.EngineError as e:
