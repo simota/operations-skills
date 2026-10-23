@@ -93,7 +93,7 @@ never as an unwritten norm:
 | Service tier | Off-hours behaviour |
 |--------------|--------------------|
 | ST0 | Full chain, 24/7, no degradation |
-| ST1 | Full chain 24/7, with Level 2 skipped where the rotation has no secondary; Level 5 (executive) business hours only |
+| ST1 | Full chain 24/7, with Level 2 skipped where the rotation has no secondary; Level 5 (executive) business hours only, except a SEV1's leadership notice, which goes when it falls due |
 | ST2 | Page for SEV1 only; SEV2 becomes a business-hours ticket |
 | ST3 | No off-hours paging; SEV2–4 queue to business hours. A genuine SEV1 still pages — and triggers a service-tier review, because an ST3 service should not be able to produce one |
 

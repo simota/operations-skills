@@ -238,13 +238,21 @@ def recap(out: str) -> dict[str, int]:
 TRAPS = ROOT / "skills/operation-incident/reference/observation-traps.md"
 
 
+def traps_text() -> str:
+    """The page the ansible claims live on. Renamed or removed, it reads as
+    empty, and each check below then says it has stopped checking anything,
+    rather than a FileNotFoundError that ended the run before the aws and
+    gcloud halves reported."""
+    return text_of(TRAPS) if TRAPS.is_file() else ""
+
+
 def stated_recaps() -> tuple[dict[str, int], dict[str, int]]:
     """The two recaps the page prints: the ordinary run, then check mode.
 
     Read from the page rather than restated here, so a page edited to claim the
     opposite fails instead of being graded against a copy kept in the checker.
     """
-    printed = [recap(l) for l in text_of(TRAPS).splitlines() if "localhost" in l]
+    printed = [recap(l) for l in traps_text().splitlines() if "localhost" in l]
     printed = [r for r in printed if r]
     plain = next((r for r in printed if "skipped" not in r), {})
     checked = next((r for r in printed if "skipped" in r), {})
@@ -260,7 +268,7 @@ EXITS = re.compile(r"`([^`]*(?:list-hosts|--limit)[^`]*)`[^.]*?exits\s*\*\*(\d+)
 def stated_exits() -> dict[str, int]:
     """The exit statuses the page states for the two host-selection commands."""
     out = {}
-    for cmd, code in EXITS.findall(text_of(TRAPS)):
+    for cmd, code in EXITS.findall(traps_text()):
         out["list-hosts" if "list-hosts" in cmd else "limit"] = int(code)
     if len(out) != 2:
         fail("ansible", f"observation-traps.md states {len(out)} of the two exit "

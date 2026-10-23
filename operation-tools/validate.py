@@ -103,7 +103,13 @@ def _entries(name: str, rule: str) -> dict:
     an empty or truncated file included: it loads as null, and read as `{}` it
     left every rule over it checking nothing, green. A registry with no entries
     says so with `{}`; silence and emptiness have to look different."""
-    data = load(name)
+    try:
+        data = load(name)
+    except yaml.YAMLError as e:
+        # A file that does not parse is a finding too: raised here, at import,
+        # it was a traceback in place of every other rule's report.
+        fail(rule, f"{name} is not valid YAML: {' '.join(str(e).split())}")
+        return {}
     if data is None:
         fail(rule, f"{name} is empty; a registry with no entries writes `{{}}`")
     elif not isinstance(data, dict):
@@ -114,7 +120,11 @@ def _entries(name: str, rule: str) -> dict:
 
 CAP = _entries("capabilities.yaml", "V9")
 ROUTES = _entries("routes.yaml", "V7")
-FIX = load("fixtures.yaml")
+try:
+    FIX = load("fixtures.yaml")
+except yaml.YAMLError as e:
+    fail("V10", f"fixtures.yaml is not valid YAML: {' '.join(str(e).split())}")
+    FIX = []                              # and V10 then says it checks nothing
 
 LIM = H["limits"]
 VOCAB = H["vocabulary"]
@@ -213,16 +223,35 @@ def _link_target(raw: str) -> str:
     return re.sub(r"""\s+(?:"[^"]*"|'[^']*'|\([^)]*\))\s*$""", "", t)
 
 
+def _paragraphs(text: str) -> list[str]:
+    """Runs of unfenced, non-blank lines, each joined into one line. A link's
+    text wraps like any other prose, and read a line at a time
+    `[the observation\ntraps page](missing.md)` was never a link at all."""
+    out, buf, last = [], [], None
+    for i, line in unfenced(text):
+        if not line.strip() or (last is not None and i != last + 1):
+            if buf:
+                out.append(" ".join(buf))
+            buf = []
+        if line.strip():
+            buf.append(line.strip())
+        last = i
+    if buf:
+        out.append(" ".join(buf))
+    return out
+
+
 def links(text: str) -> list[str]:
     """Every link target outside code: inline links and reference definitions."""
     out = []
-    for _, line in unfenced(text):
+    for para in _paragraphs(text):
         # A code span becomes a placeholder, not nothing: `[`x`](y)` is still a
         # link, and `` `[x](y)` `` no longer is one.
-        line = CODE_SPAN_RE.sub("code", line)
-        found = LINK_RE.findall(line)
-        found += [m for m in IMAGE_RE.findall(line) if m not in found]
+        para = CODE_SPAN_RE.sub("code", para)
+        found = LINK_RE.findall(para)
+        found += [m for m in IMAGE_RE.findall(para) if m not in found]
         out += [_link_target(m) for m in found]
+    for _, line in unfenced(text):
         m = REF_DEF_RE.match(line)
         if m:
             out.append(_link_target(m.group(1)))
@@ -593,8 +622,8 @@ def _own_roots() -> set[str]:
 def _is_own_reference(p: str) -> bool:
     if any(p.startswith(x) or p == x for x in H.get("external_paths", [])):
         return False
-    if any(c in p for c in "*?["):
-        return False                      # a pattern, not a path
+    if any(c in p for c in "*?[<>{}"):
+        return False                      # a pattern or a placeholder, not a path
     if p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/")):
         return True
     if not p.lower().endswith((".md", ".yaml", ".py")):
@@ -618,6 +647,10 @@ def _is_own_reference(p: str) -> bool:
         return True                       # exact, or case only: resolves on macOS, not on Linux
     pages = {n.lower() for n in _own_names() if n.endswith(".md")}
     near = difflib.get_close_matches(p.lower(), pages, n=1, cutoff=0.85)
+    # A page's name with a word added (`decommission-plan.md`, `postmortem-2.md`)
+    # is the reader's file named after it: a typo does not add a hyphenated word.
+    if near and _stem(p).startswith(_stem(near[0]) + "-"):
+        return False
     return bool(near) and _stem(near[0]) != _stem(p)
 
 

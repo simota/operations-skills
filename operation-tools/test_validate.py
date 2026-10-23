@@ -496,6 +496,29 @@ def _(r): app(r / TRAPS, "\nSee [the [old] page](GONE.md) and [![badge](ok.png)]
 def _(r): app(r / TRAPS, "\nSee [the docs [here](gone-inner.md) and more](../_operation/CONTRACT.md).\n")
 
 
+@case("V8-wrapped", "links to missing wrapped-gone.md")
+def _(r):
+    """Link text wraps like any prose; read a line at a time, this was no link."""
+    app(r / TRAPS, "\nSee [the wrapped\nlink](wrapped-gone.md).\n")
+
+
+@case("V9-yaml", "capabilities.yaml is not valid YAML")
+def _(r): app(r / "operation-registry/capabilities.yaml", "\nbroken: [unclosed\n")
+
+
+@case("V10-yaml", "fixtures.yaml is not valid YAML")
+def _(r): app(r / "operation-registry/fixtures.yaml", "\n- ask: [unclosed\n")
+
+
+@quiet("V19-placeholder", "V19")
+def _(r):
+    """The reader's own files, named after a page, are not typos of it."""
+    app(r / f"{S}operation-readiness/reference/decommission.md",
+        "\nKeep the signed-off plan beside the service's code, as `decommission-plan.md`.\n")
+    app(r / f"{S}operation-incident/reference/postmortem.md",
+        "\nFile each one as `postmortem-<n>.md`.\n")
+
+
 @case("V8-image-in-link", "links to missing ok.png")
 def _(r): app(r / TRAPS, "\nSee [![badge](ok.png)](../_operation/CONTRACT.md).\n")
 
@@ -1061,6 +1084,46 @@ def tool_refute_unchecked_fails() -> str:
         return ""
 
 
+def tool_refute_needs_ids() -> str:
+    """A verdict is read back by its claim's id, so a missing or repeated one is refused."""
+    tmp = tempfile.TemporaryDirectory()
+    with tmp:
+        c = Path(tmp.name) / "claims.json"
+        for body in ('[{"id": "c1", "claim": "x"}, {"claim": "y"}]',
+                     '[{"id": "c1", "claim": "x"}, {"id": "c1", "claim": "y"}]',
+                     '[{"id": 1, "claim": "x"}, {"id": "1", "claim": "y"}]',
+                     '[{"id": "a", "claim": "x"}, {"id": "a ", "claim": "y"}]',
+                     '[{"id": true, "claim": "x"}, {"id": "c2", "claim": "y"}]'):
+            c.write_text(body)
+            r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
+                                "--running", "claude", str(c)], capture_output=True, text=True,
+                               env={"PATH": tmp.name, "HOME": tmp.name})
+            if r.returncode != 2 or "needs its own `id`" not in r.stderr:
+                return f"refute.py accepted {body} (exit {r.returncode}): {(r.stdout + r.stderr)[-200:]}"
+        # A lone claim has nothing to be confused with: it still runs.
+        c.write_text('{"claim": "x"}')
+        r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
+                            "--running", "claude", str(c)], capture_output=True, text=True,
+                           env={"PATH": tmp.name, "HOME": tmp.name})
+        if r.returncode != 1 or "[UNCHECKED]" not in r.stdout:
+            return f"refute.py refused a lone claim without an id (exit {r.returncode})"
+        return ""
+
+
+def tool_figures_page_renamed() -> str:
+    """The ansible page renamed is a finding, not a traceback ending the run."""
+    tmp, copy = _copy()
+    with tmp:
+        page = copy / "skills/operation-incident/reference/observation-traps.md"
+        page.rename(page.with_name("observation-pitfalls.md"))
+        r = subprocess.run([sys.executable, "-B", str(copy / "operation-tools/figures_check.py")],
+                           capture_output=True, text=True)
+        out = r.stdout + r.stderr
+        if r.returncode != 1 or "Traceback" in out or "stopped checking" not in out:
+            return f"figures_check with its page renamed exited {r.returncode}: {out[-200:]}"
+        return ""
+
+
 def tool_figures_parsing() -> str:
     import figures_check as fc
     got = fc.subcommand_words("aws", "--profile prod ec2 describe-instances".split())
@@ -1428,7 +1491,8 @@ def tool_install_links_only_skills() -> str:
 
 TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_render_whole_heading, tool_engine_requires_running,
                tool_engine_dash_prompt,
-               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
+               tool_engine_checks_schema, tool_refute_unchecked_fails, tool_refute_needs_ids,
+               tool_figures_page_renamed, tool_figures_parsing,
                tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
                tool_validate_hook_banner,
                tool_figures_needs_no_yaml, tool_figures_unusable_help,
