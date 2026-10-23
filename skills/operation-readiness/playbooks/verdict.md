@@ -53,7 +53,7 @@ a `stale` or `untested` one is named there, never left implied.
 |-------------|---------------|----------------|---------------|------------------|
 | Availability target | Defined SLO, error budget policy | Defined SLO | Target, no budget policy | None |
 | On-call | 24/7 primary + secondary | 24/7 primary | SEV1 only off-hours | Business hours |
-| Runbook coverage | All paging alerts, all `proved` (or `unprovable` with a named compensating control) | All paging alerts | Top failure modes | Best effort |
+| Runbook coverage | All paging alerts, all `proved` (or `unprovable` with a named compensating control; or `simulated` with the gap stated, by the rehearsal `operation-runbook` prescribes for a `T4` step never run in production) | All paging alerts | Top failure modes | Best effort |
 | Rollback | Verified, exercised ≤90 days | Verified, exercised ≤180 days | Documented | Documented |
 | Capacity headroom | ≥3× current peak, load tested | ≥2× current peak, load tested | ≥1.5× | None |
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |

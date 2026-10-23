@@ -87,9 +87,11 @@ template so the next responder reads it at the moment of hesitation.
 
 - **Severity inflation to get attention.** If SEV1 is the only way to get responders, the
   escalation policy is broken — fix that, not the label.
-- **Severity deflation to avoid a postmortem.** Detectable: a cluster of 2h+ SEV3s. Any SEV3
-  past its 2h budget is reassessed automatically (`reference/mitigation-playbook.md` §
-  Time-Boxing).
+- **Severity deflation to avoid a postmortem.** Detectable: a cluster of 2h+ SEV3s. Every SEV3
+  line of enquiry that reaches its 2h budget ends in a severity reassessment
+  (`reference/mitigation-playbook.md` § Time-Boxing). The budget is per hypothesis, not per
+  incident: a SEV3 that keeps switching hypotheses never reaches one, so the cluster is read
+  by how long each SEV3 stayed open.
 - **Waiting for confirmation before declaring.** Declaration is how you get the people who
   can confirm.
 - **Severity set by seniority.** The person with the most context sets it; the IC owns the

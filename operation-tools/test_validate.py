@@ -758,6 +758,138 @@ def _(r): sub(r / RISK, "## Risk Scoring", "tier: ST0 | ST9\n\n## Risk Scoring")
 def _(r): sub(r / RISK, "## Risk Scoring", "verdict: `GO` | `MAYBE`\n\n## Risk Scoring")
 
 
+# --- a malformed registry is a finding, and the other rules still run ----------
+
+@case("V14-empty-route", "route future-route uses pattern None")
+def _(r):
+    """An entry with no body is YAML null; V7 raised on it, and the traceback
+    hid every rule after it. Read as empty, it is the finding an empty route is."""
+    app(r / "operation-registry/routes.yaml", "\nfuture-route:\n  # TBD\n")
+
+
+@case("V9-empty-entry", "operation-ghost declares no signals")
+def _(r): app(r / "operation-registry/capabilities.yaml", "\noperation-ghost:\n")
+
+
+@case("V9-no-signals", "operation-runbook declares no signals")
+def _(r):
+    p = r / "operation-registry/capabilities.yaml"
+    t = p.read_text(encoding="utf-8")
+    t2 = re.sub(r"(?m)^(operation-runbook:\n(?:  .*\n)*?  signals: )\[[^\]]*\]", r"\1[]", t)
+    assert t2 != t, "operation-runbook signals not found"
+    p.write_text(t2, encoding="utf-8")
+
+
+@case("V17-no-file", "delivered/rollback.md, which does not exist")
+def _(r): sub(r / "operation-registry/harness.yaml", "delivered:\n",
+              'delivered:\n  rollback: { section: "Done when" }\n')
+
+
+@case("V20-empty-key", "crashed")
+def _(r):
+    """An empty vocabulary key is YAML null, and V20 iterated it. A rule that
+    raises is reported under its own id; tool_validate_crash_runs_on proves
+    the rules after it still run."""
+    sub(r / "operation-registry/harness.yaml", "  statuses: [DONE, PARTIAL, BLOCKED]\n",
+        "  statuses: [DONE, PARTIAL, BLOCKED]\n  severities:\n")
+
+
+# --- V24 asks for a listing, not a mention -------------------------------------
+
+@case("V24-readme", "README.md does not list operation-incident")
+def _(r):
+    """The row goes; the skill's reference pages are still linked further down."""
+    sub(r / "README.md", "| [`operation-incident`](skills/operation-incident/SKILL.md) | "
+        "Something is broken right now — what do we do? | `full` |\n", "")
+
+
+@case("V24-routing", "ROUTING.md does not list operation-incident")
+def _(r):
+    p = r / f"{S}_operation/ROUTING.md"
+    p.write_text(p.read_text(encoding="utf-8").replace("`operation-incident`", "`operation-change`"),
+                 encoding="utf-8")
+
+
+# --- V37: a pinned version is a version, not a prefix --------------------------
+
+DORA_PAGE = f"{S}operation-change/reference/dora-metrics.md"
+
+
+def _pin_dora(r: Path, version: str) -> None:
+    sub(r / "operation-registry/harness.yaml", "  DORA: null", f"  DORA: {version}")
+    sub(r / DORA_PAGE, "Source: DORA —", "Source: DORA 4.1 —")
+
+
+@case("V37-pin", "pins DORA 4.1 and the page never says DORA 4.1")
+def _(r):
+    """The body moved to 4.12; `4.1` is a prefix of it, and was taken for it."""
+    _pin_dora(r, '"4.1"')
+    sub(r / DORA_PAGE, "DORA's definition", "DORA 4.12's definition")
+
+
+@case("V37-pin-float", "pins DORA as 4.1, not a string")
+def _(r):
+    """Unquoted, 4.10 loads as the float 4.1 — the registry no longer says what was written."""
+    _pin_dora(r, "4.10")
+    sub(r / DORA_PAGE, "DORA's definition", "DORA 4.1's definition")
+
+
+@quiet("V37-pin-held", "V37")
+def _(r):
+    _pin_dora(r, '"4.1"')
+    sub(r / DORA_PAGE, "DORA's definition", "DORA 4.1's definition")
+
+
+# --- V22: a class is a word, and a fenced example is a quotation ----------------
+
+@case("V22-inside-word", "marker carries no residual class")
+def _(r): sub(r / TRAPS, "# ", "#" + "TODO(agent): rerun once UNBLOCKED by the vendor\n# ")
+
+
+@quiet("V22-fenced", "V22")
+def _(r): app(r / TRAPS, "\n```text\n#" + "TODO(agent): <class> — <action>\n```\n")
+
+
+# --- paths with a fragment, and a link from the repository root ----------------
+
+@case("V19-stale-fragment", "has no heading #no-such-heading")
+def _(r): app(r / RB, "\nThe rungs are in `_operation/SIZING.md#no-such-heading`.\n")
+
+
+@case("V7-not-a-mapping", "routes.yaml is a list, not a mapping")
+def _(r): (r / "operation-registry/routes.yaml").write_text("- oops\n", encoding="utf-8")
+
+
+@case("V7-empty-file", "routes.yaml is empty")
+def _(r):
+    """Truncated, the registry loads as null; read as `{}`, V7, V13 and V14 checked nothing."""
+    (r / "operation-registry/routes.yaml").write_text("", encoding="utf-8")
+
+
+@case("V9-empty-file", "capabilities.yaml is empty")
+def _(r): (r / "operation-registry/capabilities.yaml").write_text("# truncated\n", encoding="utf-8")
+
+
+@quiet("V37-pin-int", "V37")
+def _(r):
+    """An unquoted year loads as the integer it reads as: nothing is lost."""
+    sub(r / "operation-registry/harness.yaml", "  DORA: null", "  DORA: 2024")
+    sub(r / DORA_PAGE, "Source: DORA —", "Source: DORA 2024 —")
+    sub(r / DORA_PAGE, "DORA's definition", "DORA 2024's definition")
+
+
+@quiet("V19-fragment", "V19")
+def _(r): app(r / RB, "\nThe rungs are in `_operation/SIZING.md#two-scales-and-they-are-not-the-same`.\n")
+
+
+@case("V8-absolute", "links to missing /etc/hosts")
+def _(r): app(r / "README.md", "\nSee [hosts](/etc/hosts).\n")
+
+
+@quiet("V8-root-relative", "V8")
+def _(r): app(r / "README.md", "\nSee [the contract](/skills/_operation/CONTRACT.md).\n")
+
+
 @case("V38-trailing", "switches on MAYBE")
 def _(r): sub(r / RISK, "## Risk Scoring", "verdict: GO | MAYBE (pick one).\n\n## Risk Scoring")
 
@@ -789,6 +921,26 @@ def tool_render_refuses_broken_markers() -> str:
             return "render.py exited 0 on a missing close marker"
         if f.read_text(encoding="utf-8") != t:
             return "render.py rewrote a file whose markers it refused"
+    return ""
+
+
+def tool_render_whole_heading() -> str:
+    """A block is delivered under its own `## ` heading, not into a `### `
+    subsection whose text contains it."""
+    tmp, copy = _copy()
+    with tmp:
+        f = copy / RB
+        t = f.read_text(encoding="utf-8")
+        t = t.replace(block(t, "surface") + "\n", "", 1)
+        t = t.replace("## Owns\n", "## Owns\n\n### Done when\n\nA subsection.\n", 1)
+        f.write_text(t, encoding="utf-8")
+        r = subprocess.run([sys.executable, str(copy / "operation-tools/render.py")],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            return f"render.py failed: {r.stderr.strip()[-200:]}"
+        out = run(copy, GIT_ENV)
+        if re.search(r"^\s*V17: ", out, re.M):
+            return "render.py delivered a block under a subsection that contains its heading"
     return ""
 
 
@@ -918,8 +1070,11 @@ def tool_figures_parsing() -> str:
             ("`aws --profile=prod ec2 describe-instances`", False, [("aws", "ec2", "describe-instances")]),
             ("`gcloud --project=p-1 compute instances list`", False,
              [("gcloud", "compute", "instances", "list")]),
-            ("Then `gcloud auth list`, and `gcloud help` names no command.", False,
-             [("gcloud", "auth", "list")]),
+            ("Then `gcloud auth list`, and `gcloud help` is one too.", False,
+             [("gcloud", "auth", "list"), ("gcloud", "help")]),
+            ("`gcloud verison` and `gcloud compute os-login ssh-keys lsit`", False,
+             [("gcloud", "verison"), ("gcloud", "compute", "os-login", "ssh-keys", "lsit")]),
+            ("`gcloud --verbosity debug`", False, []),
             ("gcloud logging read 'resource.type=\"gce_instance\"' --project <p>", True,
              [("gcloud", "logging", "read")]),
             ("gcloud config list   # gcloud is optional; aws is too", True,
@@ -1210,6 +1365,49 @@ def tool_no_bytecode_in_tools() -> str:
     return ""
 
 
+def tool_make_link_spaced_home() -> str:
+    """`make link` and `unlink` write where HOME says, a space in it included:
+    a make word list split it in two, and links landed beside it and in the checkout."""
+    tmp, copy = _copy()
+    with tmp:
+        home = Path(tmp.name) / "home with space"
+        (home / ".claude").mkdir(parents=True)
+        env = {**GIT_ENV, "HOME": str(home)}
+        for k in ("CLAUDE_DIR", "CODEX_DIR", "AGY_DIR"):
+            env.pop(k, None)
+        r = subprocess.run(["make", "-s", "link"], cwd=copy, capture_output=True, text=True, env=env)
+        dest = home / ".claude/skills"
+        got = sorted(p.name for p in dest.iterdir()) if dest.is_dir() else []
+        if r.returncode != 0 or got != validate.SKILLS:
+            return f"make link into a spaced HOME linked {got}: {(r.stdout + r.stderr)[-200:]!r}"
+        stray = [p.name for p in (copy / "with", Path(tmp.name) / "home") if p.exists()]
+        if stray:
+            return f"make link split a spaced HOME and wrote {stray}"
+        r = subprocess.run(["make", "-s", "unlink"], cwd=copy, capture_output=True, text=True, env=env)
+        if r.returncode != 0 or any(dest.iterdir()):
+            return f"make unlink left {sorted(p.name for p in dest.iterdir())} in a spaced HOME"
+    return ""
+
+
+def tool_validate_crash_runs_on() -> str:
+    """A rule that raises is a finding, not the end of the run: a traceback in
+    V20 used to be the only output, and a V24 violation beside it went unread."""
+    tmp, copy = _copy()
+    with tmp:
+        sub(copy / "operation-registry/harness.yaml", "  statuses: [DONE, PARTIAL, BLOCKED]\n",
+            "  statuses: [DONE, PARTIAL, BLOCKED]\n  severities:\n")
+        sub(copy / f"{S}_operation/ROUTING.md", "`operation-readiness`", "`operation-prr`")
+        r = subprocess.run([sys.executable, str(copy / "operation-tools/validate.py")],
+                           capture_output=True, text=True, env=GIT_ENV)
+        out = r.stdout + r.stderr
+        if r.returncode != 1 or "Traceback" in out:
+            return f"validate exited {r.returncode} on a rule that raises: {out[-300:]!r}"
+        if not re.search(r"^\s*V20: crashed", out, re.M) or \
+                not re.search(r"^\s*V24: .*names operation-prr", out, re.M):
+            return f"a rule that raises hid the rules after it: {out[-300:]!r}"
+    return ""
+
+
 def tool_install_links_only_skills() -> str:
     """A skill is a directory holding a SKILL.md, as `make link` reads it: a
     prefixed directory without one is not installed by install.sh either."""
@@ -1228,14 +1426,15 @@ def tool_install_links_only_skills() -> str:
     return ""
 
 
-TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_engine_requires_running,
+TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_render_whole_heading, tool_engine_requires_running,
                tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_figures_parsing,
                tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
                tool_validate_hook_banner,
                tool_figures_needs_no_yaml, tool_figures_unusable_help,
                tool_make_hooks_keeps_foreign,
-               tool_no_bytecode_in_tools, tool_install_links_only_skills]
+               tool_no_bytecode_in_tools, tool_install_links_only_skills,
+               tool_validate_crash_runs_on, tool_make_link_spaced_home]
 
 
 def _not_corpus(d: str, names: list[str]) -> list[str]:

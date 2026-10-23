@@ -183,7 +183,8 @@ make refute CLAIMS=claims.json RUNNING=claude   # put claims to the other engine
 
 ```sh
 ./install.sh                    # symlink skills/operation-* into ~/.claude/skills
-./install.sh --copy             # a self-contained copy; --uninstall removes either
+./install.sh --copy             # copies the pages; tools stay linked, so keep the repo in place
+./install.sh --uninstall        # removes either kind this repo installed
 make link                       # symlink into every installed CLI: claude, codex, agy
 ```
 
