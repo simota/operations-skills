@@ -79,7 +79,7 @@ Crude, fast, and frequently correct when the cause is unknown:
 | Scale out | Absorbs load-driven failure | T2 | Amplifies a downstream bottleneck |
 | Shed load / rate limit | Protects the core for most users | T3 | Choose *whose* traffic is dropped deliberately |
 | Disable the feature flag | Removes the failing path | T2 | Verify the flag actually gates the code path |
-| Fail over | Escapes localised failure | T3 if failback exercised within the service tier's DR cadence and writes single-primary, else **T4** | See Failover Safety below — fence before promote |
+| Fail over | Escapes localised failure | T3 if failback is `proved` and unexpired and writes single-primary, else **T4** | See Failover Safety below — fence before promote |
 | Serve stale / cached | Preserves reads during a write failure | T3 | Communicate staleness to users |
 | Drain and isolate a bad node | Removes a single bad actor | T2 | Confirm it is actually the outlier |
 
@@ -103,8 +103,9 @@ Rules:
   routes) and confirm the isolation, then promote. Promoting first is how both sides end up live.
 - **Record the failover timestamp and the lag at that moment.** It bounds the window of
   potentially lost writes, and the postmortem and any customer notification both need it.
-- **A failover with unexercised failback is `T4`**, not `T3` — and failback exercised outside the
-  service tier's DR cadence counts as unexercised. You are committing to the new region with no
+- **A failover with unexercised failback is `T4`**, not `T3` — and failback whose proof has expired
+  (past the service tier's DR cadence or its runbook's expiry, whichever ends first) counts as
+  unexercised. You are committing to the new region with no
   verified way back.
 - **Quorum systems**: confirm the surviving side actually has quorum. Promoting a minority
   partition produces a cluster that accepts writes and later discards them.

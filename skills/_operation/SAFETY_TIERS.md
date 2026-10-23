@@ -23,7 +23,7 @@ written down and exercised, classify it by that reversal:
 | Action | `T4` when | Lower when |
 |--------|-----------|------------|
 | Data mutation / backfill | No verified down-path; the prior values are not recoverable | Prior values are preserved (dual-write, versioned column, snapshot taken and restore-tested) → `T2`–`T3` by blast radius |
-| Cross-region failover | Failback is unexercised, or the regions diverge writes | Failback exercised within the service tier's DR cadence and writes are single-primary → `T3`. `ST2` and `ST3` set no cadence, so there it stays `T4` |
+| Cross-region failover | Failback is unexercised, or the regions diverge writes | Failback `proved` and unexpired (`_operation/EXPIRY.md`: inside the service tier's DR cadence and its runbook's own expiry, whichever ends first) and writes are single-primary → `T3`. `ST2` and `ST3` set no cadence, so there it stays `T4` |
 | Credential rotation | The old credential is revoked before the new one is confirmed | Old credential retained and revoked only after the new one is verified in use → `T3` |
 | Deletion | Any | — deletion is always `T4` |
 | Third-party side effect (charge, email, webhook) | Any | — never reversible; requires explicit acceptance, not approval |

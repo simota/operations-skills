@@ -63,7 +63,7 @@ The only reliable pattern for schema and format changes. **Each phase ships sepa
 | Phase | Action | Reversible? | Tier |
 |-------|--------|-------------|------|
 | **Expand** | Add the new column/field/format. Both old and new coexist. Code writes old, reads old | Yes — the addition is unused | T2 |
-| **Migrate** | Code writes both, reads old. Then backfill. Then read new, still write both | Yes — old data is still current | T2–T3 |
+| **Migrate** | Code writes both, reads old. Then backfill. Then read new, still write both | Yes — old data is still current | T2–T3 once the down-path is exercised, else T4 (`_operation/SAFETY_TIERS.md`) |
 | **Contract** | Stop writing old. Later, drop the old column | **No** — this is the point of no return | T4 |
 
 Rules:

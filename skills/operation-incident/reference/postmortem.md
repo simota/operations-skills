@@ -130,7 +130,7 @@ predicted, and are usually cheaper.
 - Every item is tracked in the normal work system, not only in the document.
 - Items are scoped to be completable. "Improve reliability" is not an action item.
 - Each item routes to the skill that owns the fix — `operation-runbook`, `operation-oncall`,
-  `operation-change`, or `operation-readiness`.
+  or `operation-change`; `operation-readiness` takes only a systemic finding (§ Pattern Review).
 - **Completion is reviewed.** An action-item completion rate below 70% at 90 days means the
   postmortem process is theatre; report the rate.
 
