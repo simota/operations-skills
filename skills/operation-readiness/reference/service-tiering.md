@@ -70,9 +70,10 @@ graceful degradation being the only one that does not require someone else's bud
 
 Tier requirements cost money and human nights. State the cost when assigning:
 
-- ST0 needs ≥6 people for 24/7 primary alone (`operation-oncall`'s floor), plus secondary depth —
-  drawn from the same six, it puts each person on call two weeks in six, so size the pool for
-  both — plus 3× capacity headroom.
+- ST0 needs ≥6 people for 24/7 primary alone (`operation-oncall`'s floor), plus a secondary that
+  is not the same rotation — secondary drawn from the same six is two weeks in six each, past
+  `operation-oncall`'s night-shift ceiling, and is the defect its escalation policy names — plus
+  3× capacity headroom.
 - Tier inflation is expensive and self-defeating: when everything is ST0, nothing is prioritised
   during a multi-service incident.
 - **Tier inflation is detectable**: if more than roughly a quarter of services are ST0, the

@@ -46,7 +46,7 @@ routing is not**. Testing the rule without testing delivery proves nothing.
 |------|--------------|--------------|
 | On-call rotation exists with capacity for this service | Confirm with `operation-oncall`; check pool size | ST0, ST1, ST2 |
 | Escalation path defined and exercised | Read the record of a no-acknowledge test | ST0, ST1 |
-| A runbook for every paging alert; at ST0 each `proved` within expiry, or `unprovable` with a named compensating control, or — for a `T4` step never rehearsed in production — `simulated` within expiry with the gap stated | Read each header's `state` and `last_executed`; a person executes one end to end | ST0, ST1 |
+| A runbook for every paging alert; at ST0 each `proved` within expiry, or `unprovable` with a named compensating control, or `simulated` within expiry with the gap stated, by the rehearsal `operation-runbook` prescribes for a `T4` step never run in production | Read each header's `state` and `last_executed`; a person executes one end to end | ST0, ST1 |
 | Runbooks for the top failure modes | Read them; record each one's state | ST2 |
 | Every paging alert links to a specific runbook | Follow each link | ST0, ST1 |
 | Severity definitions and declaration criteria agreed | Read them | ST0, ST1 |

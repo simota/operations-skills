@@ -95,15 +95,20 @@ def load(name: str):
 H = load("harness.yaml")
 
 
-def _entries(data) -> dict:
+def _entries(name: str, rule: str) -> dict:
     """A registry of named entries. An entry with no body is YAML null; read as
     empty it becomes the finding its rules make of an empty entry — no signals,
-    no pattern — rather than an AttributeError that hides every other rule."""
+    no pattern — rather than an AttributeError that hides every other rule. A
+    file that is not a mapping at all is a finding of its own, read as empty."""
+    data = load(name)
+    if data is not None and not isinstance(data, dict):
+        fail(rule, f"{name} is a {type(data).__name__}, not a mapping of named entries")
+        data = None
     return {k: v if isinstance(v, dict) else {} for k, v in (data or {}).items()}
 
 
-CAP = _entries(load("capabilities.yaml"))
-ROUTES = _entries(load("routes.yaml"))
+CAP = _entries("capabilities.yaml", "V9")
+ROUTES = _entries("routes.yaml", "V7")
 FIX = load("fixtures.yaml")
 
 LIM = H["limits"]
@@ -629,9 +634,17 @@ def _check_paths(f: Path, base: Path, label: str) -> None:
         if ".." in p:
             fail("V19", f"{label} references {p!r}; paths are normalised lexically, "
                         "so `..` does not traverse the install symlink")
-        elif not (base / p.split("#", 1)[0]).exists():
-            fail("V19", f"{label} references {p!r}, which does not resolve from a "
-                        "skill directory")
+        else:
+            path, _, frag = p.partition("#")
+            dest = base / path
+            if not dest.exists():
+                fail("V19", f"{label} references {p!r}, which does not resolve from a "
+                            "skill directory")
+            # The fragment is checked as V8 checks a link's: a stale anchor in
+            # prose sends the reader to the top of the page, unannounced.
+            elif frag and dest.suffix == ".md" and dest.is_file() and \
+                    urllib.parse.unquote(frag).lower() not in anchors(read(dest)):
+                fail("V19", f"{label} references {p!r}, and {path} has no heading #{frag}")
 
 
 # A definition, as against a mention: a table row or a heading that opens with
@@ -1114,15 +1127,18 @@ def v37_source_pins_the_rot():
                     "depends on nothing outside itself declares the map empty — "
                     "silence and emptiness have to look different")
         return
-    pinned = set()
+    declared, pinned = dict(declared), set()
     for name, version in declared.items():
-        if version is not None and not isinstance(version, str):
+        # An integer loads as written; a float does not, and a bool is no version.
+        if version is not None and (isinstance(version, bool)
+                                    or not isinstance(version, (str, int))):
             # Unquoted, `4.10` loads as the float 4.1 and `2024.10` as 2024.1.
             fail("V37", f"source_authorities pins {name} as {version!r}, not a string; "
                         "quote it, or the registry pins a different version than "
                         "the one written")
         else:
             pinned.add(name)
+            declared[name] = None if version is None else str(version)
     for d in SKILL_DIRS:
         for f in sorted((d / "reference").glob("*.md")) if (d / "reference").exists() else []:
             lines = read(f).splitlines()

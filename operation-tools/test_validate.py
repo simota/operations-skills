@@ -852,6 +852,22 @@ def _(r): app(r / TRAPS, "\n```text\n#" + "TODO(agent): <class> — <action>\n``
 
 # --- paths with a fragment, and a link from the repository root ----------------
 
+@case("V19-stale-fragment", "has no heading #no-such-heading")
+def _(r): app(r / RB, "\nThe rungs are in `_operation/SIZING.md#no-such-heading`.\n")
+
+
+@case("V7-not-a-mapping", "routes.yaml is a list, not a mapping")
+def _(r): (r / "operation-registry/routes.yaml").write_text("- oops\n", encoding="utf-8")
+
+
+@quiet("V37-pin-int", "V37")
+def _(r):
+    """An unquoted year loads as the integer it reads as: nothing is lost."""
+    sub(r / "operation-registry/harness.yaml", "  DORA: null", "  DORA: 2024")
+    sub(r / DORA_PAGE, "Source: DORA —", "Source: DORA 2024 —")
+    sub(r / DORA_PAGE, "DORA's definition", "DORA 2024's definition")
+
+
 @quiet("V19-fragment", "V19")
 def _(r): app(r / RB, "\nThe rungs are in `_operation/SIZING.md#two-scales-and-they-are-not-the-same`.\n")
 

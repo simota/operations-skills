@@ -15,7 +15,7 @@ Verified: 2026-08-21 — no automated check.
 | 2 | Secondary on-call | Primary unacknowledged, or primary requests help | 3 min unacknowledged |
 | 3 | Service owner / team lead | Level 2 unacknowledged, or scope exceeds on-call authority | 5 min |
 | 4 | Engineering manager + IC pool | Level 3 unacknowledged, or SEV1 declared | 10 min |
-| 5 | Executive / customer-facing leadership | SEV1 declared, or SEV2 past 1h (the leadership notice in `operation-incident`'s comms templates), or regulatory exposure | — |
+| 5 | Executive / customer-facing leadership | The leadership notice falls due (`operation-incident` comms: SEV1, or SEV2 past 1h) — sent by the comms lead, not paged — or regulatory exposure | — |
 
 Timeouts are for **unacknowledged** pages. A responder who acknowledges and is working stops
 the timer — but see "Acknowledged Is Not Handled" below.

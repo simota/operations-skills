@@ -81,7 +81,7 @@ The single most valuable catalog metric.
 |--------|--------|
 | Paging alerts with a runbook link | 100% |
 | Links resolving to a specific procedure (not an index) | 100% |
-| Linked runbooks `proved`, or `unprovable` with a compensating control, or `simulated` with the gap stated where a `T4` step is never rehearsed in production (`reference/runbook-testing.md`) | 100% — each `stale` one is an `UNVERIFIED` residual, named |
+| Linked runbooks `proved`, or `unprovable` with a compensating control, or `simulated` with the gap stated where a `T4` step is rehearsed as `reference/runbook-testing.md` § Game Days prescribes | 100% — each `stale` one is an `UNVERIFIED` residual, named |
 | Linked runbooks never executed | 0 — each one is an `UNVERIFIED` residual, its alert `KEEP (conditional)` |
 
 Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented,
