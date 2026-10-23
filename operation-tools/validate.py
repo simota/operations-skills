@@ -93,8 +93,17 @@ def load(name: str):
 
 
 H = load("harness.yaml")
-CAP = load("capabilities.yaml")
-ROUTES = load("routes.yaml")
+
+
+def _entries(data) -> dict:
+    """A registry of named entries. An entry with no body is YAML null; read as
+    empty it becomes the finding its rules make of an empty entry — no signals,
+    no pattern — rather than an AttributeError that hides every other rule."""
+    return {k: v if isinstance(v, dict) else {} for k, v in (data or {}).items()}
+
+
+CAP = _entries(load("capabilities.yaml"))
+ROUTES = _entries(load("routes.yaml"))
 FIX = load("fixtures.yaml")
 
 LIM = H["limits"]
@@ -349,7 +358,12 @@ def v8_links():
             if not target or is_external(target):
                 continue
             path, _, frag = target.partition("#")
-            dest = f.parent / path if path else f
+            # A leading `/` is the repository root, as GitHub renders it; read
+            # against the machine's root, `/etc/hosts` passed and `/skills/…` failed.
+            if path.startswith("/"):
+                dest = ROOT / path.lstrip("/")
+            else:
+                dest = f.parent / path if path else f
             if not dest.exists():
                 fail("V8", f"{f.relative_to(ROOT)} links to missing {target}")
                 continue
@@ -458,7 +472,12 @@ def v16_sections():
 
 def v17_delivery():
     for key, spec in H["delivered"].items():
-        want = read(ROOT / "operation-registry" / "delivered" / f"{key}.md").rstrip("\n")
+        src = ROOT / "operation-registry" / "delivered" / f"{key}.md"
+        if not src.is_file():
+            fail("V17", f"delivered[{key}] names operation-registry/delivered/{key}.md, "
+                        "which does not exist")
+            continue
+        want = read(src).rstrip("\n")
         open_m, close_m = f"<!-- deliver:{key} -->", f"<!-- /deliver:{key} -->"
         for d in SKILL_DIRS:
             text = read(d / "SKILL.md")
@@ -610,7 +629,7 @@ def _check_paths(f: Path, base: Path, label: str) -> None:
         if ".." in p:
             fail("V19", f"{label} references {p!r}; paths are normalised lexically, "
                         "so `..` does not traverse the install symlink")
-        elif not (base / p).exists():
+        elif not (base / p.split("#", 1)[0]).exists():
             fail("V19", f"{label} references {p!r}, which does not resolve from a "
                         "skill directory")
 
@@ -668,13 +687,17 @@ def v21_verify_names_a_grade():
 
 
 def v22_markers_classified():
+    # A class is a whole word: `BLOCKED` inside `UNBLOCKED` classifies nothing.
+    classes = [re.compile(rf"(?<![\w-]){re.escape(c)}(?![\w-])")
+               for c in VOCAB["residual_classes"]]
     for f in corpus(ROOT):
         if f.parts[-2:-1] == ("delivered",):
             continue
-        for i, line in enumerate(read(f).splitlines(), 1):
-            # A marker quoted in code is a mention; one beside code is still a marker.
+        for i, line in unfenced(read(f)):
+            # A marker quoted in code — a span or a fenced example — is a
+            # mention; one beside code is still a marker.
             if MARKER_RE.search(CODE_SPAN_RE.sub("", line)):
-                if not any(c in line for c in VOCAB["residual_classes"]):
+                if not any(c.search(line) for c in classes):
                     fail("V22", f"{f.relative_to(ROOT)}:{i} marker carries no residual class")
 
 
@@ -708,7 +731,9 @@ def v24_rendered_tables():
     for name in SKILLS:
         if f"`{name}`" not in routing:
             fail("V24", f"{ROUTING_FILE} does not list {name}")
-        if name not in readme:
+        # The table row, as ROUTING is read: a link to one of the skill's
+        # reference pages mentions it without listing it.
+        if f"`{name}`" not in readme:
             fail("V24", f"README.md does not list {name}")
     for doc, text in ((SKILLS_ROOT / ROUTING_FILE, routing), (ROOT / "README.md", readme)):
         for found in set(re.findall(rf"`({re.escape(PREFIX)}[a-z0-9-]+)`", text)):
@@ -1089,6 +1114,15 @@ def v37_source_pins_the_rot():
                     "depends on nothing outside itself declares the map empty — "
                     "silence and emptiness have to look different")
         return
+    pinned = set()
+    for name, version in declared.items():
+        if version is not None and not isinstance(version, str):
+            # Unquoted, `4.10` loads as the float 4.1 and `2024.10` as 2024.1.
+            fail("V37", f"source_authorities pins {name} as {version!r}, not a string; "
+                        "quote it, or the registry pins a different version than "
+                        "the one written")
+        else:
+            pinned.add(name)
     for d in SKILL_DIRS:
         for f in sorted((d / "reference").glob("*.md")) if (d / "reference").exists() else []:
             lines = read(f).splitlines()
@@ -1118,13 +1152,18 @@ def v37_source_pins_the_rot():
                 if names(head, name) and not names(body, name):
                     fail("V37", f"{f.relative_to(ROOT)} names {name} in `Source:` and never "
                                 "uses it; a source the page does not depend on pins nothing")
-                if version and names(head, name):
+                if version and name in pinned and names(head, name):
                     pin = f"{name} {version}"
-                    if pin not in head:
+                    # A version is a whole token: `4.1` is a prefix of `4.12`
+                    # and of `4.1.2`, and neither is the version pinned.
+                    def says(text: str) -> bool:
+                        return re.search(rf"(?<![\w.]){re.escape(pin)}(?![\w]|\.\d)",
+                                         text) is not None
+                    if not says(head):
                         fail("V37", f"{f.relative_to(ROOT)} names {name} in `Source:` without "
                                     f"the pinned version; the registry pins {version}, and a "
                                     "source without one cannot be compared with anything later")
-                    elif pin not in body:
+                    elif not says(body):
                         fail("V37", f"{f.relative_to(ROOT)} pins {pin} and the page never says "
                                     f"{pin}; one of the two moved without the other")
 
@@ -1221,7 +1260,14 @@ def hook_installed() -> bool:
 
 def main() -> int:
     for rule in RULES:
-        rule()
+        # A rule that raises is a finding, and the rules after it still run:
+        # a traceback in the middle used to be the only line anyone read.
+        try:
+            rule()
+        except Exception as e:                  # noqa: BLE001 — reported, not swallowed
+            fail(rule.__name__.split("_")[0].upper(),
+                 f"crashed on the registry or corpus as written ({type(e).__name__}: {e}); "
+                 "fix the entry it names, or the rule")
     hooks = hook_installed()
     print(f"{len(RULES)} rules · {len(SKILLS)} skills · "
           f"hooks {'on' if hooks else 'off — run: make hooks'}")
