@@ -45,6 +45,9 @@ quarterly reporting. The consumer nobody knew about is almost always a monthly j
 9. **Retain data** for the required period, offline, with a documented restore path.
 10. **Delete data** — `T4`, after the retention period, with explicit approval.
 
+Steps 4–6, 8 and 10 change a running service: each is shipped as its own change through
+`operation-change`, with the safety tier stated here.
+
 **Observability is retired last, not first.** Steps 1–7 and 9 are reversible; step 8 is not —
 its deletions are `T4` — which is why it waits for the verification window. A reversal is only
 safe if the service comes back with its detection intact — retiring alerts while the service

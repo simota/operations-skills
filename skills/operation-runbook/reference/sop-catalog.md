@@ -32,7 +32,7 @@ when it rots.
 |-------|-------------|
 | Owner | Named individual, currently employed, verified quarterly |
 | Backup owner | A second individual, for the case where the owner is the incident |
-| Expiry interval | By safety tier, shorter where the system changes faster: T4 quarterly, T3 semi-annually, T1–T2 annually — and never longer than the service tier's cadence for the same path (`operation-readiness`'s tier requirements: rollback ≤90 days at ST0, ≤180 at ST1) |
+| Expiry interval | Chosen from how fast the system changes, with the reason stated (`_operation/EXPIRY.md`), and never longer than the safety tier's ceiling — T4 quarterly, T3 semi-annually, T1–T2 annually — nor than the service tier's cadence for the same path (`operation-readiness`'s tier requirements: rollback ≤90 days at ST0, ≤180 at ST1) |
 | Voiding surface | The named surface whose change expires the proof at once (`_operation/EXPIRY.md`) |
 | Last executed | Date, by whom, and where — updated only by a real execution |
 
@@ -81,7 +81,7 @@ The single most valuable catalog metric.
 |--------|--------|
 | Paging alerts with a runbook link | 100% |
 | Links resolving to a specific procedure (not an index) | 100% |
-| Linked runbooks `proved`, or `unprovable` with a compensating control | 100% — each `stale` one is an `UNVERIFIED` residual, named |
+| Linked runbooks `proved`, or `unprovable` with a compensating control, or `simulated` with the gap stated where a `T4` step is never rehearsed in production (`reference/runbook-testing.md`) | 100% — each `stale` one is an `UNVERIFIED` residual, named |
 | Linked runbooks never executed | 0 — each one is an `UNVERIFIED` residual, its alert `KEEP (conditional)` |
 
 Gaps route to `operation-oncall` as `KEEP (conditional)` alerts — page-worthy but undocumented,
