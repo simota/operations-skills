@@ -79,7 +79,7 @@ Crude, fast, and frequently correct when the cause is unknown:
 | Scale out | Absorbs load-driven failure | T2 | Amplifies a downstream bottleneck |
 | Shed load / rate limit | Protects the core for most users | T3 | Choose *whose* traffic is dropped deliberately |
 | Disable the feature flag | Removes the failing path | T2 | Verify the flag actually gates the code path |
-| Fail over | Escapes localised failure | T3 if failback is `proved` and unexpired and writes single-primary, else **T4** | See Failover Safety below — fence before promote |
+| Fail over | Escapes localised failure | T3 if failback is `proved` and unexpired and writes single-primary, else **T4** — and always T4 at ST2/ST3, which set no DR cadence | See Failover Safety below — fence before promote |
 | Serve stale / cached | Preserves reads during a write failure | T3 | Communicate staleness to users |
 | Drain and isolate a bad node | Removes a single bad actor | T2 | Confirm it is actually the outlier |
 
@@ -105,8 +105,8 @@ Rules:
   potentially lost writes, and the postmortem and any customer notification both need it.
 - **A failover with unexercised failback is `T4`**, not `T3` — and failback whose proof has expired
   (past the service tier's DR cadence or its runbook's expiry, whichever ends first) counts as
-  unexercised. You are committing to the new region with no
-  verified way back.
+  unexercised; at ST2/ST3, which set no DR cadence, it stays `T4` (`_operation/SAFETY_TIERS.md`).
+  You are committing to the new region with no verified way back.
 - **Quorum systems**: confirm the surviving side actually has quorum. Promoting a minority
   partition produces a cluster that accepts writes and later discards them.
 - If replication lag cannot be measured, treat the failover as lossy and communicate it as such.

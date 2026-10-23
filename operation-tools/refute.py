@@ -140,10 +140,11 @@ def main() -> int:
     ids = [c.get("id") for c in claims]
     unnamed = [i for i, v in enumerate(ids)
                if isinstance(v, bool) or not isinstance(v, (str, int)) or not str(v).strip()]
-    # Compared as printed: `1` and `"1"` are two ids in JSON and one on the page.
-    shown = [str(v) for i, v in enumerate(ids) if i not in unnamed]
+    # Compared as printed: `1` and `"1"`, or `a` and `a `, are two ids in JSON and
+    # one on the page. A lone claim has nothing to be confused with.
+    shown = [str(v).strip() for i, v in enumerate(ids) if i not in unnamed]
     repeated = sorted({v for v in shown if shown.count(v) > 1})
-    if unnamed or repeated:
+    if len(claims) > 1 and (unnamed or repeated):
         print(f"{a.claims}: every claim needs its own `id`, a string or integer; "
               f"entries without one: {unnamed}; ids used twice: {repeated}", file=sys.stderr)
         return 2

@@ -58,7 +58,7 @@ a `stale` or `untested` one is named there, never left implied.
 | Capacity headroom | ≥3× current peak, load tested | ≥2× current peak, load tested | ≥1.5× | None |
 | DR / failover | Tested ≤6 months | Tested ≤12 months | Documented | None |
 | Postmortem | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days | All SEV1/SEV2; SEV3 at ≥3× in 90 days |
-| Escalation depth | Full chain | Full chain (the secondary level where the rotation has one), executive level business hours except a SEV1's leadership notice | Two levels | One level |
+| Escalation depth | Full chain | Full chain (the secondary level where the rotation has one), executive level business hours only, except a SEV1's leadership notice, which goes when it falls due | Two levels | One level |
 | Change approval | Service owner, or for a `Standard` change its class pre-approval; second reviewer from the `operation-change` 16–20 band up (total ≥16 or any single 5); the safety tier's approver always (`_operation/SAFETY_TIERS.md`) | Same as ST0 | Same as ST0 | None beyond the change class, the risk band and the safety tier (`operation-change`, `_operation/SAFETY_TIERS.md`) |
 | Dependency tier floor | All deps ST0 | All deps ST0–ST1 | All deps ST0–ST2 | None |
 

@@ -1092,13 +1092,21 @@ def tool_refute_needs_ids() -> str:
         for body in ('[{"id": "c1", "claim": "x"}, {"claim": "y"}]',
                      '[{"id": "c1", "claim": "x"}, {"id": "c1", "claim": "y"}]',
                      '[{"id": 1, "claim": "x"}, {"id": "1", "claim": "y"}]',
-                     '[{"id": true, "claim": "x"}]'):
+                     '[{"id": "a", "claim": "x"}, {"id": "a ", "claim": "y"}]',
+                     '[{"id": true, "claim": "x"}, {"id": "c2", "claim": "y"}]'):
             c.write_text(body)
             r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
                                 "--running", "claude", str(c)], capture_output=True, text=True,
                                env={"PATH": tmp.name, "HOME": tmp.name})
             if r.returncode != 2 or "needs its own `id`" not in r.stderr:
                 return f"refute.py accepted {body} (exit {r.returncode}): {(r.stdout + r.stderr)[-200:]}"
+        # A lone claim has nothing to be confused with: it still runs.
+        c.write_text('{"claim": "x"}')
+        r = subprocess.run([sys.executable, str(ROOT / "operation-tools/refute.py"),
+                            "--running", "claude", str(c)], capture_output=True, text=True,
+                           env={"PATH": tmp.name, "HOME": tmp.name})
+        if r.returncode != 1 or "[UNCHECKED]" not in r.stdout:
+            return f"refute.py refused a lone claim without an id (exit {r.returncode})"
         return ""
 
 
