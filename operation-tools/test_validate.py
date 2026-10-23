@@ -860,6 +860,16 @@ def _(r): app(r / RB, "\nThe rungs are in `_operation/SIZING.md#no-such-heading`
 def _(r): (r / "operation-registry/routes.yaml").write_text("- oops\n", encoding="utf-8")
 
 
+@case("V7-empty-file", "routes.yaml is empty")
+def _(r):
+    """Truncated, the registry loads as null; read as `{}`, V7, V13 and V14 checked nothing."""
+    (r / "operation-registry/routes.yaml").write_text("", encoding="utf-8")
+
+
+@case("V9-empty-file", "capabilities.yaml is empty")
+def _(r): (r / "operation-registry/capabilities.yaml").write_text("# truncated\n", encoding="utf-8")
+
+
 @quiet("V37-pin-int", "V37")
 def _(r):
     """An unquoted year loads as the integer it reads as: nothing is lost."""

@@ -99,9 +99,14 @@ def _entries(name: str, rule: str) -> dict:
     """A registry of named entries. An entry with no body is YAML null; read as
     empty it becomes the finding its rules make of an empty entry — no signals,
     no pattern — rather than an AttributeError that hides every other rule. A
-    file that is not a mapping at all is a finding of its own, read as empty."""
+    file that is not a mapping at all is a finding of its own, read as empty —
+    an empty or truncated file included: it loads as null, and read as `{}` it
+    left every rule over it checking nothing, green. A registry with no entries
+    says so with `{}`; silence and emptiness have to look different."""
     data = load(name)
-    if data is not None and not isinstance(data, dict):
+    if data is None:
+        fail(rule, f"{name} is empty; a registry with no entries writes `{{}}`")
+    elif not isinstance(data, dict):
         fail(rule, f"{name} is a {type(data).__name__}, not a mapping of named entries")
         data = None
     return {k: v if isinstance(v, dict) else {} for k, v in (data or {}).items()}
