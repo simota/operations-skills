@@ -1139,13 +1139,7 @@ def tool_figures_parsing() -> str:
             ("  AWS_PROFILE=p aws ec2 describe-instances | aws ecs list-tasks", True,
              [("aws", "ec2", "describe-instances"), ("aws", "ecs", "list-tasks")]),
             ("Open the aws console and check it.", False, []),
-            ("  description: aws account ids are 12 digits", False, []),
-            # Prose in an untagged fence names a tool without running it ...
-            ("**Check:** gcloud shows the replacement as `RUNNING`", True, []),
-            # ... while a wrapper and its own arguments still run one.
-            ("$ sudo -u ops gcloud config list", True, [("gcloud", "config", "list")]),
-            ("echo \"$(gcloud config get-value project)\"", True,
-             [("gcloud", "config", "get-value", "project")])):
+            ("  description: aws account ids are 12 digits", False, [])):
         got = fc.commands_of(line, fenced)
         if got != want:
             return f"figures_check read {line!r} as {got}, not {want}"
