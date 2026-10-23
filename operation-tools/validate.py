@@ -264,13 +264,25 @@ def v2_description_terms():
     others = set(SKILLS)
     for d in SKILL_DIRS:
         desc = frontmatter(read(d / "SKILL.md")).get("description", "")
-        for term in H["forbidden_description_terms"]:
-            if term in desc:
+        # Case does not change what a phrase says: "NOT for" and "Rather than"
+        # draw the same boundary as the lower-case forms the harness lists.
+        terms = {t.casefold(): t for t in reversed(H["forbidden_description_terms"])}
+        for term in terms.values():
+            if term.casefold() in desc.casefold():
                 fail("V2", f"{d.name} description contains {term!r}; "
                            "boundaries belong in capabilities.yaml `not:`")
         for name in others - {d.name}:
             if name in desc:
                 fail("V2", f"{d.name} description names {name}")
+
+
+def _target(base: Path, link: str) -> Path:
+    """Where `link` points from `base`, normalised lexically as a host reads it.
+
+    Compared by path, not by file name: a playbook naming the reader's own
+    `.operations/onboarding.md` does not make `reference/onboarding.md` reachable.
+    """
+    return Path(os.path.normpath(base / link.split("#")[0]))
 
 
 def v3_roster():
@@ -286,9 +298,9 @@ def v4_playbook_orphans():
         if not pb_dir.exists():
             continue
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m.split("#")[0]).name for m in links(body)}
+        linked = {_target(d, m) for m in links(body)}
         for pb in sorted(pb_dir.glob("*.md")):
-            if pb.name not in linked:
+            if pb not in linked:
                 fail("V4", f"{d.name}/playbooks/{pb.name} is not linked from Decide first")
 
 
@@ -373,6 +385,11 @@ def v10_fixtures():
         fail("V10", "fixtures.yaml is not a non-empty list of asks; this rule is checking nothing")
         return
     for entry in FIX:
+        if not (isinstance(entry, dict) and isinstance(entry.get("ask"), str)
+                and isinstance(entry.get("expect"), str)):
+            fail("V10", f"fixture {entry!r} needs an `ask` and an `expect`; "
+                        "a malformed one checks nothing")
+            continue
         ask, expect = _norm(entry["ask"]), entry["expect"]
         hits = [(len(sig), owner) for sig, owner in pairs if sig in ask]
         if not hits:
@@ -713,8 +730,11 @@ def v25_playbook_rot():
 def v26_boundaries_real():
     for name, c in CAP.items():
         for entry in c.get("not", []):
-            go = entry.get("go", "")
-            if go.startswith(PREFIX) and go not in SKILLS:
+            go = entry.get("go") if isinstance(entry, dict) else None
+            if not isinstance(go, str) or not go.strip():
+                fail("V26", f"{name} `not:` entry {entry!r} sends work nowhere; "
+                            "every boundary names a `go:`")
+            elif go.startswith(PREFIX) and go not in SKILLS:
                 fail("V26", f"{name} `not:` sends work to {go}, which does not exist")
 
 
@@ -780,9 +800,12 @@ def v29_reference_headers():
     want = H["reference_headers"]
     for d in SKILL_DIRS:
         for f in sorted((d / "reference").glob("*.md")) if (d / "reference").exists() else []:
-            head = "\n".join(read(f).splitlines()[:12])
+            # At the start of a line, as V31 and V37 read it: a header found
+            # anywhere (`**Source:**`, or mid-sentence) passed here and was then
+            # skipped by both of them as missing, so no rule read it at all.
+            head = read(f).splitlines()[:12]
             for header in want:
-                if header not in head:
+                if not any(l.startswith(header) for l in head):
                     fail("V29", f"{f.relative_to(ROOT)} has no {header!r} in its first "
                                 "12 lines; the deferred layer states what it claims "
                                 "and when anyone last checked")
@@ -795,12 +818,13 @@ def v30_reference_orphans():
         if not ref_dir.exists():
             continue
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m.split("#")[0]).name for m in links(body)}
+        linked = {_target(d, m) for m in links(body)}
         for pb in sorted((d / "playbooks").glob("*.md")) if (d / "playbooks").exists() else []:
-            linked |= {Path(m.split("#")[0]).name for m in links(read(pb))}
-            linked |= {Path(m).name for m in TICK_PATH_RE.findall(read(pb))}
+            linked |= {_target(pb.parent, m) for m in links(read(pb))}
+            # A code-span path is written from the skill's root (`reference/x.md`).
+            linked |= {_target(d, m) for m in TICK_PATH_RE.findall(read(pb))}
         for f in sorted(ref_dir.glob("*.md")):
-            if f.name not in linked:
+            if f not in linked:
                 fail("V30", f"{f.relative_to(ROOT)} is reachable from nothing — "
                             "not the Decide first table, not a playbook")
 
@@ -822,12 +846,13 @@ def v31_verified_names_a_check():
             start = next((i for i, l in enumerate(lines) if l.startswith("Verified:")), None)
             if start is None:
                 continue                      # V29 already reports the missing header
-            block = []
-            for l in lines[start:]:
-                if not l.strip():
-                    break
-                block.append(l)
-            text = " ".join(block)
+            # The block ends at the next header, as V37's does: run to the next
+            # blank line, it borrowed a marker from the `Source:` line below it.
+            end = start
+            while (end + 1 < len(lines) and lines[end + 1].strip()
+                   and not any(lines[end + 1].startswith(h) for h in H["reference_headers"])):
+                end += 1
+            text = " ".join(lines[start:end + 1])
             if not any(m in text for m in markers):
                 fail("V31", f"{f.relative_to(ROOT)} states a `Verified:` date and nothing "
                             "else; name what re-checks it, or say `no automated check`")
@@ -900,6 +925,10 @@ def v34_tools_reachable():
         source = ROOT / f"{SET}-tools" / tool
         if not source.exists():
             fail("V34", f"linked_tools names {tool}, which is not in {SET}-tools/")
+            continue
+        if not (who == "all" or (isinstance(who, list)
+                                 and all(isinstance(w, str) for w in who))):
+            fail("V34", f"linked_tools[{tool}] is {who!r}; write `all` or a list of skills")
             continue
         wanted = set(SKILLS) if who == "all" else set(who)
         unknown = wanted - set(SKILLS)

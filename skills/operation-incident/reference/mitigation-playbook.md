@@ -54,16 +54,19 @@ into data loss** — this is one of the most common ways an incident gets worse.
 
 ## Time-Boxing
 
-Every diagnostic line of enquiry gets an explicit budget, announced by the IC:
+Every diagnostic line of enquiry gets an explicit budget, announced by the IC — at SEV3, which
+has no IC (`reference/severity-matrix.md` § Response Expectations; a single responder, no formal
+roles, `reference/command-structure.md` § Scaling by Severity), by that responder:
 
 | Severity | Default hypothesis budget | On expiry |
 |----------|--------------------------|-----------|
 | SEV1 | 15 min | Switch to blunt mitigation (rollback, restart, failover, shed) |
 | SEV2 | 30 min | Reassess options; consider degrade |
-| SEV3 | 2h | Convert to a ticket if impact is stable |
+| SEV3 | 2h | Reassess severity (`reference/severity-matrix.md` § Upgrade and Downgrade); convert to a ticket only if impact is stable |
 
-At expiry the IC makes a deliberate call: extend with a stated reason, or switch. Silent
-overrun is the mechanism by which a 20-minute outage becomes a three-hour one.
+At expiry the IC (at SEV3, the responder) makes a deliberate call: extend with a stated
+reason, or switch. Silent overrun is the mechanism by which a 20-minute outage becomes a
+three-hour one.
 
 ## Blunt Mitigations
 

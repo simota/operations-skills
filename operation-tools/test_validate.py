@@ -417,6 +417,15 @@ def _(r): sub(r / RB, "allowed-tools: ", "allowed-tools: [unclosed, ")
 def _(r): sub(r / RB, "toil accounting.\"\n", "toil accounting.\n  Not for paging.\"\n")
 
 
+@quiet("V30-playbook-link", "V30")
+def _(r):
+    """Compared by path, a playbook's `../reference/` link still reaches the page."""
+    sub(r / f"{S}operation-oncall/SKILL.md",
+        "| Bringing someone onto the rota | [onboarding](reference/onboarding.md) |\n", "")
+    app(r / f"{S}operation-oncall/playbooks/paging.md",
+        "\nOnboarding: [onboarding](../reference/onboarding.md).\n")
+
+
 @quiet("V4-anchor", "V4", "V8")
 def _(r):
     """A Decide-first link to a heading inside a playbook still links the playbook."""
@@ -496,6 +505,60 @@ def _(r):
     f = r / "operation-registry/fixtures.yaml"
     f.write_text("fixtures:\n" + "".join("  " + l + "\n" for l in
                  f.read_text(encoding="utf-8").splitlines()), encoding="utf-8")
+
+
+@case("V10-key", "needs an `ask` and an `expect`")
+def _(r):
+    """A misspelt key is a V10 finding, not a KeyError that hides every other rule."""
+    sub(r / "operation-registry/fixtures.yaml", "  expect: operation-incident",
+        "  expected: operation-incident")
+
+
+@case("V2-case", "description contains 'Not for'")
+def _(r): sub(r / f"{S}operation-runbook/SKILL.md", "Writing reusable procedure that works",
+              "NOT FOR outages. Writing reusable procedure that works")
+
+
+@case("V4-same-name", 'traps.md is not linked from Decide first')
+def _(r):
+    """Another skill's traps.md shares the name and is not this skill's playbook."""
+    sub(r / f"{S}operation-oncall/SKILL.md", "](playbooks/traps.md)",
+        "](../operation-change/playbooks/traps.md)")
+
+
+@case("V26-no-go", 'sends work nowhere')
+def _(r): sub(r / "operation-registry/capabilities.yaml", "      go: operation-incident\n", "")
+
+
+@case("V29-bold", "has no 'Source:'")
+def _(r):
+    """V31 and V37 read only a header at the start of a line; V29 must agree,
+    or a bolded header is skipped by all three."""
+    sub(r / f"{S}operation-change/reference/dora-metrics.md", "\nSource: ", "\n**Source:** ")
+
+
+@case("V30-same-name", 'onboarding.md is reachable from nothing')
+def _(r):
+    """The reader's own `.operations/onboarding.md` is not reference/onboarding.md."""
+    sub(r / f"{S}operation-oncall/SKILL.md",
+        "| Bringing someone onto the rota | [onboarding](reference/onboarding.md) |\n", "")
+    app(r / f"{S}operation-oncall/playbooks/paging.md",
+        "\nRecord the plan in `.operations/onboarding.md`.\n")
+
+
+@case("V31-borrowed", 'states a `Verified:` date and nothing else')
+def _(r):
+    """The Verified block ends at the next header, not at the next blank line."""
+    sub(r / f"{S}operation-change/reference/dora-metrics.md",
+        "Source: DORA — the four keys and their definitions are theirs, not this page's.\n"
+        "Verified: 2026-08-21 — no automated check.",
+        "Verified: 2026-08-21\n"
+        "Source: DORA — the four keys and their definitions are quoted from their research.")
+
+
+@case("V34-not-a-list", "write `all` or a list of skills")
+def _(r): sub(r / "operation-registry/harness.yaml", "refute.py: all",
+              "refute.py: operation-change")
 
 
 @quiet("V8-code", "V8")
@@ -855,6 +918,12 @@ def tool_figures_parsing() -> str:
             ("`aws --profile=prod ec2 describe-instances`", False, [("aws", "ec2", "describe-instances")]),
             ("`gcloud --project=p-1 compute instances list`", False,
              [("gcloud", "compute", "instances", "list")]),
+            ("Then `gcloud auth list`, and `gcloud help` names no command.", False,
+             [("gcloud", "auth", "list")]),
+            ("gcloud logging read 'resource.type=\"gce_instance\"' --project <p>", True,
+             [("gcloud", "logging", "read")]),
+            ("gcloud config list   # gcloud is optional; aws is too", True,
+             [("gcloud", "config", "list")]),
             ("First `aws sts get-caller-identity`, then `aws ecs list-tasks`.", False,
              [("aws", "sts", "get-caller-identity"), ("aws", "ecs", "list-tasks")]),
             ("  AWS_PROFILE=p aws ec2 describe-instances | aws ecs list-tasks", True,
