@@ -9,6 +9,7 @@ Idempotent: run it, commit the diff.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -47,10 +48,13 @@ def render(path: Path) -> bool:
             text = head + payload + tail
         elif (n_open, n_close) == (0, 0):
             heading = f"## {spec['section']}\n"
-            if heading not in text:
+            # The heading is a whole line: `### Done when` contains `## Done when`,
+            # and matching it put the block into a subsection of another section.
+            m = re.search(rf"(?m)^{re.escape(heading)}", text)
+            if not m:
                 raise RenderError(f"{path.parent.name}/SKILL.md has no section "
                                   f"{spec['section']!r} to deliver {key} into")
-            head, rest = text.split(heading, 1)
+            head, rest = text[:m.start()], text[m.end():]
             # append at the end of that section, before the next heading
             nxt = rest.find("\n## ")
             body, tail = (rest[:nxt], rest[nxt:]) if nxt != -1 else (rest, "")

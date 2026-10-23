@@ -101,7 +101,7 @@ for src in "$SRC_DIR"/operation-*; do
         refuse "$dest"; continue
       fi
       rm -rf "$dest"
-      # resolve the _operation symlink so the copy is self-contained
+      # resolve the _operation and registry symlinks, so the pages travel with the copy
       cp -RL "$src" "$dest"
       # A tool is not self-contained: refute.py imports engine.py beside it and
       # reads the registry two levels up, so a dereferenced copy cannot start.

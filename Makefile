@@ -15,7 +15,9 @@ AGY_DIR    ?= $(HOME)/.gemini/antigravity-cli/skills
 # written to when it is installed here, and its own home — the parent of the
 # skills directory — is what says so: judging by the skills directory itself
 # would skip a host that has one but has never been given a skill.
-HOST_DIRS  := $(CLAUDE_DIR) $(CODEX_DIR) $(AGY_DIR)
+# Each one quoted on its own: a make word list splits at spaces, so a HOME with
+# one in it read as two directories, and links landed in both and in neither.
+HOST_DIRS  := "$(CLAUDE_DIR)" "$(CODEX_DIR)" "$(AGY_DIR)"
 
 .DEFAULT_GOAL := help
 .PHONY: help check validate test figures engines refute render hooks link unlink status
@@ -89,6 +91,9 @@ hooks:
 # A link is ours only when it resolves into this repository's skills/. Anything
 # else at the target — a real directory, or a symlink into another set — belongs
 # to someone else and is left alone by both link and unlink, as install.sh does.
+# One difference: install.sh also counts a `--copy` it stamped as its own, and
+# this does not, so such a copy shows as foreign here and only install.sh
+# replaces or removes it.
 # Resolved physically, so a link made through a symlinked checkout still counts;
 # a dangling link falls back to its literal text.
 OURS = { r="$$(cd "$$target" 2>/dev/null && pwd -P)" || r="$$(readlink "$$target")"; \

@@ -124,11 +124,13 @@ def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
         for m in CMD.finditer(code):
             tool, rest = m.group(1), m.group(2).split()
             words = subcommand_words(tool, rest)
-            # gcloud nests to different depths: `gcloud config list` and
-            # `gcloud logging read` name a command in two words, and requiring
-            # three left them cited but never checked.
-            least, most = {"aws": (2, 2), "gcloud": (2, 3)}.get(tool, (0, 0))
-            if most and len(words) >= least:
+            # gcloud nests to any depth — `gcloud version`, `gcloud config list`,
+            # `gcloud compute os-login ssh-keys list` — and takes `--help` after
+            # positionals, so every word is checked. Requiring two dropped a
+            # one-word typo unread, and stopping at three checked a four-word
+            # command only as far as its group.
+            least, most = {"aws": (2, 2), "gcloud": (1, None)}.get(tool, (0, 0))
+            if tool in ("aws", "gcloud") and len(words) >= least:
                 out.append((tool, *words[:most]))
     return out
 
