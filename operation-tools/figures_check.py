@@ -108,6 +108,13 @@ def subcommand_words(tool: str, rest: list[str]) -> list[str]:
 # starts one — after a prompt, an env prefix, a pipe — and every match counts.
 CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 =._/:-]+)")
 SPAN = re.compile(r"`([^`]+)`")
+# In a fence, a command starts a line, or follows a prompt, env assignments, a
+# pipe or separator, `$(`, a backtick, or a word that runs the next one, with
+# whatever arguments that word takes. Matched after any space, a prose line
+# inside an untagged fence ("**Check:** gcloud shows the replacement as
+# RUNNING") cited `gcloud shows the replacement as`.
+STARTS = re.compile(r"(?:^|[|;&(`])\s*(?:\$\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*"
+                    r"(?:(?:sudo|time|exec|env|xargs|watch|timeout|nohup|nice)\s.*)?$")
 
 
 def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
@@ -122,6 +129,8 @@ def commands_of(line: str, fenced: bool = False) -> list[tuple[str, ...]]:
         line = re.sub(r"(?:^|(?<=\s))#.*", "", line)
     for code in [line] if fenced else SPAN.findall(line):
         for m in CMD.finditer(code):
+            if fenced and not STARTS.search(code[:m.start()]):
+                continue
             tool, rest = m.group(1), m.group(2).split()
             words = subcommand_words(tool, rest)
             # gcloud nests to any depth — `gcloud version`, `gcloud config list`,
