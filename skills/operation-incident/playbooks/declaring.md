@@ -3,7 +3,9 @@
 
 ## Live State Block
 
-While an incident is active, every response opens with this. Nothing precedes it.
+While an incident is active, this is the record, kept current where the responders read it —
+not what every response repeats (`_operation/REPORT.md`). A response opens with the `IMPACT`
+line and adds only the fields the reader must act on now.
 
 ```
 INCIDENT <id> | SEV<n> | <DECLARED|MITIGATING|MONITORING|RESOLVED>
@@ -16,7 +18,7 @@ COMMS:    last <time> | next <time>
 ```
 
 An unfilled field is written as `UNASSIGNED` or `UNKNOWN`, never omitted. `IC: UNASSIGNED`
-on a SEV1 is the most important line on the screen.
+on a SEV1 is the most important line on the screen, and goes into every response until it is filled.
 
 ## Declaration Criteria
 
