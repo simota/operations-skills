@@ -223,50 +223,136 @@ def _link_target(raw: str) -> str:
     return re.sub(r"""\s+(?:"[^"]*"|'[^']*'|\([^)]*\))\s*$""", "", t)
 
 
-# Lines that are a block on their own: a heading, a thematic break or setext
-# underline. A link never runs into or out of one, nor out of a table row.
-ONE_LINE_BLOCK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|([-*_=])(?:\s*\1){2,}\s*$)")
-BULLET_RE = re.compile(r"^\s*[-*+]\s")
-ORDERED_RE = re.compile(r"^\s*(\d{1,9})[.)]\s")
-# A table's delimiter row: cells of dashes, colons allowed at either end. It
-# needs a pipe as well, or it is a setext underline.
-DELIMITER_RE = re.compile(r"^ {0,3}\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$")
+# Where a run of lines splits into blocks. Each test splits only where a block
+# certainly starts: splitting where CommonMark joins drops a wrapped link, and
+# V8 then passes a missing target silently; joining where it splits makes a
+# link nobody wrote, and V8 says so out loud. So every doubt resolves to a join.
+HEADING_OR_BREAK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|([-*_])(?:[ \t]*\1){2,}[ \t]*$)")
+# A setext underline that is not also a thematic break: `===`, or one or two
+# dashes. After a paragraph it closes it; after anything else it is text.
+SETEXT_EQ_RE = re.compile(r"^ {0,3}(?:=+|-{1,2})[ \t]*$")
+ITEM_RE = re.compile(r"^( *)(?:[-*+]|(\d{1,9})([.)]))(?: +|$)")
+DELIMITER_RE = re.compile(r"^ {0,3}(?:\|\s*)?:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$")
+# A line's structural lead: its indent, a list marker, quote markers.
+LEAD_RE = re.compile(r"[ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]*)?(?:>[ \t]*)*")
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))
+
+
+def _tabbed(line: str) -> bool:
+    """A tab in the line's structure — its indent, or after a list or quote
+    marker. A tab moves to the next multiple of four columns, so where that
+    leaves the line depends on every container around it; none of the tests
+    below can place it, and a line they cannot place is left to join."""
+    return "\t" in LEAD_RE.match(line).group(0)
+
+
+def _content_col(item: re.Match) -> int:
+    """Where a list item's content starts. Five spaces or more after the marker
+    are indented code inside the item, which then starts one past the marker;
+    so does an item with nothing after its marker."""
+    end = item.end()
+    gap = end - item.end(3 if item.group(2) else 1) - (0 if item.group(2) else 1)
+    if gap > 4 or not item.string[end:].strip():
+        return end - gap + 1
+    return end
+
+
+def _body(line: str) -> str:
+    """The line past its indent and any list marker: what the item holds."""
+    m = ITEM_RE.match(line)
+    return line[m.end() if m else 0:].lstrip(" ")
+
+
+def _empty_item(line: str) -> bool:
+    """A list item with nothing after its marker. Opening a run, it is a block
+    of its own: what follows is outside it or a new paragraph inside it, and
+    either way not the item's own text."""
+    m = ITEM_RE.match(line)
+    return bool(m) and not line[m.end():].strip()
+
+
+def _cells(row: str) -> int:
+    row = re.sub(r"\\\|", "", row.strip())
+    return len(row.removeprefix("|").removesuffix("|").split("|"))
 
 
 def _table_rows(lines: list[tuple[int, str]]) -> set[int]:
-    """Line numbers that are table rows: a header, the delimiter row under it,
-    and the rows that follow it. A line opening with `|` is not one by itself —
-    without a delimiter row it is prose, and `[the operator\n| pipeline](x.md)`
-    is a link."""
+    """Line numbers that are table rows: a header that starts a run of lines,
+    the delimiter row under it with as many cells, and the rows after them
+    that carry a pipe. A line opening with `|` is not a row by itself — without
+    a delimiter row it is prose, and `[the operator\n| pipeline](x.md)` is a
+    link. Anything less certain is left to join: a header continuing a
+    paragraph, or a list item or quote, may be that paragraph's lazy text."""
     rows: set[int] = set()
     for k, (i, line) in enumerate(lines):
-        if not (DELIMITER_RE.match(line) and "|" in line and k and lines[k - 1][0] == i - 1
-                and "|" in lines[k - 1][1]):
+        if not (k and "|" in line and DELIMITER_RE.match(line)):
             continue
-        rows |= {i - 1, i}
+        h, header = lines[k - 1]
+        if (h != i - 1 or "|" not in header or _indent(header) > 3 or _tabbed(header)
+                or ITEM_RE.match(header) or header.lstrip(" ").startswith(">")
+                or (k >= 2 and lines[k - 2][0] == h - 1 and lines[k - 2][1].strip())
+                or _cells(header) != _cells(line)):
+            continue
+        rows |= {h, i}
+        last = i
         for j, nxt in lines[k + 1:]:
-            if j != max(rows) + 1 or not nxt.strip():
+            # A table ends where any block could start, a list at any number.
+            if (j != last + 1 or "|" not in nxt or HEADING_OR_BREAK_RE.match(nxt) or _tabbed(nxt)
+                    or (_indent(nxt) <= 3 and (ITEM_RE.match(nxt) or nxt.lstrip(" ").startswith(">")))):
                 break
             rows.add(j)
+            last = j
     return rows
 
 
 def _opens_block(line: str, buf: list[str]) -> bool:
-    """Whether `line` starts a new block rather than continuing the paragraph in
-    `buf`, as CommonMark reads it. A bullet does. An ordered item does from 1,
-    or as a sibling of the list item `buf` is in — at less than that item's
-    content indent; at or past it, `2025. report` continues the item's prose.
-    A quote does when the paragraph is not already one."""
-    if ONE_LINE_BLOCK_RE.match(line) or BULLET_RE.match(line):
+    """Whether `line` certainly starts a new block after the run in `buf`.
+
+    A heading or thematic break at up to three spaces always does. Anything
+    else depends on the container the run is in, which is known only when the
+    run opened a list item: a line at or past the item's content is inside it,
+    and one left of it is read against column 0 — the least the outer
+    container can be, which only ever turns a split into a join. A bullet, a
+    `1.` or a quote with content, at up to three spaces past that, interrupts;
+    further in, it is the paragraph's text. A numbered line other than 1 opens
+    only a sibling of the run's own item, aligned with it and with the same
+    delimiter, since `2025. report` is prose. A `===` or `-` underlines a plain
+    paragraph from at or past its own indent; after a quote, an item, a line
+    that may have opened one, or to the left of a paragraph that may sit in an
+    item, it may be lazy text.
+    """
+    if HEADING_OR_BREAK_RE.match(line):
         return True
-    m = ORDERED_RE.match(line)
-    if m:
-        if m.group(1) == "1":
-            return True
-        item = BULLET_RE.match(buf[0]) or ORDERED_RE.match(buf[0])
-        if item and len(line) - len(line.lstrip()) < item.end():
-            return True
-    return line.lstrip().startswith(">") and not buf[0].lstrip().startswith(">")
+    if any(_tabbed(l) for l in buf) or _tabbed(line):
+        return False
+    head = opened = ITEM_RE.match(buf[0])
+    # Any quote in the run, its first line, an item holding one, or one that
+    # interrupted it, may be what a `>` line continues.
+    quoted = any(_body(l).startswith(">") for l in buf)
+    indent = _indent(line)
+    # The run is known to sit in the item only while nothing in it has gone
+    # left of the item's content: a lazy line, or a line after an item that
+    # opened with a quote, may already be outside it.
+    if head and any(_indent(l) < _content_col(head) for l in buf[1:]):
+        head = None
+    if SETEXT_EQ_RE.match(line):
+        # Only under one paragraph whose container is known: a line joined
+        # into the run that could have opened an item or a quote may have
+        # moved the paragraph somewhere `buf[0]` does not say.
+        return (not opened and not quoted and indent >= _indent(buf[0])
+                and not any(ITEM_RE.match(l) for l in buf[1:]))
+    base = _content_col(head) if head and indent >= _content_col(head) else 0
+    m = ITEM_RE.match(line)
+    if m and line[m.end():].strip() and indent - base <= 3 \
+            and (m.group(2) is None or m.group(2) == "1"):
+        return True
+    if m and head and m.group(2) and head.group(2) and m.group(3) == head.group(3) \
+            and indent == len(head.group(1)):
+        return True
+    return line.lstrip(" ").startswith(">") and not quoted and indent - base <= 3
 
 
 def _paragraphs(text: str) -> list[str]:
@@ -281,10 +367,20 @@ def _paragraphs(text: str) -> list[str]:
     for i, line in lines:
         if (not line.strip() or (last is not None and i != last + 1)
                 or i in table or (last in table)
-                or (buf and (_opens_block(line, buf) or ONE_LINE_BLOCK_RE.match(buf[-1])))):
+                or (buf and (_opens_block(line, buf) or HEADING_OR_BREAK_RE.match(buf[-1])))
+                or (len(buf) == 1 and _empty_item(buf[0]))):
+            # A setext underline that ends a paragraph holds no text; after
+            # anything else it is text of its own.
+            underline = (SETEXT_EQ_RE.match(line) and buf and i == last + 1
+                         and not HEADING_OR_BREAK_RE.match(buf[-1])
+                         and not (len(buf) == 1 and _empty_item(buf[0]))
+                         and _opens_block(line, buf))
             if buf:
                 out.append(" ".join(l.strip() for l in buf))
             buf = []
+            if underline:
+                last = i
+                continue
         if line.strip():
             buf.append(line)
         last = i

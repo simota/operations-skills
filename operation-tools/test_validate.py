@@ -520,6 +520,24 @@ def _(r):
     app(r / TRAPS, "\n- See [the annual\n  2025. report](wrapped-number-gone.md).\n")
 
 
+@case("V8-after-table", "links to missing after-table-gone.md")
+def _(r):
+    """A heading ends a table; the paragraph under it is prose, its wrapped link read."""
+    app(r / TRAPS, "\n| a | b |\n|---|---|\n# Notes\nSee [the wrapped\nlink](after-table-gone.md).\n")
+
+
+@case("V8-wrapped-dash", "links to missing wrapped-dash-gone.md")
+def _(r):
+    """Four spaces in, a dash continues the paragraph rather than opening a list."""
+    app(r / TRAPS, "\nSee [the command\n    - argument](wrapped-dash-gone.md).\n")
+
+
+@case("V8-wrapped-tab", "links to missing wrapped-tab-gone.md")
+def _(r):
+    """A tab puts a line four columns in, where a `>` is the paragraph's text."""
+    app(r / TRAPS, "\nSee [the quoted\n\t> reply](wrapped-tab-gone.md).\n")
+
+
 @quiet("V8-block-boundary", "V8", "V19")
 def _(r):
     """A link does not run across a heading, two list items or two table rows;
