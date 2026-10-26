@@ -538,6 +538,26 @@ def _(r):
     app(r / TRAPS, "\nSee [the quoted\n\t> reply](wrapped-tab-gone.md).\n")
 
 
+@case("V8-wrapped-nbsp", "links to missing wrapped-nbsp-gone.md")
+def _(r):
+    """A no-break space after `#` is no heading separator: the line is the link's text."""
+    app(r / TRAPS, "\nSee [the heading\n# reply](wrapped-nbsp-gone.md).\n")
+
+
+@case("V8-table-indented", "links to missing table-indented-gone.md")
+def _(r):
+    """Four spaces in, a line ends a table; the prose after it is read as prose."""
+    app(r / TRAPS, "\n| a | b |\n|---|---|\n    a | b |\n| c | See [the wrapped\n"
+                   "\t- link](table-indented-gone.md)\n")
+
+
+@case("V8-fence-nbsp", "links to missing fence-nbsp-gone.md")
+def _(r):
+    """Only spaces and tabs may follow a closing fence; a no-break space leaves it
+    open, and the next fence closes it rather than opening one over the prose."""
+    app(r / TRAPS, "\n```\nx\n``` \n```\n\nSee [the page](fence-nbsp-gone.md).\n")
+
+
 @quiet("V8-block-boundary", "V8", "V19")
 def _(r):
     """A link does not run across a heading, two list items or two table rows;

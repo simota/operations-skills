@@ -227,14 +227,21 @@ def _link_target(raw: str) -> str:
 # certainly starts: splitting where CommonMark joins drops a wrapped link, and
 # V8 then passes a missing target silently; joining where it splits makes a
 # link nobody wrote, and V8 says so out loud. So every doubt resolves to a join.
-HEADING_OR_BREAK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|([-*_])(?:[ \t]*\1){2,}[ \t]*$)")
+HEADING_OR_BREAK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|([-*_])(?:[ \t]*\1){2,}[ \t]*$)")
 # A setext underline that is not also a thematic break: `===`, or one or two
 # dashes. After a paragraph it closes it; after anything else it is text.
 SETEXT_EQ_RE = re.compile(r"^ {0,3}(?:=+|-{1,2})[ \t]*$")
 ITEM_RE = re.compile(r"^( *)(?:[-*+]|(\d{1,9})([.)]))(?: +|$)")
-DELIMITER_RE = re.compile(r"^ {0,3}(?:\|\s*)?:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$")
+DELIMITER_RE = re.compile(r"^ {0,3}(?:\|[ \t]*)?:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$")
 # A line's structural lead: its indent, a list marker, quote markers.
 LEAD_RE = re.compile(r"[ \t]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]*)?(?:>[ \t]*)*")
+
+
+def _blank(line: str) -> bool:
+    """Spaces and tabs only. Python's `strip()` and `\\s` take a no-break space
+    as whitespace too, which CommonMark does not: a line holding one is text,
+    and `#\\u00a0x` is no heading."""
+    return not line.strip(" \t")
 
 
 def _indent(line: str) -> int:
@@ -255,7 +262,7 @@ def _content_col(item: re.Match) -> int:
     so does an item with nothing after its marker."""
     end = item.end()
     gap = end - item.end(3 if item.group(2) else 1) - (0 if item.group(2) else 1)
-    if gap > 4 or not item.string[end:].strip():
+    if gap > 4 or _blank(item.string[end:]):
         return end - gap + 1
     return end
 
@@ -271,7 +278,7 @@ def _empty_item(line: str) -> bool:
     of its own: what follows is outside it or a new paragraph inside it, and
     either way not the item's own text."""
     m = ITEM_RE.match(line)
-    return bool(m) and not line[m.end():].strip()
+    return bool(m) and _blank(line[m.end():])
 
 
 def _cells(row: str) -> int:
@@ -293,14 +300,16 @@ def _table_rows(lines: list[tuple[int, str]]) -> set[int]:
         h, header = lines[k - 1]
         if (h != i - 1 or "|" not in header or _indent(header) > 3 or _tabbed(header)
                 or ITEM_RE.match(header) or header.lstrip(" ").startswith(">")
-                or (k >= 2 and lines[k - 2][0] == h - 1 and lines[k - 2][1].strip())
+                or (k >= 2 and lines[k - 2][0] == h - 1 and not _blank(lines[k - 2][1]))
                 or _cells(header) != _cells(line)):
             continue
         rows |= {h, i}
         last = i
         for j, nxt in lines[k + 1:]:
-            # A table ends where any block could start, a list at any number.
+            # A table ends where any block could start, a list at any number,
+            # or four spaces in.
             if (j != last + 1 or "|" not in nxt or HEADING_OR_BREAK_RE.match(nxt) or _tabbed(nxt)
+                    or _indent(nxt) > 3
                     or (_indent(nxt) <= 3 and (ITEM_RE.match(nxt) or nxt.lstrip(" ").startswith(">")))):
                 break
             rows.add(j)
@@ -346,7 +355,7 @@ def _opens_block(line: str, buf: list[str]) -> bool:
                 and not any(ITEM_RE.match(l) for l in buf[1:]))
     base = _content_col(head) if head and indent >= _content_col(head) else 0
     m = ITEM_RE.match(line)
-    if m and line[m.end():].strip() and indent - base <= 3 \
+    if m and not _blank(line[m.end():]) and indent - base <= 3 \
             and (m.group(2) is None or m.group(2) == "1"):
         return True
     if m and head and m.group(2) and head.group(2) and m.group(3) == head.group(3) \
@@ -365,7 +374,7 @@ def _paragraphs(text: str) -> list[str]:
     table = _table_rows(lines)
     out, buf, last = [], [], None
     for i, line in lines:
-        if (not line.strip() or (last is not None and i != last + 1)
+        if (_blank(line) or (last is not None and i != last + 1)
                 or i in table or (last in table)
                 or (buf and (_opens_block(line, buf) or HEADING_OR_BREAK_RE.match(buf[-1])))
                 or (len(buf) == 1 and _empty_item(buf[0]))):
@@ -381,7 +390,7 @@ def _paragraphs(text: str) -> list[str]:
             if underline:
                 last = i
                 continue
-        if line.strip():
+        if not _blank(line):
             buf.append(line)
         last = i
     if buf:

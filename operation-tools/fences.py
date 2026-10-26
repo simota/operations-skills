@@ -27,6 +27,7 @@ def fence_step(line: str, fence: str | None) -> tuple[str | None, bool]:
         if run[0] == "`" and "`" in rest:      # inline code, not a fence
             return None, False
         return run, True
-    if run[0] == fence[0] and len(run) >= len(fence) and not rest.strip():
+    # Only spaces and tabs may follow a closing run; a no-break space is text.
+    if run[0] == fence[0] and len(run) >= len(fence) and not rest.strip(" \t"):
         return None, True
     return fence, False
