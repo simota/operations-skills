@@ -224,23 +224,49 @@ def _link_target(raw: str) -> str:
 
 
 # Lines that are a block on their own: a heading, a thematic break or setext
-# underline, a table row. A link never runs into or out of one.
-ONE_LINE_BLOCK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|([-*_=])(?:\s*\1){2,}\s*$|\|)")
+# underline. A link never runs into or out of one, nor out of a table row.
+ONE_LINE_BLOCK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|([-*_=])(?:\s*\1){2,}\s*$)")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 ORDERED_RE = re.compile(r"^\s*(\d{1,9})[.)]\s")
+# A table's delimiter row: cells of dashes, colons allowed at either end. It
+# needs a pipe as well, or it is a setext underline.
+DELIMITER_RE = re.compile(r"^ {0,3}\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$")
+
+
+def _table_rows(lines: list[tuple[int, str]]) -> set[int]:
+    """Line numbers that are table rows: a header, the delimiter row under it,
+    and the rows that follow it. A line opening with `|` is not one by itself —
+    without a delimiter row it is prose, and `[the operator\n| pipeline](x.md)`
+    is a link."""
+    rows: set[int] = set()
+    for k, (i, line) in enumerate(lines):
+        if not (DELIMITER_RE.match(line) and "|" in line and k and lines[k - 1][0] == i - 1
+                and "|" in lines[k - 1][1]):
+            continue
+        rows |= {i - 1, i}
+        for j, nxt in lines[k + 1:]:
+            if j != max(rows) + 1 or not nxt.strip():
+                break
+            rows.add(j)
+    return rows
 
 
 def _opens_block(line: str, buf: list[str]) -> bool:
     """Whether `line` starts a new block rather than continuing the paragraph in
-    `buf`, as CommonMark reads it. A list item does; an ordered one only from 1
-    or inside a list, since `2025. was` in wrapped prose is still prose. A quote
-    does when the paragraph is not already one."""
+    `buf`, as CommonMark reads it. A bullet does. An ordered item does from 1,
+    or as a sibling of the list item `buf` is in — at less than that item's
+    content indent; at or past it, `2025. report` continues the item's prose.
+    A quote does when the paragraph is not already one."""
     if ONE_LINE_BLOCK_RE.match(line) or BULLET_RE.match(line):
         return True
     m = ORDERED_RE.match(line)
-    if m and (m.group(1) == "1" or (buf and (BULLET_RE.match(buf[0]) or ORDERED_RE.match(buf[0])))):
-        return True
-    return line.lstrip().startswith(">") and bool(buf) and not buf[0].lstrip().startswith(">")
+    if m:
+        if m.group(1) == "1":
+            return True
+        item = BULLET_RE.match(buf[0]) or ORDERED_RE.match(buf[0])
+        if item and len(line) - len(line.lstrip()) < item.end():
+            return True
+    return line.lstrip().startswith(">") and not buf[0].lstrip().startswith(">")
 
 
 def _paragraphs(text: str) -> list[str]:
@@ -249,11 +275,13 @@ def _paragraphs(text: str) -> list[str]:
     `[the observation\ntraps page](missing.md)` was never a link at all. A run
     stops where a block does: joined across a heading or two list items,
     `# [title` and `text](x.md)` became a link nobody wrote."""
+    lines = unfenced(text)
+    table = _table_rows(lines)
     out, buf, last = [], [], None
-    for i, line in unfenced(text):
+    for i, line in lines:
         if (not line.strip() or (last is not None and i != last + 1)
-                or (buf and _opens_block(line, buf))
-                or (buf and ONE_LINE_BLOCK_RE.match(buf[-1]))):
+                or i in table or (last in table)
+                or (buf and (_opens_block(line, buf) or ONE_LINE_BLOCK_RE.match(buf[-1])))):
             if buf:
                 out.append(" ".join(l.strip() for l in buf))
             buf = []

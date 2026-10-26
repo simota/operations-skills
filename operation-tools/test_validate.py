@@ -508,6 +508,18 @@ def _(r):
     app(r / TRAPS, "\n- See [the wrapped\n  item link](wrapped-item-gone.md).\n")
 
 
+@case("V8-wrapped-pipe", "links to missing wrapped-pipe-gone.md")
+def _(r):
+    """A line opening with `|` is prose until a delimiter row makes it a table."""
+    app(r / TRAPS, "\nSee [the operator\n| pipeline](wrapped-pipe-gone.md).\n")
+
+
+@case("V8-wrapped-number", "links to missing wrapped-number-gone.md")
+def _(r):
+    """A number inside a list item's continuation is the item's prose, not a sibling item."""
+    app(r / TRAPS, "\n- See [the annual\n  2025. report](wrapped-number-gone.md).\n")
+
+
 @quiet("V8-block-boundary", "V8", "V19")
 def _(r):
     """A link does not run across a heading, two list items or two table rows;
