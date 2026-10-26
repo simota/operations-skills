@@ -502,6 +502,20 @@ def _(r):
     app(r / TRAPS, "\nSee [the wrapped\nlink](wrapped-gone.md).\n")
 
 
+@case("V8-wrapped-item", "links to missing wrapped-item-gone.md")
+def _(r):
+    """A list item's own continuation line is still the item: the link it wraps is read."""
+    app(r / TRAPS, "\n- See [the wrapped\n  item link](wrapped-item-gone.md).\n")
+
+
+@quiet("V8-block-boundary", "V8", "V19")
+def _(r):
+    """A link does not run across a heading, two list items or two table rows;
+    joined there, each of these was a link to a page nobody named."""
+    app(r / TRAPS, "\n## A [heading\ntext](gone-heading.md)\n\n- an [item\n- next](gone-item.md)\n\n"
+                   "| [a | b |\n|---|---|\n| c](gone-row.md) | d |\n")
+
+
 @case("V9-yaml", "capabilities.yaml is not valid YAML")
 def _(r): app(r / "operation-registry/capabilities.yaml", "\nbroken: [unclosed\n")
 

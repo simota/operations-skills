@@ -223,21 +223,45 @@ def _link_target(raw: str) -> str:
     return re.sub(r"""\s+(?:"[^"]*"|'[^']*'|\([^)]*\))\s*$""", "", t)
 
 
+# Lines that are a block on their own: a heading, a thematic break or setext
+# underline, a table row. A link never runs into or out of one.
+ONE_LINE_BLOCK_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|([-*_=])(?:\s*\1){2,}\s*$|\|)")
+BULLET_RE = re.compile(r"^\s*[-*+]\s")
+ORDERED_RE = re.compile(r"^\s*(\d{1,9})[.)]\s")
+
+
+def _opens_block(line: str, buf: list[str]) -> bool:
+    """Whether `line` starts a new block rather than continuing the paragraph in
+    `buf`, as CommonMark reads it. A list item does; an ordered one only from 1
+    or inside a list, since `2025. was` in wrapped prose is still prose. A quote
+    does when the paragraph is not already one."""
+    if ONE_LINE_BLOCK_RE.match(line) or BULLET_RE.match(line):
+        return True
+    m = ORDERED_RE.match(line)
+    if m and (m.group(1) == "1" or (buf and (BULLET_RE.match(buf[0]) or ORDERED_RE.match(buf[0])))):
+        return True
+    return line.lstrip().startswith(">") and bool(buf) and not buf[0].lstrip().startswith(">")
+
+
 def _paragraphs(text: str) -> list[str]:
     """Runs of unfenced, non-blank lines, each joined into one line. A link's
     text wraps like any other prose, and read a line at a time
-    `[the observation\ntraps page](missing.md)` was never a link at all."""
+    `[the observation\ntraps page](missing.md)` was never a link at all. A run
+    stops where a block does: joined across a heading or two list items,
+    `# [title` and `text](x.md)` became a link nobody wrote."""
     out, buf, last = [], [], None
     for i, line in unfenced(text):
-        if not line.strip() or (last is not None and i != last + 1):
+        if (not line.strip() or (last is not None and i != last + 1)
+                or (buf and _opens_block(line, buf))
+                or (buf and ONE_LINE_BLOCK_RE.match(buf[-1]))):
             if buf:
-                out.append(" ".join(buf))
+                out.append(" ".join(l.strip() for l in buf))
             buf = []
         if line.strip():
-            buf.append(line.strip())
+            buf.append(line)
         last = i
     if buf:
-        out.append(" ".join(buf))
+        out.append(" ".join(l.strip() for l in buf))
     return out
 
 
