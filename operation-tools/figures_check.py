@@ -24,7 +24,7 @@ import sys
 import tempfile
 
 sys.dont_write_bytecode = True           # no __pycache__ in the tools dir after a check
-from fences import FENCE_RE, fence_step  # noqa: E402  — one reading of a fence, shared with validate
+from fences import Fences  # noqa: E402  — one reading of a fence, shared with validate
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 QUOTED = sorted((ROOT / "skills/operation-incident/reference").glob("*.md"))
@@ -90,6 +90,11 @@ VALUE_FLAGS = {
 }
 
 
+# A word a command can be named by. Anything else — `<vm>`, `$PROJECT`, a quoted
+# filter — is an argument, and the command is named by the words before it.
+WORD = re.compile(r"[a-z0-9._/:-]+")
+
+
 def subcommand_words(tool: str, rest: list[str]) -> list[str]:
     words, skip = [], False
     for w in rest:
@@ -97,16 +102,21 @@ def subcommand_words(tool: str, rest: list[str]) -> list[str]:
             skip = False
         elif w.startswith("-"):
             skip = "=" not in w and w in VALUE_FLAGS.get(tool, set())
-        else:
+        elif WORD.fullmatch(w):
             words.append(w)
+        else:
+            break
     return words
 
 
-# `=` and the characters a flag's value carries are part of the capture: stopping
-# at `--profile=prod` would leave `aws --profile=prod ec2 ...` citing nothing, and
-# a command nobody checks reads exactly like one that passed. Any word boundary
-# starts one — after a prompt, an env prefix, a pipe — and every match counts.
-CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([a-z0-9 =._/:-]+)")
+# Everything up to a shell separator is the capture, flags' values included:
+# stopping at `--profile=prod`, or at the `<p>` in `--project <p>`, left a command
+# written with its global flag first citing nothing, and a command nobody checks
+# reads exactly like one that passed. subcommand_words() decides which words name
+# it. `(` ends the capture too, so a `$(aws ...)` inside a flag's value is its own
+# match rather than part of the outer one. Any word boundary starts one — after a
+# prompt, an env prefix, a pipe — and every match counts.
+CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([^|;&`()\n]+)")
 SPAN = re.compile(r"`([^`]+)`")
 
 
@@ -143,15 +153,14 @@ SHELL_FENCES = {"", "sh", "bash", "shell", "console", "zsh"}
 def cited_commands() -> set[tuple[str, ...]]:
     out: set[tuple[str, ...]] = set()
     for p in ALL_PAGES:
-        fence, shell = None, False
+        f, shell = Fences(), False
         for line in text_of(p).splitlines():
-            fence, edge = fence_step(line, fence)
-            if edge:
-                if fence is not None:       # opened: its info string says what it holds
-                    info = FENCE_RE.match(line).group(2).strip().split()
+            if f.step(line):
+                if f.fence is not None:     # opened: its info string says what it holds
+                    info = f.info.split()
                     shell = (info[0].lower() if info else "") in SHELL_FENCES
                 continue
-            out.update(commands_of(line, fenced=fence is not None and shell))
+            out.update(commands_of(line, fenced=f.fence is not None and shell))
     return out
 
 

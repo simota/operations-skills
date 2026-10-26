@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 sys.dont_write_bytecode = True      # no __pycache__ in the tools dir after a check
-from fences import fence_step       # noqa: E402  — stdlib-only, so figures_check can share it
+from fences import Fences           # noqa: E402  — stdlib-only, so figures_check can share it
 
 ROOT = Path(__file__).resolve().parent.parent
 FAILURES: list[str] = []
@@ -185,20 +185,20 @@ def frontmatter(text: str) -> dict:
 
 def unfenced(text: str) -> list[tuple[int, str]]:
     """(line number, line) for every line outside a fenced code block."""
-    out, fence = [], None
+    out, f = [], Fences()
     for i, line in enumerate(text.splitlines(), 1):
-        fence, edge = fence_step(line, fence)
-        if fence is None and not edge:
+        edge = f.step(line)
+        if f.fence is None and not edge:
             out.append((i, line))
     return out
 
 
 def sections(text: str) -> dict[str, str]:
     """`## ` headings outside code fences. A heading quoted in an example is not one."""
-    out, cur, buf, fence = {}, None, [], None
+    out, cur, buf, f = {}, None, [], Fences()
     for line in text.splitlines():
-        fence, edge = fence_step(line, fence)
-        if fence is None and not edge and line.startswith("## "):
+        edge = f.step(line)
+        if f.fence is None and not edge and line.startswith("## "):
             if cur:
                 out[cur] = "\n".join(buf)
             cur, buf = line[3:].strip(), []

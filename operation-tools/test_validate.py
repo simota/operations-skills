@@ -1011,6 +1011,25 @@ def tool_render_whole_heading() -> str:
     return ""
 
 
+def tool_render_fenced_heading() -> str:
+    """A `## ` line in a fenced example does not end the section a block goes into."""
+    tmp, copy = _copy()
+    with tmp:
+        f = copy / RB
+        t = f.read_text(encoding="utf-8")
+        t = t.replace(block(t, "surface") + "\n", "", 1)
+        t = t.replace("## Done when\n", "## Done when\n\n```markdown\n## Timeline\n- 14:02 paged\n```\n", 1)
+        f.write_text(t, encoding="utf-8")
+        r = subprocess.run([sys.executable, str(copy / "operation-tools/render.py")],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            return f"render.py failed: {r.stderr.strip()[-200:]}"
+        out = f.read_text(encoding="utf-8")
+        if out.index("<!-- deliver:surface -->") < out.index("## Timeline\n- 14:02 paged\n```"):
+            return "render.py delivered a block inside a fenced example"
+    return ""
+
+
 def tool_engine_requires_running() -> str:
     tmp = tempfile.TemporaryDirectory()
     with tmp:
@@ -1190,6 +1209,14 @@ def tool_figures_parsing() -> str:
              [("aws", "sts", "get-caller-identity"), ("aws", "ecs", "list-tasks")]),
             ("  AWS_PROFILE=p aws ec2 describe-instances | aws ecs list-tasks", True,
              [("aws", "ec2", "describe-instances"), ("aws", "ecs", "list-tasks")]),
+            ("gcloud --project <p> compute instancs list", True,
+             [("gcloud", "compute", "instancs", "list")]),
+            ("aws --profile $P ec2 describe-instancs --instance-ids <id>", True,
+             [("aws", "ec2", "describe-instancs")]),
+            ("aws ec2 describe-instances --region \"$(aws configure gett region)\"", True,
+             [("aws", "ec2", "describe-instances"), ("aws", "configure", "gett")]),
+            ("gcloud compute instances describe <vm> --zone <z> --project <p>", True,
+             [("gcloud", "compute", "instances", "describe")]),
             ("Open the aws console and check it.", False, []),
             ("  description: aws account ids are 12 digits", False, [])):
         got = fc.commands_of(line, fenced)
@@ -1198,14 +1225,22 @@ def tool_figures_parsing() -> str:
     with tempfile.TemporaryDirectory() as tmp:
         page = Path(tmp) / "p.md"
         page.write_text("```yaml\ndescription: aws account ids are 12 digits\n```\n\n"
-                        "```sh\naws ec2 describe-instances\n```\n")
+                        "```sh\naws ec2 describe-instances\n```\n\n"
+                        "1. Before scaling:\n\n    ```bash\n    gcloud compute instancs list\n    ```\n\n"
+                        "Out of the list again:\n\n    ```\n    gcloud verison\n    ```\n\n"
+                        "2. Output looks like:\n\n    ```text\n    ok\n\n"
+                        "The item, and its unclosed fence, end here.\n\n"
+                        "```bash\naws ecs list-tasks\n```\n")
         saved, fc.ALL_PAGES = fc.ALL_PAGES, [page]
         try:
             got = fc.cited_commands()
         finally:
             fc.ALL_PAGES = saved
-        if got != {("aws", "ec2", "describe-instances")}:
-            return f"figures_check read a YAML fence as commands: {sorted(got)}"
+        if got != {("aws", "ec2", "describe-instances"), ("gcloud", "compute", "instancs", "list"),
+                   ("aws", "ecs", "list-tasks")}:
+            return ("figures_check read a YAML fence, a fence in a list item, the end of "
+                    "one, or indented code "
+                    f"wrongly: {sorted(got)}")
     if fc.norm("a command-specific format") != fc.norm(
             fc.re.sub(r"(\w)-[ \t]*\n\s*(\w)", r"\1\2", "a command-\nspecific format")):
         return "figures_check compares a real hyphen differently from a typeset break"
@@ -1426,6 +1461,48 @@ def tool_make_hooks_keeps_foreign() -> str:
     return ""
 
 
+def tool_make_hooks_refuses_shared_dir() -> str:
+    """A core.hooksPath outside the repo is every repo's: `make hooks` links
+    nothing there, and a hook already linked there checks nothing elsewhere."""
+    with tempfile.TemporaryDirectory() as tmp:
+        d, shared, other = Path(tmp) / "repo", Path(tmp) / "shared-hooks", Path(tmp) / "other"
+        (d / "operation-tools/githooks").mkdir(parents=True)
+        shared.mkdir()
+        shutil.copy(ROOT / "Makefile", d)
+        shutil.copy(ROOT / "operation-tools/githooks/pre-commit", d / "operation-tools/githooks")
+        gitconfig = Path(tmp) / "gitconfig"
+        gitconfig.write_text(f"[core]\n\thooksPath = {shared}\n"
+                             "[user]\n\tname = t\n\temail = t@example.com\n")
+        env = {**GIT_ENV, "GIT_CONFIG_GLOBAL": str(gitconfig)}
+        subprocess.run(["git", "init", "-q"], cwd=d, check=True, env=env)
+        r = subprocess.run(["make", "-s", "hooks"], cwd=d, capture_output=True, text=True, env=env)
+        if r.returncode == 0 or (shared / "pre-commit").exists() or (shared / "pre-commit").is_symlink():
+            return f"`make hooks` linked its hook into a hooks directory other repos share: {r.stdout!r}"
+        if "outside this repository" not in r.stdout:
+            return f"`make hooks` refused a shared hooks directory without saying why: {r.stdout!r}"
+        (shared / "pre-commit").symlink_to(d / "operation-tools/githooks/pre-commit")
+        other.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=other, check=True, env=env)
+        (other / "a").write_text("a\n")
+        subprocess.run(["git", "add", "a"], cwd=other, check=True, env=env)
+        r = subprocess.run(["git", "commit", "-qm", "x"], cwd=other, capture_output=True,
+                           text=True, env=env)
+        if r.returncode != 0:
+            return f"this repo's hook, run from a shared hooks directory, failed another repo's commit: {r.stderr.strip()[-200:]}"
+        # Here, a commit that deletes the registry is still checked — and this
+        # stripped copy has no validate.py, so the check refuses it.
+        (d / "operation-registry").mkdir()
+        (d / "operation-registry/harness.yaml").write_text("set: operation\n")
+        subprocess.run(["git", "add", "-A"], cwd=d, check=True, env=env)
+        subprocess.run(["git", "commit", "-qm", "x", "--no-verify"], cwd=d, check=True, env=env)
+        subprocess.run(["git", "rm", "-q", "operation-registry/harness.yaml"], cwd=d, check=True, env=env)
+        r = subprocess.run(["git", "commit", "-qm", "drop"], cwd=d, capture_output=True,
+                           text=True, env=env)
+        if r.returncode == 0:
+            return "the hook let a commit deleting the registry through unchecked"
+    return ""
+
+
 def tool_figures_needs_no_yaml() -> str:
     """`make figures` is standard library only: it must run where PyYAML is not."""
     tools = ROOT / "operation-tools"
@@ -1533,14 +1610,15 @@ def tool_install_links_only_skills() -> str:
     return ""
 
 
-TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_render_whole_heading, tool_engine_requires_running,
+TOOL_CHECKS = [tool_render_refuses_broken_markers, tool_render_whole_heading, tool_render_fenced_heading,
+               tool_engine_requires_running,
                tool_engine_dash_prompt,
                tool_engine_checks_schema, tool_refute_unchecked_fails, tool_refute_needs_ids,
                tool_figures_page_renamed, tool_figures_parsing,
                tool_validate_stem, tool_validate_link_re_linear, tool_validate_skips_ignored, tool_validate_inside_foreign_repo,
                tool_validate_hook_banner,
                tool_figures_needs_no_yaml, tool_figures_unusable_help,
-               tool_make_hooks_keeps_foreign,
+               tool_make_hooks_keeps_foreign, tool_make_hooks_refuses_shared_dir,
                tool_no_bytecode_in_tools, tool_install_links_only_skills,
                tool_validate_crash_runs_on, tool_make_link_spaced_home]
 

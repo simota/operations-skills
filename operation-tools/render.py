@@ -9,11 +9,14 @@ Idempotent: run it, commit the diff.
 """
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.dont_write_bytecode = True
+from fences import Fences                 # noqa: E402  — the same reading validate's sections() uses
 
 ROOT = Path(__file__).resolve().parent.parent
 H = yaml.safe_load((ROOT / "operation-registry" / "harness.yaml").read_text(encoding="utf-8"))
@@ -23,6 +26,15 @@ SKILLS_ROOT = ROOT / H["skills_dir"] if H.get("skills_dir") else ROOT
 
 class RenderError(Exception):
     """A SKILL.md whose markers cannot be rendered without guessing."""
+
+
+def heading_lines(lines: list[str]):
+    """(index, line) of every `## ` heading outside a fence."""
+    f = Fences()
+    for i, line in enumerate(lines):
+        edge = f.step(line.rstrip("\n"))
+        if f.fence is None and not edge and line.startswith("## "):
+            yield i, line
 
 
 def render(path: Path) -> bool:
@@ -47,18 +59,23 @@ def render(path: Path) -> bool:
             _, tail = rest.split(close_m, 1)
             text = head + payload + tail
         elif (n_open, n_close) == (0, 0):
-            heading = f"## {spec['section']}\n"
+            heading = f"## {spec['section']}"
             # The heading is a whole line: `### Done when` contains `## Done when`,
             # and matching it put the block into a subsection of another section.
-            m = re.search(rf"(?m)^{re.escape(heading)}", text)
-            if not m:
+            # Both ends are read outside fences, as V17 reads them: a `## Timeline`
+            # in a fenced postmortem skeleton ended the section, and the block
+            # landed inside the example.
+            lines = text.splitlines(keepends=True)
+            starts = [i for i, l in heading_lines(lines)]
+            at = next((i for i in starts if lines[i].rstrip("\n") == heading), None)
+            if at is None:
                 raise RenderError(f"{path.parent.name}/SKILL.md has no section "
                                   f"{spec['section']!r} to deliver {key} into")
-            head, rest = text[:m.start()], text[m.end():]
             # append at the end of that section, before the next heading
-            nxt = rest.find("\n## ")
-            body, tail = (rest[:nxt], rest[nxt:]) if nxt != -1 else (rest, "")
-            text = head + heading + body.rstrip("\n") + "\n" + payload + "\n" + tail
+            nxt = next((i for i in starts if i > at), len(lines))
+            head, body, tail = "".join(lines[:at]), "".join(lines[at + 1:nxt]), "".join(lines[nxt:])
+            text = (head + heading + "\n" + body.rstrip("\n") + "\n" + payload + "\n"
+                    + ("\n" + tail if tail else ""))
         else:
             raise RenderError(f"{path.parent.name}/SKILL.md has {n_open} open and "
                               f"{n_close} close {key} markers; fix them by hand — "
