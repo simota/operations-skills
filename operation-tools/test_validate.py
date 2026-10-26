@@ -1213,6 +1213,8 @@ def tool_figures_parsing() -> str:
              [("gcloud", "compute", "instancs", "list")]),
             ("aws --profile $P ec2 describe-instancs --instance-ids <id>", True,
              [("aws", "ec2", "describe-instancs")]),
+            ("aws ec2 describe-instances --region \"$(aws configure gett region)\"", True,
+             [("aws", "ec2", "describe-instances"), ("aws", "configure", "gett")]),
             ("gcloud compute instances describe <vm> --zone <z> --project <p>", True,
              [("gcloud", "compute", "instances", "describe")]),
             ("Open the aws console and check it.", False, []),

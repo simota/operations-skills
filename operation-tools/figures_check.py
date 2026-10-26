@@ -113,9 +113,10 @@ def subcommand_words(tool: str, rest: list[str]) -> list[str]:
 # stopping at `--profile=prod`, or at the `<p>` in `--project <p>`, left a command
 # written with its global flag first citing nothing, and a command nobody checks
 # reads exactly like one that passed. subcommand_words() decides which words name
-# it. Any word boundary starts one — after a prompt, an env prefix, a pipe — and
-# every match counts.
-CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([^|;&`)\n]+)")
+# it. `(` ends the capture too, so a `$(aws ...)` inside a flag's value is its own
+# match rather than part of the outer one. Any word boundary starts one — after a
+# prompt, an env prefix, a pipe — and every match counts.
+CMD = re.compile(r"(?:^|(?<=[\s`$(|;&]))(aws|gcloud|ansible|ansible-playbook)\s+([^|;&`()\n]+)")
 SPAN = re.compile(r"`([^`]+)`")
 
 
