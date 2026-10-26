@@ -36,6 +36,11 @@ Correcting downward is free; that is the point of declaring early.
 | SEV3 | Next business hour | No | No | On state change | If repeated ≥3× in 90 days |
 | SEV4 | Next business day | No | No | On resolution | No |
 
+The Ack column is the routing for `ST0` and `ST1`. At `ST2` and `ST3` the service tier's off-hours
+degradation wins (`operation-oncall`'s escalation policy): an off-hours SEV2 there is a
+business-hours ticket, and the duration trigger below counts from its acknowledgement — the
+service tier accepted the overnight wait. A SEV1 pages at every service tier.
+
 The comms cadence holds **even when there is nothing new**. "No change, still investigating,
 next update at HH:MM" is a valid and necessary update — silence is read as abandonment.
 

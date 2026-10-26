@@ -23,9 +23,9 @@ Verified: 2026-08-21 — no automated check.
 | Audience | Notify when | Channel | Cadence |
 |----------|-------------|---------|---------|
 | Responders | Declaration | War room | Continuous |
-| Engineering org | SEV1/SEV2 declaration | Team channel | On state change |
+| Engineering org | SEV1/SEV2 declaration | Team channel | 30 min at SEV1, 60 min at SEV2, and on state change |
 | Support team | Any customer-visible impact | Support channel, **before** the status page | 30 min at SEV1 |
-| Leadership | SEV1, or SEV2 past 1h | Direct + channel | 30–60 min |
+| Leadership | SEV1, or SEV2 past 1h | Direct + channel | 30 min at SEV1, 60 min at SEV2 |
 | Affected customers | Impact confirmed and reproducible | Status page, in-app, email | 30 min at SEV1 |
 | All customers | Broad impact or trust-relevant | Status page + email | 30 min |
 | Regulators | Statutory trigger met | Owned by legal/compliance — escalate, never send | Per statute |

@@ -12,9 +12,9 @@ makes it `KEEP (conditional)` — so no row order can let an unproven runbook pa
 | No human action (fix, comms, escalation) can change the outcome | `DELETE` the page; keep the signal if forensics reads it | — |
 | Action exists and working automation already performs it | `DEMOTE` | Auto-remediation; a failed run is judged by the rows below, and pages only if one of them pages |
 | Fires with another alert >80% of the time | `MERGE` | Into the parent symptom alert |
-| No user impact, no imminent impact | `DEMOTE` | Ticket, business hours |
+| No user impact, no imminent impact — or impact that routes to a ticket: SEV3/SEV4, or the service tier's off-hours degradation (`reference/escalation-policy.md`) | `DEMOTE` | Ticket, business hours |
 | Impact spans multiple services or is customer-announced | `KEEP` | Page primary + declare incident |
-| User-visible or imminent impact, no working automation | `KEEP` | Page primary |
+| User-visible or imminent impact at a severity that pages, no working automation | `KEEP` | Page primary |
 
 `KEEP (conditional)` is a debt marker: the alert pages today but is listed as a blocking
 gap in the output, handed to `operation-runbook`.
