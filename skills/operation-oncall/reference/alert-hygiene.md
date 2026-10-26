@@ -11,7 +11,9 @@ Verified: 2026-08-21 — no automated check.
 An alert pages a human cleanly only if **all four** hold (failing only (4) still pages, as
 `KEEP (conditional)`):
 
-1. **Impact** — it indicates user-visible impact, or impact that will occur without action.
+1. **Impact** — it indicates user-visible impact, or impact that will occur without action, at a
+   severity that pages: SEV1/SEV2, as the service tier allows (`reference/escalation-policy.md`
+   § Severity-to-Channel Routing). SEV3 and SEV4 impact is real, and routes to a ticket.
 2. **Agency** — a human action can change the outcome. A fix, a customer communication and an
    escalation all count; waiting on a provider with customers to inform is not "no agency".
 3. **Not automated** — no working automation performs that action today.
@@ -22,7 +24,7 @@ Which criterion fails decides the verdict — they are not interchangeable:
 | Failing | Verdict | Because |
 |---------|---------|---------|
 | (2) agency | `DELETE` the page | No human action (fix, comms, escalation) can ever change the outcome |
-| (1) impact, but (2) holds | `DEMOTE` to ticket | Real and actionable, but no user consequence |
+| (1) impact, but (2) holds | `DEMOTE` to ticket | Real and actionable, but no user consequence at a severity that pages |
 | (3) not automated — working automation already handles it | `DEMOTE` to auto-remediation; a failed run is re-judged on (1), (2) and (4) | A human is doing a machine's job. Until the automation runs, the other criteria decide |
 | (4) documented | `KEEP (conditional)` | Still pages; the missing or `UNVERIFIED` runbook is a blocking gap |
 

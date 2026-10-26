@@ -8,7 +8,10 @@ Verified: 2026-08-21 — no automated check.
 
 ## Reversibility Checklist
 
-Run before approving any change. Any unchecked box moves reversibility to score 5.
+Run before approving any change. An unchecked box scores reversibility by what it leaves
+(`_operation/SAFETY_TIERS.md`): an undo that cannot run, or never has, scores 5 and is `T4`; one
+that runs but takes hours, or loses what the forward window wrote, scores 4 and is `T3` — slow or
+partially lossy, not irreversible. Unsure which → 5.
 
 - [ ] The previous artifact version is still available and deployable
 - [ ] No schema migration ran, **or** the migration is backwards-compatible with the previous version
