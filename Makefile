@@ -69,8 +69,21 @@ render:
 # is repaired. A link into another project with the same layout, or a dangling
 # link of any other shape (a hook manager's target gone for now), is foreign. core.hooksPath may
 # point at operation-tools/githooks itself, which must never be linked onto itself.
+# A hooks directory outside this repository — a global core.hooksPath shared by
+# every repo on the machine — is refused: linked there, this hook ran in every
+# other repo's commits, found no validate.py and failed each one.
 hooks:
-	@d="$$(git rev-parse --git-path hooks)" && mkdir -p "$$d" && \
+	@d="$$(git rev-parse --git-path hooks)" && \
+		case "$$d" in /*) ;; *) d="$$(pwd -P)/$$d" ;; esac && \
+		p="$$d" && while [ ! -d "$$p" ]; do p="$$(dirname "$$p")"; done && \
+		p="$$(cd "$$p" && pwd -P)" && \
+		gc="$$(cd "$$(git rev-parse --git-common-dir)" && pwd -P)" && \
+		case "$$p/" in "$$gc"/*|"$(REPO)"/*) ;; *) \
+			echo "pre-commit not installed: $$d is outside this repository (core.hooksPath is"; \
+			echo "  shared with other repos there); call $(REPO)/operation-tools/githooks/pre-commit"; \
+			echo "  from a hook in that directory, or set a core.hooksPath local to this repo"; \
+			exit 1 ;; esac && \
+		mkdir -p "$$d" && \
 		src="$(REPO)/operation-tools/githooks/pre-commit" && t="$$d/pre-commit" && \
 		chmod +x "$$src" && \
 		if [ "$$t" -ef "$$src" ]; then echo "pre-commit installed in $$d"; exit 0; fi && \
