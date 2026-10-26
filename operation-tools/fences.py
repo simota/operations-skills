@@ -13,6 +13,8 @@ FENCE_RE = re.compile(r"^( *)(`{3,}|~{3,})(.*)$")
 # A list item, and the column its content starts at. Past four spaces after the
 # marker the content is indented code, which is not this reader's concern.
 LIST_ITEM_RE = re.compile(r"^( *)([-*+]|\d{1,9}[.)])( {1,4})(?=\S)")
+# `* * *` and `- - -` are thematic breaks, which end a list rather than open one.
+BREAK_RE = re.compile(r"^ {0,3}([-*_])( *\1){2,} *$")
 
 
 class Fences:
@@ -27,6 +29,8 @@ class Fences:
     as prose left every command and heading inside it unread. A line indented
     less than the item's content leaves the item; a lazy continuation does too,
     which is the conservative side — it only reads as it did before lists counted.
+    Leaving the item closes a fence it holds, unclosed or not: kept open, one
+    missing ``` swallowed every heading and command to the end of the page.
     """
 
     def __init__(self) -> None:
@@ -35,7 +39,14 @@ class Fences:
         self._content = 0                 # the enclosing list item's content column
 
     def step(self, line: str) -> bool:
-        """Read `line`; whether it opened or closed a fence."""
+        """Read `line`; whether it opened or closed a fence.
+
+        A line that closes a fence by leaving its list item is not itself a fence
+        line: it is read as the first line outside, and may open the next one.
+        """
+        if self.fence is not None and self._content and line.strip() \
+                and len(line) - len(line.lstrip(" ")) < self._content:
+            self.fence, self.info = None, ""
         if self.fence is None:
             self._content = self._list_content(line)
         m = FENCE_RE.match(line)
@@ -55,7 +66,7 @@ class Fences:
     def _list_content(self, line: str) -> int:
         if not line.strip():
             return self._content
-        m = LIST_ITEM_RE.match(line)
+        m = None if BREAK_RE.match(line) else LIST_ITEM_RE.match(line)
         if m:
             return len(m.group(1)) + len(m.group(2)) + len(m.group(3))
         indent = len(line) - len(line.lstrip(" "))

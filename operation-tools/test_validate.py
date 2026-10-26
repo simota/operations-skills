@@ -1225,14 +1225,19 @@ def tool_figures_parsing() -> str:
         page.write_text("```yaml\ndescription: aws account ids are 12 digits\n```\n\n"
                         "```sh\naws ec2 describe-instances\n```\n\n"
                         "1. Before scaling:\n\n    ```bash\n    gcloud compute instancs list\n    ```\n\n"
-                        "Out of the list again:\n\n    ```\n    gcloud verison\n    ```\n")
+                        "Out of the list again:\n\n    ```\n    gcloud verison\n    ```\n\n"
+                        "2. Output looks like:\n\n    ```text\n    ok\n\n"
+                        "The item, and its unclosed fence, end here.\n\n"
+                        "```bash\naws ecs list-tasks\n```\n")
         saved, fc.ALL_PAGES = fc.ALL_PAGES, [page]
         try:
             got = fc.cited_commands()
         finally:
             fc.ALL_PAGES = saved
-        if got != {("aws", "ec2", "describe-instances"), ("gcloud", "compute", "instancs", "list")}:
-            return ("figures_check read a YAML fence, a fence in a list item or indented code "
+        if got != {("aws", "ec2", "describe-instances"), ("gcloud", "compute", "instancs", "list"),
+                   ("aws", "ecs", "list-tasks")}:
+            return ("figures_check read a YAML fence, a fence in a list item, the end of "
+                    "one, or indented code "
                     f"wrongly: {sorted(got)}")
     if fc.norm("a command-specific format") != fc.norm(
             fc.re.sub(r"(\w)-[ \t]*\n\s*(\w)", r"\1\2", "a command-\nspecific format")):
@@ -1482,6 +1487,17 @@ def tool_make_hooks_refuses_shared_dir() -> str:
                            text=True, env=env)
         if r.returncode != 0:
             return f"this repo's hook, run from a shared hooks directory, failed another repo's commit: {r.stderr.strip()[-200:]}"
+        # Here, a commit that deletes the registry is still checked — and this
+        # stripped copy has no validate.py, so the check refuses it.
+        (d / "operation-registry").mkdir()
+        (d / "operation-registry/harness.yaml").write_text("set: operation\n")
+        subprocess.run(["git", "add", "-A"], cwd=d, check=True, env=env)
+        subprocess.run(["git", "commit", "-qm", "x", "--no-verify"], cwd=d, check=True, env=env)
+        subprocess.run(["git", "rm", "-q", "operation-registry/harness.yaml"], cwd=d, check=True, env=env)
+        r = subprocess.run(["git", "commit", "-qm", "drop"], cwd=d, capture_output=True,
+                           text=True, env=env)
+        if r.returncode == 0:
+            return "the hook let a commit deleting the registry through unchecked"
     return ""
 
 
